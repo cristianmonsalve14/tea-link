@@ -1,3 +1,57 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer base {
+  /* Configuración base para accesibilidad TEA */
+  body {
+    @apply font-sans text-body text-neutral-gray bg-neutral-white;
+    font-family: 'Inter', 'Roboto', sans-serif;
+  }
+
+  h1 {
+    @apply text-h1;
+  }
+
+  h2 {
+    @apply text-h2;
+  }
+
+  h3 {
+    @apply text-h3;
+  }
+
+  /* Estilos para enfoque de teclado (accesibilidad) */
+  *:focus-visible {
+    @apply outline-2 outline-offset-2 outline-primary;
+  }
+}
+
+@layer components {
+  /* Botón primario - accesible para TEA */
+  .btn-primary {
+    @apply bg-primary text-white px-6 py-3 rounded-lg font-semibold;
+    @apply hover:bg-primary-dark transition-colors duration-200;
+    @apply min-h-touch min-w-touch;
+    @apply focus-visible:outline-primary;
+  }
+
+  /* Botón secundario */
+  .btn-secondary {
+    @apply bg-secondary text-white px-6 py-3 rounded-lg font-semibold;
+    @apply hover:bg-secondary-dark transition-colors duration-200;
+    @apply min-h-touch min-w-touch;
+  }
+
+  /* Tarjeta/Card */
+  .card {
+    @apply bg-white rounded-lg shadow-md p-6 border border-neutral-gray-light;
+  }
+
+  /* Input de formulario */
+  .input {
+    @apply w-full px-4 py-3 border border-neutral-gray-medium rounded-lg;
+    @apply focus:border-primary focus:ring-2 focus:ring-primary/20;
+    @apply min-h-touch;
+  }
+}

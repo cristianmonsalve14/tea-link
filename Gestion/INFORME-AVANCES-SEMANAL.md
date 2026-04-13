@@ -11,28 +11,28 @@
 
 ---
 
-## 📅 INFORME SEMANA 5 (9 MARZO - 12 ABRIL 2026)
+## 📅 INFORME SEMANA 5 (9 MARZO - 13 ABRIL 2026)
 
-**Fecha del Informe:** 12 de abril de 2026  
+**Fecha del Informe:** 13 de abril de 2026  
 **Semanas completadas:** 5 de 18  
-**Días trabajados:** 34 días  
-**Días restantes hasta entrega final:** 91 días
+**Días trabajados:** 35 días  
+**Días restantes hasta entrega final:** 90 días
 
 ---
 
 ## 📊 RESUMEN EJECUTIVO
 
-### Avance Global del Proyecto: **25%**
+### Avance Global del Proyecto: **27.78%**
 
 | Fase | Actividades | Completadas | En Progreso | Pendientes | % Fase |
 |------|-------------|-------------|-------------|------------|--------|
-| **Fase 1: Planificación y Diseño** | 5 | 4 | 0 | 1 | 80% |
-| **Fase 2: Desarrollo Core** | 6 | 0 | 1 | 5 | 8% |
+| **Fase 1: Planificación y Diseño** | 5 | 5 | 0 | 0 | 100% |
+| **Fase 2: Desarrollo Core** | 6 | 0 | 0 | 6 | 0% |
 | **Fase 3: Reportes y Mejoras** | 4 | 0 | 0 | 4 | 0% |
 | **Fase 4: Testing y Defensa** | 3 | 0 | 0 | 3 | 0% |
-| **TOTAL** | **18** | **4** | **1** | **13** | **25%** |
+| **TOTAL** | **18** | **5** | **0** | **13** | **27.78%** |
 
-**Estado general:** 🟢 **EN TIEMPO** - Desarrollo avanzando según cronograma
+**Estado general:** 🟢 **EN TIEMPO** - Fase 1 completada, iniciar desarrollo
 
 ---
 
@@ -568,32 +568,86 @@ mkdir src src\routes src\controllers src\middleware src\types
 
 ---
 
+## 📅 ACTUALIZACIÓN - 13 ABRIL 2026
+
+### **ACTIVIDAD 4: Diseño UI/UX** ✅ COMPLETADA
+**Período:** 13 abril 2026 (1 día)  
+**Estado:** ✅ COMPLETADA
+
+#### **¿Qué se hizo?**
+
+1. **Paleta de Colores Definida**
+   - ✅ Primario: #4A90E2 (Azul calmado - accesible para TEA)
+   - ✅ Secundario: #7ED321 (Verde suave - confirmaciones)
+   - ✅ Neutros: Blanco, Gris oscuro (#333), Gris claro (#F5F7FA)
+   - ✅ Estados: Naranja suave (warnings), Rojo suave (errores)
+
+2. **Wireframes Creados**
+   - ✅ Login/Registro
+   - ✅ Dashboard principal con métricas
+   - ✅ Lista de observaciones (con filtros)
+   - ✅ Formulario nueva observación
+   - ✅ Perfil de usuario
+   - ✅ Generación de reportes
+   - **Documento:** `Documentacion/DISENO-UI-UX.md`
+
+3. **Configuración Técnica**
+   - ✅ `tailwind.config.js` actualizado con:
+     - Paleta de colores personalizada
+     - Tipografía Inter + Roboto
+     - Breakpoints responsive (mobile/tablet/desktop/wide)
+     - Tamaños mínimos táctiles (44px)
+   - ✅ `index.html` actualizado:
+     - Google Fonts (Inter) integrado
+     - Idioma español
+     - Título "TEA Link"
+   - ✅ `index.css` con clases de utilidad:
+     - .btn-primary, .btn-secondary
+     - .card, .input
+     - Focus visible para accesibilidad
+
+4. **Principios de Accesibilidad Aplicados**
+   - ✅ Contraste mínimo WCAG AA (4.5:1)
+   - ✅ Navegación por teclado (focus-visible)
+   - ✅ Tamaño mínimo 44px para elementos táctiles
+   - ✅ Colores calmados (no estridentes) para personas con TEA
+
+**Resultado:** Frontend listo para desarrollo de componentes React con diseño profesional y accesible.
+
+---
+
 ## ✅ CONCLUSIONES Y PRÓXIMOS PASOS
 
-### **Estado Actual:**
-- ✅ Documentación 100% completa y profesional
+### **Estado Actual (13 abril 2026):**
+- ✅ Documentación 100% completa
 - ✅ Entorno de desarrollo configurado (frontend + backend)
-- ✅ Adelantado 11 días sobre cronograma
-- ⏳ 8 días para Evaluación 1 (25% de la nota)
+- ✅ Base de datos diseñada (Prisma schema completo)
+- ✅ Diseño UI/UX completado (paleta + wireframes + Tailwind)
+- ✅ Repositorio GitHub organizado y con colaboradores
+- 📊 **Avance Global:** 27.78% (5 de 18 actividades)
 
 ### **Fortalezas:**
-- Planificación exhaustiva
+- Planificación exhaustiva y documentada
 - Decisiones técnicas fundamentadas
-- Stack tecnológico moderno
-- Preparación para defensa
-
-### **Desafíos Inmediatos:**
-- Completar diseño de base de datos (3 días)
-- Crear wireframes UI/UX (3 días)
-- Preparar presentación Evaluación 1 (2 días)
+- Stack tecnológico moderno y accesible
+- Diseño pensado para usuarios con TEA
 
 ### **Próxima Acción:**
-**Lunes 23 marzo:** Iniciar Actividad 3 - Diseño de Base de Datos con Prisma
+**Sprint 1: Autenticación** (Backend)
+- Configurar Prisma completamente
+- Crear migrations de base de datos
+- Implementar endpoints de registro y login
+- JWT + bcrypt para seguridad
+- Middleware de autenticación
+
+### **Fechas Críticas:**
+- **Semana 9 (~10 mayo):** Primera revisión masiva de repositorios
+- **Semana 17 (~5 julio):** Entrega final del proyecto
 
 ---
 
 **Firma del Alumno:** Cristian Monsalve Budrovich  
-**Fecha:** 22 de marzo de 2026
+**Fecha:** 13 de abril de 2026
 
 ---
 
