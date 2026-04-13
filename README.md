@@ -6,7 +6,7 @@
 **Asignatura:** Taller Aplicado de Programación (TPY1101)  
 **Período:** Semestre 2026 (9 marzo - 12 julio 2026)  
 **Duración:** 18 semanas - 144 horas pedagógicas  
-**Repositorio:** [Tu repositorio GitHub aquí]
+**Repositorio:** https://github.com/cristianmonsalve14/tea-link
 
 ---
 
@@ -136,49 +136,66 @@ Desarrollar una aplicación web que centralice y facilite el registro colaborati
 
 ## 📁 Estructura del Proyecto
 
+**Organización según requisitos DuocUC:**
+
 ```
 tea-link/
-├── frontend/                          # SPA React con Vite
-│   ├── src/
-│   │   ├── pages/                    # Páginas (Login, Dashboard, etc.)
-│   │   ├── components/               # Componentes reutilizables
-│   │   ├── hooks/                    # Custom React hooks
-│   │   ├── contexts/                 # Context API (global state)
-│   │   ├── services/                 # Llamadas a API
-│   │   ├── types/                    # TypeScript types/interfaces
-│   │   ├── styles/                   # Tailwind + estilos globales
-│   │   └── App.tsx                   # Componente raíz
-│   ├── package.json
-│   ├── tsconfig.json
-│   └── vite.config.ts
+├── Gestion/                           # Gestión del proyecto
+│   ├── 1.1.2 Documento de registro de definición...docx
+│   ├── Integrantes.txt               # Listado de integrantes del equipo
+│   ├── CONTROL-AVANCE-TEA-LINK.md    # Control de avance semanal
+│   └── INFORME-AVANCES-SEMANAL.md    # Reportes semanales de progreso
 │
-├── backend/                           # API Express + TypeScript
-│   ├── src/
-│   │   ├── routes/                   # Definición de endpoints
-│   │   ├── controllers/              # Lógica de negocio
-│   │   ├── middleware/               # Auth, RBAC, validación
-│   │   ├── services/                 # Lógica transversal
-│   │   ├── types/                    # TypeScript types
-│   │   └── server.ts                 # Punto de entrada
-│   ├── prisma/
-│   │   ├── schema.prisma             # Definición de modelo datos
-│   │   └── migrations/               # Historial de cambios DB
-│   ├── package.json
-│   ├── tsconfig.json
-│   └── .env.example
+├── Documentacion/                     # Documentación técnica
+│   ├── INFORME-TECNICO-BASE-DATOS.md # Documentación de base de datos
+│   └── diagramas/
+│       ├── flujo-datos-arquitectura.png
+│       └── flujo-datos-arquitectura.puml
 │
-├── docs/                              # Documentación
-│   ├── arquitectura.md
-│   ├── api-endpoints.md
-│   ├── guia-desarrollo.md
-│   └── diagrams/
-│       └── ER-diagram.png
+├── Producto/                          # Código fuente y SQL
+│   ├── backend/                      # API Express + TypeScript
+│   │   ├── src/
+│   │   │   ├── routes/              # Definición de endpoints
+│   │   │   ├── controllers/         # Lógica de negocio
+│   │   │   ├── middleware/          # Auth, RBAC, validación
+│   │   │   ├── types/               # TypeScript types
+│   │   │   ├── index.ts             # Punto de entrada
+│   │   │   └── test-db.ts           # Testing de conexión
+│   │   ├── prisma/
+│   │   │   └── schema.prisma        # Definición de modelo datos
+│   │   ├── package.json
+│   │   ├── package-lock.json
+│   │   └── tsconfig.json
+│   │
+│   ├── frontend/                     # SPA React con Vite
+│   │   ├── src/
+│   │   │   ├── pages/               # Páginas (Login, Dashboard, etc.)
+│   │   │   ├── components/          # Componentes reutilizables
+│   │   │   ├── hooks/               # Custom React hooks
+│   │   │   ├── services/            # Llamadas a API
+│   │   │   ├── types/               # TypeScript types/interfaces
+│   │   │   ├── assets/              # Imágenes, iconos
+│   │   │   ├── App.tsx              # Componente raíz
+│   │   │   ├── App.css
+│   │   │   ├── index.css
+│   │   │   └── main.tsx
+│   │   ├── public/
+│   │   ├── package.json
+│   │   ├── package-lock.json
+│   │   ├── tsconfig.json
+│   │   ├── vite.config.ts
+│   │   ├── tailwind.config.js
+│   │   ├── postcss.config.js
+│   │   └── eslint.config.js
+│   │
+│   └── database/                     # Scripts SQL
+│       ├── create_database_tea_link.sql  # Script de creación de BD
+│       └── INSTRUCCIONES_EJECUCION.md    # Guía de ejecución
 │
-├── GUIA-1-COMPLETA-TEA-LINK.md       # Documentación oficial GUÍA 1
-├── GUIA-DEFENSA-PREGUNTAS-RESPUESTAS.md  # 18 preguntas de defensa
-├── CONTROL-AVANCE-TEA-LINK.md        # Control de avance semanal
 ├── README.md                          # Este archivo
-└── .gitignore
+├── .gitignore
+└── .vscode/
+    └── settings.json                  # Configuración del editor
 ```
 
 ---
@@ -193,13 +210,13 @@ tea-link/
 
 ### 1️⃣ Clonar repositorio
 ```bash
-git clone https://github.com/[usuario]/tea-link.git
+git clone https://github.com/cristianmonsalve14/tea-link.git
 cd tea-link
 ```
 
 ### 2️⃣ Configurar Backend
 ```bash
-cd backend
+cd Producto/backend
 
 # Instalar dependencias
 npm install
@@ -217,7 +234,7 @@ npm run dev
 
 ### 3️⃣ Configurar Frontend
 ```bash
-cd frontend
+cd Producto/frontend
 
 # Instalar dependencias
 npm install
