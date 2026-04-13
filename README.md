@@ -429,7 +429,7 @@ Este proyecto está desarrollado como **Proyecto de Titulación** en la carrera 
 
 ### Propiedad Intelectual
 
-Este proyecto contiene ideas, diseños y código original que el autor planea desarrollar comercialmente. Cualquier uso no autorizado constituye una violación a los derechos de propiedad intelectual.
+Este proyecto contiene ideas, diseños y código original del autor. Cualquier uso no autorizado constituye una violación a los derechos de propiedad intelectual.
 
 **Para consultas sobre licenciamiento, colaboración o implementación:**  
 Contactar a: Cristian Monsalve Budrovich
