@@ -18,29 +18,16 @@ export default {
           light: '#96E03F',
           dark: '#6ABC1B',
         },
-        neutral: {
-          white: '#FFFFFF',
-          gray: {
-            DEFAULT: '#333333', // Textos
-            light: '#F5F7FA',   // Fondos alternos
-            medium: '#9CA3AF',
-          },
-        },
-        status: {
-          warning: '#F5A623',  // Naranja suave
-          error: '#D0021B',    // Rojo suave
-          success: '#7ED321',  // Verde (igual a secondary)
-        },
+        'neutral-white': '#FFFFFF',
+        'neutral-gray': '#333333', // Textos
+        'neutral-gray-light': '#F5F7FA', // Fondos alternos
+        'neutral-gray-medium': '#9CA3AF',
+        'status-warning': '#F5A623',  // Naranja suave
+        'status-error': '#D0021B',    // Rojo suave
+        'status-success': '#7ED321',  // Verde (igual a secondary)
       },
       fontFamily: {
         sans: ['Inter', 'Roboto', 'sans-serif'],
-      },
-      fontSize: {
-        'h1': ['2rem', { lineHeight: '2.5rem', fontWeight: '700' }],      // 32px
-        'h2': ['1.5rem', { lineHeight: '2rem', fontWeight: '600' }],      // 24px
-        'h3': ['1.25rem', { lineHeight: '1.75rem', fontWeight: '600' }],  // 20px
-        'body': ['1rem', { lineHeight: '1.5rem', fontWeight: '400' }],    // 16px
-        'small': ['0.875rem', { lineHeight: '1.25rem', fontWeight: '400' }], // 14px
       },
       spacing: {
         // Espaciado generoso para accesibilidad

@@ -1,57 +1,28 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import 'tailwindcss';
 
-@layer base {
-  /* Configuración base para accesibilidad TEA */
-  body {
-    @apply font-sans text-body text-neutral-gray bg-neutral-white;
-    font-family: 'Inter', 'Roboto', sans-serif;
-  }
-
-  h1 {
-    @apply text-h1;
-  }
-
-  h2 {
-    @apply text-h2;
-  }
-
-  h3 {
-    @apply text-h3;
-  }
-
-  /* Estilos para enfoque de teclado (accesibilidad) */
-  *:focus-visible {
-    @apply outline-2 outline-offset-2 outline-primary;
-  }
+@theme {
+  /* Colores personalizados TEA */
+  --color-primary: #4A90E2;
+  --color-primary-light: #6AA8F0;
+  --color-primary-dark: #3178C6;
+  
+  --color-secondary: #7ED321;
+  --color-secondary-light: #96E03F;
+  --color-secondary-dark: #6ABC1B;
+  
+  --color-neutral-white: #FFFFFF;
+  --color-neutral-gray: #333333;
+  --color-neutral-gray-light: #F5F7FA;
+  --color-neutral-gray-medium: #9CA3AF;
+  
+  --color-status-warning: #F5A623;
+  --color-status-error: #D0021B;
+  --color-status-success: #7ED321;
+  
+  /* Fuentes */
+  --font-family-sans: 'Inter', 'Roboto', sans-serif;
 }
 
-@layer components {
-  /* Botón primario - accesible para TEA */
-  .btn-primary {
-    @apply bg-primary text-white px-6 py-3 rounded-lg font-semibold;
-    @apply hover:bg-primary-dark transition-colors duration-200;
-    @apply min-h-touch min-w-touch;
-    @apply focus-visible:outline-primary;
-  }
-
-  /* Botón secundario */
-  .btn-secondary {
-    @apply bg-secondary text-white px-6 py-3 rounded-lg font-semibold;
-    @apply hover:bg-secondary-dark transition-colors duration-200;
-    @apply min-h-touch min-w-touch;
-  }
-
-  /* Tarjeta/Card */
-  .card {
-    @apply bg-white rounded-lg shadow-md p-6 border border-neutral-gray-light;
-  }
-
-  /* Input de formulario */
-  .input {
-    @apply w-full px-4 py-3 border border-neutral-gray-medium rounded-lg;
-    @apply focus:border-primary focus:ring-2 focus:ring-primary/20;
-    @apply min-h-touch;
-  }
+body {
+  font-family: var(--font-family-sans);
 }
