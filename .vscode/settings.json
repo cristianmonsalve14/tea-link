@@ -1,0 +1,13 @@
+{
+  // Configuración específica para Prisma en este proyecto
+  "prisma.prismaClientVersion": "5.22.0",
+  "typescript.tsdk": "node_modules/typescript/lib",
+  
+  // Mantener los beneficios de la extensión Prisma
+  "prisma.showPrismaDataPlatformNotification": false,
+  "prisma.fileWatcher": true,
+  "[prisma]": {
+    "editor.defaultFormatter": "Prisma.prisma",
+    "editor.formatOnSave": true
+  }
+}

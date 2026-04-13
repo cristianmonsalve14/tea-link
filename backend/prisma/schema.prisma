@@ -1,0 +1,110 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Usuario {
+  id              Int           @id @default(autoincrement())
+  email           String        @unique @db.VarChar(255)
+  password_hash   String        @db.VarChar(255)
+  nombre_completo String        @db.VarChar(255)
+  rol             rol_enum
+  created_at      DateTime      @default(now()) @db.Timestamp(6)
+  updated_at      DateTime      @default(now()) @updatedAt @db.Timestamp(6)
+  observaciones   Observacion[] @relation("AutorObservacion")
+  perfiles        Perfil[]
+  reportes        Reporte[]
+
+  @@index([email], map: "idx_usuarios_email")
+  @@map("usuarios")
+}
+
+model Perfil {
+  id               Int           @id @default(autoincrement())
+  nombre           String        @db.VarChar(255)
+  edad             Int?
+  diagnostico      String?       @db.VarChar(500)
+  fecha_nacimiento DateTime?     @db.Date
+  notas            String?
+  usuario_id       Int
+  created_at       DateTime      @default(now()) @db.Timestamp(6)
+  updated_at       DateTime      @default(now()) @updatedAt @db.Timestamp(6)
+  observaciones    Observacion[]
+  usuario          Usuario       @relation(fields: [usuario_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_perfiles_usuario")
+
+  @@index([usuario_id], map: "idx_perfiles_usuario_id")
+  @@map("perfiles")
+}
+
+model Observacion {
+  id           Int                        @id @default(autoincrement())
+  titulo       String                     @db.VarChar(255)
+  descripcion  String
+  categoria    categoria_observacion_enum
+  fecha_evento DateTime                   @db.Timestamp(6)
+  perfil_id    Int
+  autor_id     Int
+  created_at   DateTime                   @default(now()) @db.Timestamp(6)
+  updated_at   DateTime                   @default(now()) @updatedAt @db.Timestamp(6)
+  autor        Usuario                    @relation("AutorObservacion", fields: [autor_id], references: [id], onUpdate: NoAction, map: "fk_observaciones_autor")
+  perfil       Perfil                     @relation(fields: [perfil_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_observaciones_perfil")
+  reportes     ObservacionEnReporte[]
+
+  @@index([autor_id], map: "idx_observaciones_autor_id")
+  @@index([categoria], map: "idx_observaciones_categoria")
+  @@index([fecha_evento], map: "idx_observaciones_fecha_evento")
+  @@index([perfil_id, fecha_evento(sort: Desc)], map: "idx_observaciones_perfil_fecha")
+  @@index([perfil_id], map: "idx_observaciones_perfil_id")
+  @@map("observaciones")
+}
+
+model Reporte {
+  id            Int                    @id @default(autoincrement())
+  titulo        String                 @db.VarChar(255)
+  fecha_inicio  DateTime               @db.Date
+  fecha_fin     DateTime               @db.Date
+  formato       formato_reporte_enum
+  url_archivo   String?                @db.VarChar(500)
+  creador_id    Int
+  created_at    DateTime               @default(now()) @db.Timestamp(6)
+  observaciones ObservacionEnReporte[]
+  creador       Usuario                @relation(fields: [creador_id], references: [id], onUpdate: NoAction, map: "fk_reportes_creador")
+
+  @@index([creador_id], map: "idx_reportes_creador_id")
+  @@index([created_at(sort: Desc)], map: "idx_reportes_created_at")
+  @@map("reportes")
+}
+
+model ObservacionEnReporte {
+  reporte_id     Int
+  observacion_id Int
+  observacion    Observacion @relation(fields: [observacion_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_observaciones_reportes_observacion")
+  reporte        Reporte     @relation(fields: [reporte_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_observaciones_reportes_reporte")
+
+  @@id([reporte_id, observacion_id])
+  @@index([observacion_id], map: "idx_obs_reportes_observacion_id")
+  @@index([reporte_id], map: "idx_obs_reportes_reporte_id")
+  @@map("observaciones_en_reportes")
+}
+
+enum categoria_observacion_enum {
+  CONDUCTA
+  COMUNICACION
+  SOCIAL
+  ACADEMICO
+}
+
+enum formato_reporte_enum {
+  PDF
+  EXCEL
+}
+
+enum rol_enum {
+  FAMILIA
+  EDUCADOR
+  PROFESIONAL
+}
