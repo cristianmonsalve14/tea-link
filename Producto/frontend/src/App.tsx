@@ -98,13 +98,13 @@ function App() {
         
         <div className="bg-white rounded-lg shadow-md p-6 border border-neutral-gray-light">
           <div className="flex flex-wrap gap-4">
-            <button className="bg-primary text-white px-6 py-3 rounded-lg font-semibold hover:bg-primary-dark transition-colors min-h-[2.75rem] min-w-[2.75rem]">
+            <button className="bg-primary text-white px-6 py-3 rounded-lg font-semibold hover:bg-primary-dark transition-colors min-h-11 min-w-11">
               Botón Primario
             </button>
-            <button className="bg-secondary text-white px-6 py-3 rounded-lg font-semibold hover:bg-secondary-dark transition-colors min-h-[2.75rem] min-w-[2.75rem]">
+            <button className="bg-secondary text-white px-6 py-3 rounded-lg font-semibold hover:bg-secondary-dark transition-colors min-h-11 min-w-11">
               Botón Secundario
             </button>
-            <button className="bg-neutral-gray text-white px-6 py-3 rounded-lg font-semibold hover:bg-neutral-gray/80 transition-colors min-h-[2.75rem] min-w-[2.75rem]">
+            <button className="bg-neutral-gray text-white px-6 py-3 rounded-lg font-semibold hover:bg-neutral-gray/80 transition-colors min-h-11 min-w-11">
               Botón Deshabilitado
             </button>
           </div>
@@ -124,7 +124,7 @@ function App() {
               <input
                 type="email"
                 id="email"
-                className="w-full px-4 py-3 border border-neutral-gray-medium rounded-lg focus:border-primary focus:ring-2 focus:ring-primary/20 min-h-[2.75rem]"
+                className="w-full px-4 py-3 border border-neutral-gray-medium rounded-lg focus:border-primary focus:ring-2 focus:ring-primary/20 min-h-11"
                 placeholder="correo@ejemplo.cl"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -138,7 +138,7 @@ function App() {
               <input
                 type="password"
                 id="password"
-                className="w-full px-4 py-3 border border-neutral-gray-medium rounded-lg focus:border-primary focus:ring-2 focus:ring-primary/20 min-h-[2.75rem]"
+                className="w-full px-4 py-3 border border-neutral-gray-medium rounded-lg focus:border-primary focus:ring-2 focus:ring-primary/20 min-h-11"
                 placeholder="••••••••"
               />
             </div>
@@ -149,17 +149,17 @@ function App() {
               </label>
               <textarea
                 id="description"
-                className="w-full px-4 py-3 border border-neutral-gray-medium rounded-lg focus:border-primary focus:ring-2 focus:ring-primary/20 min-h-[2.75rem] resize-none"
+                className="w-full px-4 py-3 border border-neutral-gray-medium rounded-lg focus:border-primary focus:ring-2 focus:ring-primary/20 min-h-11 resize-none"
                 rows={4}
                 placeholder="Escribe aquí tu observación..."
               />
             </div>
 
             <div className="flex gap-4">
-              <button type="submit" className="bg-primary text-white px-6 py-3 rounded-lg font-semibold hover:bg-primary-dark transition-colors min-h-[2.75rem] min-w-[2.75rem]">
+              <button type="submit" className="bg-primary text-white px-6 py-3 rounded-lg font-semibold hover:bg-primary-dark transition-colors min-h-11 min-w-11">
                 Guardar
               </button>
-              <button type="button" className="bg-secondary text-white px-6 py-3 rounded-lg font-semibold hover:bg-secondary-dark transition-colors min-h-[2.75rem] min-w-[2.75rem]">
+              <button type="button" className="bg-secondary text-white px-6 py-3 rounded-lg font-semibold hover:bg-secondary-dark transition-colors min-h-11 min-w-11">
                 Cancelar
               </button>
             </div>
