@@ -17,6 +17,10 @@ app.use(express.json());
 import authRoutes from './routes/auth';
 app.use('/api/auth', authRoutes);
 
+// Rutas de observaciones
+import observacionesRoutes from './routes/observaciones';
+app.use('/api/observaciones', observacionesRoutes);
+
 // Ruta de prueba
 app.get('/', (req: Request, res: Response) => {
   res.json({ 

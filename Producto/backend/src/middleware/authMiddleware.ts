@@ -1,3 +1,12 @@
+// Middleware de autorización por roles
+export const authorizeRoles = (...roles: string[]) => {
+  return (req: AuthRequest, res: Response, next: NextFunction) => {
+    if (!req.user || !roles.includes(req.user.rol)) {
+      return res.status(403).json({ error: 'Acceso denegado: rol no autorizado' });
+    }
+    next();
+  };
+};
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 

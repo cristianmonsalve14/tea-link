@@ -10,7 +10,7 @@ const registerSchema = z.object({
   email: z.string().email(),
   password: z.string().min(6),
   nombre_completo: z.string().min(1),
-  rol: z.enum(['FAMILIA', 'EDUCADOR', 'PROFESIONAL', 'ADMINISTRADOR'])
+  rol: z.enum(['FAMILIA', 'EDUCADOR', 'PROFESIONAL', 'ADMINISTRADOR', 'MEDICO'])
 });
 
 export const register = async (req: Request, res: Response) => {
