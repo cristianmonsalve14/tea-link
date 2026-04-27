@@ -31,10 +31,13 @@
 - Puede crear observaciones (por defecto, privacidad PUBLICA).
 - Puede editar y eliminar solo sus propias observaciones.
 
+
 ### ADMINISTRADOR
 - Puede autenticarse y acceder a la plataforma.
+- Solo puede gestionar (crear, editar, eliminar) usuarios y perfiles de su propia institución (familia, centro educacional, centro médico, centro profesional).
 - No puede ver, editar ni eliminar observaciones.
-- Solo gestiona usuarios y configuración general.
+- No existe un superadministrador global por defecto.
+- Todas las acciones sensibles quedan registradas en la auditoría.
 
 ## Resumen de reglas de visibilidad
 | Privacidad           | FAMILIA | EDUCADOR | PROFESIONAL | MÉDICO |
@@ -55,9 +58,13 @@
 }
 ```
 
+
 ## Notas
 - Solo el autor puede editar/eliminar sus observaciones.
 - El campo privacidad solo puede ser definido por el MÉDICO. Otros roles crean observaciones siempre como PUBLICA.
+- Cada usuario y perfil está asociado a una institución.
+- Los administradores solo pueden operar sobre recursos de su propia institución.
+- Para pruebas y producción, asegúrate de que los administradores y usuarios tengan correctamente asignada su institución.
 
 ---
 

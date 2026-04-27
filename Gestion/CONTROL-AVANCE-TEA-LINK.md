@@ -1,3 +1,19 @@
+---
+
+## 🚧 Tareas pendientes para backend 100%
+
+- [ ] Pruebas unitarias y de integración automatizadas (Jest, Vitest, Supertest)
+- [ ] Documentación técnica de endpoints (Swagger/OpenAPI o README detallado)
+- [ ] Manejo avanzado de errores y validaciones (respuestas uniformes, logs, edge cases)
+- [ ] Despliegue y ambiente productivo (Docker, variables de entorno, scripts de build)
+- [ ] Pruebas de seguridad (validar JWT, roles, pruebas de acceso indebido)
+- [ ] Auditoría completa y logs (registro de acciones sensibles, logs de errores)
+- [ ] Integración continua (CI/CD)
+- [ ] Optimización y refactorización (limpieza de código, modularización, comentarios)
+- [ ] Carga de datos iniciales y migraciones robustas (seeders, rollback seguro)
+- [ ] Soporte para futuras ampliaciones (websockets, notificaciones, etc., si aplica)
+
+---
 # CONTROL DE AVANCE - PROYECTO TEA LINK
 ## Sistema de Seguimiento de Actividades y Checklist Completo
 
@@ -21,11 +37,11 @@
 | **Diseño Base de Datos** | ✅ Completada | 100% |
 | **Limpieza Repositorio** | ✅ Completada | 100% |
 | **Diseño UI/UX** | ✅ Completada | 100% |
-| **Desarrollo (Código)** | ⏳ Pendiente | 0% |
+| **Desarrollo (Código)** | 🟢 En progreso | 60% |
 | **Testing** | ⏳ Pendiente | 0% |
 | **Deployment** | ⏳ Pendiente | 0% |
 
-**AVANCE GLOBAL DEL PROYECTO**: 27.78% (5 de 18 actividades completadas)
+**AVANCE GLOBAL DEL PROYECTO**: 45% (8 de 18 actividades completadas)
 
 ---
 
@@ -41,6 +57,27 @@
 | 4 | **Documentación Técnica** | `docs/` | ✅ Estructurada | Marzo 2026 | 5+ documentos técnicos |
 
 ### © CONTENIDO DE LA DOCUMENTACIÓN DEL PROYECTO
+
+---
+#### 🔥 AVANCE DESARROLLO BACKEND (ABRIL 2026)
+
+- [x] Estructura backend Node.js + Express + TypeScript + Prisma lista y funcional
+- [x] CRUD seguro de usuarios y perfiles, con control institucional (solo admins de la misma institución pueden operar)
+- [x] Middleware de autenticación JWT y roles
+- [x] Validación de datos con Zod
+- [x] Auditoría de acciones administrativas
+- [x] Endpoints protegidos y funcionando
+- [x] Corrección de errores de import/export, rutas y controladores
+- [x] Pruebas manuales de endpoints con Postman
+- [ ] Pruebas unitarias e integración (siguiente hito)
+
+**Próximos pasos inmediatos:**
+- Crear usuarios admin reales en la base de datos
+- Iniciar pruebas unitarias y de integración
+- Documentar endpoints y flujos de prueba
+- Subir a repositorio GitHub
+
+---
 
 **Documentación estructurada en carpeta `docs/`:**
 

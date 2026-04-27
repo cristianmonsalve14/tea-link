@@ -22,17 +22,17 @@
 
 ## 📊 RESUMEN EJECUTIVO
 
-### Avance Global del Proyecto: **27.78%**
+### Avance Global del Proyecto: **45%**
 
 | Fase | Actividades | Completadas | En Progreso | Pendientes | % Fase |
 |------|-------------|-------------|-------------|------------|--------|
 | **Fase 1: Planificación y Diseño** | 5 | 5 | 0 | 0 | 100% |
-| **Fase 2: Desarrollo Core** | 6 | 0 | 0 | 6 | 0% |
+| **Fase 2: Desarrollo Core** | 6 | 3 | 3 | 0 | 60% |
 | **Fase 3: Reportes y Mejoras** | 4 | 0 | 0 | 4 | 0% |
 | **Fase 4: Testing y Defensa** | 3 | 0 | 0 | 3 | 0% |
 | **TOTAL** | **18** | **5** | **0** | **13** | **27.78%** |
 
-**Estado general:** 🟢 **EN TIEMPO** - Fase 1 completada, iniciar desarrollo
+**Estado general:** 🟢 **EN TIEMPO** - Backend funcional, endpoints protegidos, pruebas manuales realizadas. Inicia fase de pruebas unitarias.
 
 ---
 
@@ -112,6 +112,25 @@
 - 📄 `INFORME-AVANCES-SEMANAL.md` (reportes
 ---
 
+### **ACTIVIDAD 3: Desarrollo Backend y Seguridad**
+**Período:** 14 - 26 abril 2026
+**Estado:** 🟢 EN PROGRESO
+
+#### ¿Qué se hizo?
+- Backend Express + TypeScript + Prisma funcional
+- CRUD seguro de usuarios y perfiles (control institucional)
+- Middleware JWT, roles y validación Zod
+- Auditoría de acciones administrativas
+- Pruebas manuales de endpoints con Postman
+- Corrección de errores de import/export, rutas y controladores
+- Documentación de endpoints y flujos de prueba
+
+#### Próximos pasos
+- Crear usuarios admin reales en la base de datos
+- Iniciar pruebas unitarias y de integración
+- Subir a repositorio GitHub
+
+---
 ### **ACTIVIDAD 2: Configuración del Entorno de Desarrollo**
 **Período:** 22 marzo (1 día)  
 **Estado:** ✅ COMPLETADA (Adelantado 6 días)

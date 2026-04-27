@@ -1,10 +1,17 @@
+
 import { Router } from 'express';
-import { register, login } from '../controllers/authController';
+import { register, login, updateUser, deleteUser, createInstitucion, listInstituciones } from '../controllers/authController';
 import { PrismaClient } from '@prisma/client';
 import { authenticateToken, AuthRequest, authorizeRoles } from '../middleware/authMiddleware';
 
 const prisma = new PrismaClient();
 const router = Router();
+
+// Crear institución (público para pruebas, restringir en producción)
+router.post('/institucion', createInstitucion);
+
+// Listar instituciones
+router.get('/instituciones', listInstituciones);
 
 // Ruta solo para MEDICO
 router.get('/solo-medico', authenticateToken, authorizeRoles('MEDICO'), async (req: AuthRequest, res) => {
@@ -30,6 +37,12 @@ router.post('/register', register);
 
 // Login de usuario
 router.post('/login', login);
+
+// Editar usuario (solo admin de la misma institución)
+router.put('/usuario/:id', authenticateToken, authorizeRoles('ADMINISTRADOR'), updateUser);
+
+// Eliminar usuario (solo admin de la misma institución)
+router.delete('/usuario/:id', authenticateToken, authorizeRoles('ADMINISTRADOR'), deleteUser);
 
 // Ruta protegida de ejemplo (cualquier usuario autenticado)
 router.get('/protegida', authenticateToken, async (req: AuthRequest, res) => {

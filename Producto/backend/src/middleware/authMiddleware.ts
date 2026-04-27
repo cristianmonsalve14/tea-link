@@ -1,3 +1,6 @@
+import { Request, Response, NextFunction } from 'express';
+import jwt from 'jsonwebtoken';
+
 // Middleware de autorización por roles
 export const authorizeRoles = (...roles: string[]) => {
   return (req: AuthRequest, res: Response, next: NextFunction) => {
@@ -7,8 +10,6 @@ export const authorizeRoles = (...roles: string[]) => {
     next();
   };
 };
-import { Request, Response, NextFunction } from 'express';
-import jwt from 'jsonwebtoken';
 
 export interface AuthRequest extends Request {
   user?: any;

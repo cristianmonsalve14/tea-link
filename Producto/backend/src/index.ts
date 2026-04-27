@@ -21,6 +21,10 @@ app.use('/api/auth', authRoutes);
 import observacionesRoutes from './routes/observaciones';
 app.use('/api/observaciones', observacionesRoutes);
 
+// Rutas de perfiles
+import perfilesRoutes from './routes/perfiles';
+app.use('/api/perfiles', perfilesRoutes);
+
 // Ruta de prueba
 app.get('/', (req: Request, res: Response) => {
   res.json({ 
