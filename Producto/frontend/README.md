@@ -71,3 +71,49 @@ export default defineConfig([
   },
 ])
 ```
+
+---
+
+## 🟢 Estado actual y pruebas de login (Abril 2026)
+
+### ✅ Login funcional y validaciones
+- Formulario de login completamente funcional con validación de email y contraseña.
+- Mensajes de error claros y accesibles.
+- Indicador visual de éxito y redirección automática al dashboard tras login correcto.
+- Solo permite acceso a usuarios realmente registrados en la base de datos.
+
+### 🎨 Diseño moderno y accesible
+- Fondo con gradiente azul, rojo y verde (colores representativos del espectro autista).
+- Glassmorphism en el formulario (fondo semitransparente, blur, sombra y esquinas redondeadas).
+- Botón principal azul, tipografía amigable, iconos y feedback visual.
+- Adaptado para desktop y notebook.
+
+### 👤 Usuarios de prueba
+Puedes iniciar sesión con cualquiera de estos usuarios (si existen en la base de datos):
+
+- **Administrador Colegio**
+  - Email: admin.colegio@tealink.com
+  - Contraseña: AdminColegio123!
+- **Familia**
+  - Email: familia@tealink.com
+  - Contraseña: Familia123!
+- **Educador**
+  - Email: educador2@tealink.com
+  - Contraseña: Educador123!
+- **Profesional**
+  - Email: profesional@tealink.com
+  - Contraseña: Profesional123!
+- **Médico**
+  - Email: medico@tealink.com
+  - Contraseña: Medico123!
+
+> Si algún usuario no existe, crear en la base de datos con contraseña hasheada (bcrypt).
+
+### ⏭️ Próximos pasos
+- Proteger rutas privadas del frontend (dashboard, etc.)
+- Dashboard personalizado según rol
+- Cierre de sesión (logout)
+- Registro y recuperación de contraseña (si aplica)
+- Mejoras visuales y accesibilidad
+
+---
