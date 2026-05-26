@@ -1,21 +1,22 @@
+model Institucion {
+  id        Int                   @id @default(autoincrement())
+  nombre    String                @db.VarChar(255)
+  tipo      tipo_institucion_enum
+  direccion String?               @db.VarChar(255)
+  created_at DateTime             @default(now()) @db.Timestamp(6)
+  updated_at DateTime             @default(now()) @updatedAt @db.Timestamp(6)
+  usuarios   Usuario[]            @relation("InstitucionUsuarios")
+  perfiles   Perfil[]             @relation("InstitucionPerfiles")
+
+  @@map("instituciones")
+}
+
 enum tipo_institucion_enum {
   FAMILIA
   CENTRO_EDUCACIONAL
   CENTRO_MEDICO
   CENTRO_PROFESIONAL
-}
-
-model Institucion {
-  id          Int       @id @default(autoincrement())
-  nombre      String    @db.VarChar(255)
-  tipo        tipo_institucion_enum
-  direccion   String?  @db.VarChar(255)
-  usuarios    Usuario[]
-  perfiles    Perfil[]
-  created_at  DateTime  @default(now()) @db.Timestamp(6)
-  updated_at  DateTime  @default(now()) @updatedAt @db.Timestamp(6)
-
-  @@map("instituciones")
+  SISTEMA
 }
 generator client {
   provider = "prisma-client-js"
@@ -32,17 +33,16 @@ model Usuario {
   password_hash   String           @db.VarChar(255)
   nombre_completo String           @db.VarChar(255)
   rol             rol_enum
-  institucion_id  Int
-  institucion     Institucion      @relation(fields: [institucion_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_usuario_institucion")
   created_at      DateTime         @default(now()) @db.Timestamp(6)
   updated_at      DateTime         @default(now()) @updatedAt @db.Timestamp(6)
   observaciones   Observacion[]    @relation("AutorObservacion")
   perfiles        PerfilUsuario[]
   reportes        Reporte[]
   acciones_admin  AuditoriaAdmin[]
+  institucion_id  Int?
+  institucion     Institucion?     @relation("InstitucionUsuarios", fields: [institucion_id], references: [id])
 
   @@index([email], map: "idx_usuarios_email")
-  @@index([institucion_id], map: "idx_usuario_institucion_id")
   @@map("usuarios")
 }
 
@@ -53,10 +53,10 @@ model Perfil {
   diagnostico      String?         @db.VarChar(500)
   fecha_nacimiento DateTime?       @db.Date
   notas            String?
-  institucion_id   Int
-  institucion      Institucion     @relation(fields: [institucion_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_perfil_institucion")
   created_at       DateTime        @default(now()) @db.Timestamp(6)
   updated_at       DateTime        @default(now()) @updatedAt @db.Timestamp(6)
+  institucion_id   Int
+  institucion      Institucion     @relation("InstitucionPerfiles", fields: [institucion_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_perfil_institucion")
   observaciones    Observacion[]
   usuarios         PerfilUsuario[]
 
@@ -101,6 +101,12 @@ model Observacion {
   @@index([perfil_id, fecha_evento(sort: Desc)], map: "idx_observaciones_perfil_fecha")
   @@index([perfil_id], map: "idx_observaciones_perfil_id")
   @@map("observaciones")
+}
+
+enum privacidad_observacion_enum {
+  PUBLICA
+  PRIVADA
+  MULTINIVEL
 }
 
 model Reporte {
@@ -171,6 +177,7 @@ enum rol_enum {
   PROFESIONAL
   ADMINISTRADOR
   MEDICO
+  SUPERADMIN
 }
 
 enum rol_perfil_enum {
@@ -178,10 +185,4 @@ enum rol_perfil_enum {
   EDUCADOR
   PROFESIONAL
   MEDICO
-}
-
-enum privacidad_observacion_enum {
-  PUBLICA
-  SOLO_PROFESIONALES
-  SOLO_MEDICO
 }

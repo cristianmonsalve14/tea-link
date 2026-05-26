@@ -60,3 +60,8 @@ prisma/migrations/**/migration.sql.args
 # Database local
 *.sqlite
 *.db
+*.dump
+backups/
+
+# Generated test artifacts
+test-out.pdf

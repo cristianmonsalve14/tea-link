@@ -10,13 +10,19 @@ const prisma = new PrismaClient();
 ===================== */
 const crearPerfilSchema = z.object({
   nombre: z.string().min(1),
-  edad: z.number().int().positive().optional(),
+  edad: z.coerce.number().int().positive().optional(),
   diagnostico: z.string().max(500).optional(),
   fecha_nacimiento: z.string().optional(),
   notas: z.string().optional()
 });
 
-const actualizarPerfilSchema = crearPerfilSchema.partial();
+const actualizarPerfilSchema = z.object({
+  nombre: z.string().min(1).optional(),
+  edad: z.coerce.number().int().positive().optional(),
+  diagnostico: z.string().max(500).optional(),
+  fecha_nacimiento: z.string().optional(),
+  notas: z.string().optional()
+});
 
 /* =====================
    CREAR PERFIL

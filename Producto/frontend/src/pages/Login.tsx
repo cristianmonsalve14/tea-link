@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { isAuthenticated, clearSession, saveSession, syncSessionFromToken } from "../utils/auth";
 
 const Login: React.FC = () => {
   const [email, setEmail] = useState("");
@@ -9,6 +10,7 @@ const Login: React.FC = () => {
   const [success, setSuccess] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [touched, setTouched] = useState<{email: boolean; password: boolean}>({email: false, password: false});
+  const [hasActiveSession, setHasActiveSession] = useState(false);
   const navigate = useNavigate();
 
   // Validaciones
@@ -45,7 +47,14 @@ const Login: React.FC = () => {
       }
       const data = await response.json();
       setSuccess(true);
-      localStorage.setItem("token", data.token);
+      const institucion =
+        data.user?.institucion_nombre ?? data.user?.institucion_id?.toString();
+      saveSession(
+        data.token,
+        data.user?.rol,
+        institucion,
+        data.user?.institucion_tipo
+      );
       setTimeout(() => {
         navigate("/dashboard");
       }, 1000);
@@ -60,12 +69,26 @@ const Login: React.FC = () => {
     }
   };
 
-  // Si ya está autenticado, redirigir (solo en efecto para evitar render en blanco)
   useEffect(() => {
-    if (localStorage.getItem("token")) {
-      navigate("/dashboard", { replace: true });
+    if (isAuthenticated()) {
+      setHasActiveSession(true);
+    } else {
+      clearSession();
+      setHasActiveSession(false);
     }
-  }, [navigate]);
+  }, []);
+
+  const handleContinueSession = () => {
+    syncSessionFromToken();
+    navigate("/dashboard", { replace: true });
+  };
+
+  const handleLogout = () => {
+    clearSession();
+    setHasActiveSession(false);
+    setSuccess(false);
+    setError("");
+  };
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-linear-to-br from-blue-400 via-red-200 to-green-300 relative overflow-hidden">
@@ -100,6 +123,27 @@ const Login: React.FC = () => {
         autoComplete="off"
       >
         <h2 className="text-2xl font-bold mb-6 text-center text-blue-700">Bienvenido/a</h2>
+        {hasActiveSession && (
+          <div className="mb-4 p-3 rounded-lg bg-blue-50 border border-blue-200 text-sm text-blue-900">
+            <p className="mb-2">Ya tienes una sesión activa.</p>
+            <div className="flex flex-col gap-2">
+              <button
+                type="button"
+                onClick={handleContinueSession}
+                className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700"
+              >
+                Continuar al panel
+              </button>
+              <button
+                type="button"
+                onClick={handleLogout}
+                className="w-full border border-blue-400 text-blue-700 py-2 rounded hover:bg-blue-100"
+              >
+                Cerrar sesión e ingresar de nuevo
+              </button>
+            </div>
+          </div>
+        )}
         <div className="mb-4 relative">
           <span className="absolute left-2 top-2.5 text-blue-400">
             <svg width="20" height="20" fill="none" viewBox="0 0 24 24"><path d="M2 6.5A2.5 2.5 0 014.5 4h15A2.5 2.5 0 0122 6.5v11a2.5 2.5 0 01-2.5 2.5h-15A2.5 2.5 0 012 17.5v-11z" stroke="#3B82F6" strokeWidth="2"/><path d="M2 7l10 6 10-6" stroke="#3B82F6" strokeWidth="2"/></svg>

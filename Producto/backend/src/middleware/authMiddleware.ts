@@ -15,17 +15,23 @@ export interface AuthRequest extends Request {
   user?: any;
 }
 
+export type JwtUser = {
+  userId: number;
+  rol: string;
+  institucion_id?: number | null;
+};
+
 export const authenticateToken = (req: AuthRequest, res: Response, next: NextFunction) => {
   const authHeader = req.headers['authorization'];
   const token = authHeader && authHeader.split(' ')[1];
   if (!token) {
     return res.status(401).json({ error: 'Token no proporcionado' });
   }
-  jwt.verify(token, process.env.JWT_SECRET || 'secret', (err, user) => {
-    if (err) {
-      return res.status(403).json({ error: 'Token inválido' });
-    }
-    req.user = user;
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'secret') as JwtUser;
+    req.user = decoded;
     next();
-  });
+  } catch {
+    return res.status(403).json({ error: 'Token inválido o expirado' });
+  }
 };

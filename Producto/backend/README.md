@@ -1,14 +1,103 @@
+# Backend - TEA Link
+
+Este directorio contiene el codigo fuente de la API REST de TEA Link, desarrollada con **Node.js, Express, TypeScript, Prisma y PostgreSQL**.
+
+Para la vision general del proyecto, objetivos, arquitectura y alcance proyectado, revisar el [README principal](../../README.md).
+
+## Funcionalidades principales
+
+- Autenticacion con JWT y contrasenas cifradas con bcrypt.
+- Control de acceso basado en roles: SUPERADMIN, ADMINISTRADOR, EDUCADOR, FAMILIA, PROFESIONAL y MEDICO.
+- Gestion de instituciones, administradores institucionales, perfiles, educadores, observaciones y reportes.
+- Separacion de datos por institucion.
+- Auditoria de acciones administrativas relevantes.
+- Generacion inicial de reportes en PDF/CSV.
+
+## Tecnologias
+
+- Node.js + Express
+- TypeScript
+- Prisma ORM
+- PostgreSQL
+- JWT
+- bcrypt
+- Zod
+- pdfkit
+
+## Configuracion local
+
+Instalar dependencias:
+
+```powershell
+npm install
+```
+
+Crear un archivo `.env` en `Producto/backend` con las variables necesarias:
+
+```env
+DATABASE_URL="postgresql://postgres:password@localhost:5432/tea_link"
+JWT_SECRET="clave_segura_para_desarrollo"
+PORT=3000
+```
+
+> No subir credenciales reales al repositorio.
+
+## Base de datos
+
+Ejecutar migraciones Prisma:
+
+```powershell
+npx prisma migrate dev
+```
+
+Cargar datos de prueba:
+
+```powershell
+npm run db:seed
+```
+
+Verificar estado de migraciones:
+
+```powershell
+npx prisma migrate status
+```
+
+## Ejecucion
+
+Levantar el backend en desarrollo:
+
+```powershell
+npm run dev
+```
+
+Si el puerto 3000 queda ocupado por un proceso anterior:
+
+```powershell
+npm run dev:kill-port
+npm run dev
+```
+
+Tambien existe una variante forzada:
+
+```powershell
+npm run dev:force
+```
+
+El servidor queda disponible en:
+
+```text
+http://localhost:3000
+```
+
+## Scripts disponibles
+
+- `npm run dev`: libera el puerto 3000 y levanta el backend con nodemon.
+- `npm run dev:kill-port`: intenta liberar el puerto 3000.
+- `npm run dev:force`: fuerza liberacion del puerto y levanta el backend.
+- `npm run build`: compila TypeScript.
+- `npm run start`: ejecuta la version compilada.
+- `npm run db:seed`: carga usuarios y datos base de prueba.
+
 ## Seguridad JWT
 
-Asegúrate de definir la variable de entorno `JWT_SECRET` en tu archivo `.env` para mayor seguridad:
-
-```
-JWT_SECRET=tu_clave_secreta_segura
-```
-
-Si no se define, se usará el valor por defecto `secret` (solo para desarrollo).
-# ⚙️ Backend - TEA Link
-
-Este directorio contiene todo el código fuente de la API del servidor (backend), desarrollada con **Node.js, Express y TypeScript**.
-
-Para obtener una visión completa del proyecto, incluyendo arquitectura, objetivos, cronograma y stack tecnológico, por favor consulta el [**README principal del proyecto**](../README.md).
+La variable `JWT_SECRET` debe estar definida en `.env`. Si no se define, el backend usa un valor por defecto solo apto para desarrollo local.

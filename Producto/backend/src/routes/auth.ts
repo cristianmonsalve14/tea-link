@@ -1,17 +1,62 @@
+// Eliminar administrador por superadmin
 
 import { Router } from 'express';
-import { register, login, updateUser, deleteUser, createInstitucion, listInstituciones } from '../controllers/authController';
 import { PrismaClient } from '@prisma/client';
 import { authenticateToken, AuthRequest, authorizeRoles } from '../middleware/authMiddleware';
+import { register, login, updateUser, deleteUser, listUsuariosInstitucion, createEducadorByAdmin, createInstitucion, listInstituciones, updateInstitucion, deleteInstitucion, getSuperadminStats, getUltimasAccionesAuditoria, createAdministradorBySuperadmin, listAdministradores, resetAdminPasswordBySuperadmin, updateAdministradorBySuperadmin, deleteAdministradorBySuperadmin } from '../controllers/authController';
 
 const prisma = new PrismaClient();
 const router = Router();
 
+// Eliminar administrador por superadmin
+router.delete('/superadmin/administrador/:id', authenticateToken, authorizeRoles('SUPERADMIN'), deleteAdministradorBySuperadmin);
+
+
+
+// --- DASHBOARD SUPERADMIN ---
+router.get('/superadmin/stats', authenticateToken, authorizeRoles('SUPERADMIN'), async (req, res) => {
+	try {
+		// Usa los nombres de modelo Prisma correctos (singular)
+		const totalUsuarios = await prisma.usuario.count();
+		const totalPerfiles = await prisma.perfil.count();
+		const totalObservaciones = await prisma.observacion.count();
+		const totalInstituciones = await prisma.institucion.count();
+
+		res.json({
+			kpis: {
+				usuarios: totalUsuarios,
+				perfiles: totalPerfiles,
+				observaciones: totalObservaciones,
+				instituciones: totalInstituciones
+			}
+		});
+	} catch (error) {
+		console.error(error);
+		res.status(500).json({ error: "Error en stats" });
+	}
+});
+router.get('/superadmin/auditoria', authenticateToken, authorizeRoles('SUPERADMIN'), getUltimasAccionesAuditoria);
+
+// Crear administrador por superadmin
+router.post('/superadmin/administrador', authenticateToken, authorizeRoles('SUPERADMIN'), createAdministradorBySuperadmin);
+// Listar administradores (superadmin)
+router.get('/superadmin/administradores', authenticateToken, authorizeRoles('SUPERADMIN'), listAdministradores);
+// Resetear contraseña de administrador (superadmin)
+router.post('/superadmin/administrador/:id/reset-password', authenticateToken, authorizeRoles('SUPERADMIN'), resetAdminPasswordBySuperadmin);
+// Editar datos de administrador (superadmin)
+router.put('/superadmin/administrador/:id', authenticateToken, authorizeRoles('SUPERADMIN'), updateAdministradorBySuperadmin);
+
 // Crear institución (público para pruebas, restringir en producción)
-router.post('/institucion', createInstitucion);
+router.post('/institucion', authenticateToken, authorizeRoles('SUPERADMIN'), createInstitucion);
 
 // Listar instituciones
-router.get('/instituciones', listInstituciones);
+router.get('/instituciones', authenticateToken, authorizeRoles('SUPERADMIN'), listInstituciones);
+
+// Editar institución
+router.put('/institucion/:id', authenticateToken, authorizeRoles('SUPERADMIN'), updateInstitucion);
+
+// Eliminar institución
+router.delete('/institucion/:id', authenticateToken, authorizeRoles('SUPERADMIN'), deleteInstitucion);
 
 // Ruta solo para MEDICO
 router.get('/solo-medico', authenticateToken, authorizeRoles('MEDICO'), async (req: AuthRequest, res) => {
@@ -32,8 +77,10 @@ router.get('/solo-medico', authenticateToken, authorizeRoles('MEDICO'), async (r
 	}
 });
 
-// Registro de usuario
-router.post('/register', register);
+// Usuarios de la institución (administrador del colegio)
+router.get('/usuarios', authenticateToken, authorizeRoles('ADMINISTRADOR'), listUsuariosInstitucion);
+router.post('/educadores', authenticateToken, authorizeRoles('ADMINISTRADOR'), createEducadorByAdmin);
+router.post('/register', authenticateToken, authorizeRoles('ADMINISTRADOR'), register);
 
 // Login de usuario
 router.post('/login', login);

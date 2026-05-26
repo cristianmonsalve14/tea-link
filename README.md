@@ -12,7 +12,9 @@
 
 ## 📋 Descripción General
 
-**TEA Link** es una aplicación web diseñada para centralizar y facilitar la comunicación entre familias, educadores y profesionales de apoyo que trabajan con personas dentro del **Trastorno del Espectro Autista (TEA)**.
+**TEA Link** es una aplicación web diseñada para centralizar y facilitar la comunicación entre familias, educadores, profesionales y medicos de apoyo que trabajan con personas dentro del **Trastorno del Espectro Autista (TEA)**.
+
+> **Nota:** Este README describe la visión general y el alcance proyectado de TEA Link como producto final. Algunas funcionalidades ya se encuentran implementadas y otras están planificadas para próximas etapas del desarrollo.
 
 El sistema permite:
 - ✅ Registrar observaciones colaborativas de manera segura y organizada
@@ -45,7 +47,7 @@ TEA Link **centraliza toda la información** en una plataforma segura, accesible
 ## 🎯 Objetivos del Proyecto
 
 ### Objetivo General
-Desarrollar una aplicación web que centralice y facilite el registro colaborativo de observaciones sobre personas con Trastorno del Espectro Autista, mejorando la comunicación entre familias, educadores y profesionales de apoyo mediante una plataforma segura con control de acceso basado en roles, trazabilidad completa de eventos, y generación de reportes personalizados que permitan el seguimiento longitudinal del desarrollo.
+Desarrollar una aplicación web que centralice y facilite el registro colaborativo de observaciones sobre personas con TEA, mejorando la comunicación entre familias, educadores y profesionales de apoyo mediante una plataforma segura con control de acceso basado en roles, trazabilidad completa de eventos, y generación de reportes personalizados que permitan el seguimiento longitudinal del desarrollo.
 
 ### Objetivos Específicos
 1. **Implementar un módulo de gestión de usuarios** con registro, autenticación segura (JWT + bcrypt) y asignación de roles diferenciados (familia, educador, profesional) que permita control de acceso granular (RBAC) para proteger información sensible de menores.
