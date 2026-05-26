@@ -1,13 +1,29 @@
+---
+
+## 🚧 Tareas pendientes para backend 100%
+
+- [ ] Pruebas unitarias y de integración automatizadas (Jest, Vitest, Supertest)
+- [ ] Documentación técnica de endpoints (Swagger/OpenAPI o README detallado)
+- [ ] Manejo avanzado de errores y validaciones (respuestas uniformes, logs, edge cases)
+- [ ] Despliegue y ambiente productivo (Docker, variables de entorno, scripts de build)
+- [ ] Pruebas de seguridad (validar JWT, roles, pruebas de acceso indebido)
+- [ ] Auditoría completa y logs (registro de acciones sensibles, logs de errores)
+- [ ] Integración continua (CI/CD)
+- [ ] Optimización y refactorización (limpieza de código, modularización, comentarios)
+- [ ] Carga de datos iniciales y migraciones robustas (seeders, rollback seguro)
+- [ ] Soporte para futuras ampliaciones (websockets, notificaciones, etc., si aplica)
+
+---
 # CONTROL DE AVANCE - PROYECTO TEA LINK
 ## Sistema de Seguimiento de Actividades y Checklist Completo
 
 ---
 
 **Fecha de Inicio del Proyecto**: 9 de marzo de 2026  
-**Fecha Actual**: 12 de abril de 2026  
+**Fecha Actual**: 13 de abril de 2026  
 **Semana Actual**: SEMANA 5 de 18  
-**Días transcurridos**: 34 días  
-**Días restantes**: 91 días (hasta 12 julio 2026)
+**Días transcurridos**: 35 días  
+**Días restantes**: 90 días (hasta 12 julio 2026)
 
 ---
 
@@ -20,12 +36,12 @@
 | **Configuración Entorno** | ✅ Completada | 100% |
 | **Diseño Base de Datos** | ✅ Completada | 100% |
 | **Limpieza Repositorio** | ✅ Completada | 100% |
-| **Diseño UI/UX** | ⏳ Pendiente | 0% |
-| **Desarrollo (Código)** | ⏳ Pendiente | 0% |
+| **Diseño UI/UX** | ✅ Completada | 100% |
+| **Desarrollo (Código)** | 🟢 En progreso | 60% |
 | **Testing** | ⏳ Pendiente | 0% |
 | **Deployment** | ⏳ Pendiente | 0% |
 
-**AVANCE GLOBAL DEL PROYECTO**: 22.22% (4 de 18 actividades completadas)
+**AVANCE GLOBAL DEL PROYECTO**: 45% (8 de 18 actividades completadas)
 
 ---
 
@@ -41,6 +57,27 @@
 | 4 | **Documentación Técnica** | `docs/` | ✅ Estructurada | Marzo 2026 | 5+ documentos técnicos |
 
 ### © CONTENIDO DE LA DOCUMENTACIÓN DEL PROYECTO
+
+---
+#### 🔥 AVANCE DESARROLLO BACKEND (ABRIL 2026)
+
+- [x] Estructura backend Node.js + Express + TypeScript + Prisma lista y funcional
+- [x] CRUD seguro de usuarios y perfiles, con control institucional (solo admins de la misma institución pueden operar)
+- [x] Middleware de autenticación JWT y roles
+- [x] Validación de datos con Zod
+- [x] Auditoría de acciones administrativas
+- [x] Endpoints protegidos y funcionando
+- [x] Corrección de errores de import/export, rutas y controladores
+- [x] Pruebas manuales de endpoints con Postman
+- [ ] Pruebas unitarias e integración (siguiente hito)
+
+**Próximos pasos inmediatos:**
+- Crear usuarios admin reales en la base de datos
+- Iniciar pruebas unitarias y de integración
+- Documentar endpoints y flujos de prueba
+- Subir a repositorio GitHub
+
+---
 
 **Documentación estructurada en carpeta `docs/`:**
 
@@ -191,47 +228,44 @@ Checklist de tareas:
 ---
 
 #### **Actividad 4: Diseño de interfaz UI/UX** (S3-S4: 23-29 marzo)
-**Estado**: ⏳ **PRÓXIMA SEMANA**
+**Estado**: ✅ **COMPLETADA** (13 abril 2026)
 
 Checklist de tareas:
-- [ ] Crear cuenta en Figma o usar Excalidraw
-- [ ] Definir paleta de colores (accesible para TEA)
-  - [ ] Color primario
-  - [ ] Color secundario
-  - [ ] Colores de estado (éxito, error, advertencia)
-  - [ ] Escala de grises
-- [ ] Diseñar wireframes de 10 pantallas principales:
-  - [ ] 1. Login
-  - [ ] 2. Registro
-  - [ ] 3. Dashboard principal
-  - [ ] 4. Lista de perfiles
-  - [ ] 5. Crear/Editar perfil
-  - [ ] 6. Lista de observaciones
-  - [ ] 7. Crear/Editar observación
-  - [ ] 8. Detalle de observación
-  - [ ] 9. Generar reporte
-  - [ ] 10. Ver reporte (preview)
-- [ ] Definir componentes Tailwind reutilizables:
-  - [ ] Botones (primary, secondary, danger)
-  - [ ] Inputs de formulario
-  - [ ] Cards
-  - [ ] Modals
-  - [ ] Navbar
-  - [ ] Sidebar (opcional)
-- [ ] Validar accesibilidad:
-  - [ ] Contraste mínimo WCAG AA (4.5:1)
-  - [ ] Navegación clara
-  - [ ] Feedback visual de acciones
-- [ ] Exportar wireframes (PNG/PDF)
-- [ ] Documentar guía de estilo
+- [x] Definir paleta de colores (accesible para TEA)
+  - [x] Color primario (#4A90E2 - Azul calmado)
+  - [x] Color secundario (#7ED321 - Verde suave)
+  - [x] Colores de estado (warning, error, success)
+  - [x] Escala de grises
+- [x] Diseñar wireframes de 6 pantallas principales:
+  - [x] 1. Login
+  - [x] 2. Dashboard principal
+  - [x] 3. Lista de observaciones (con filtros)
+  - [x] 4. Crear observación
+  - [x] 5. Perfil de usuario
+  - [x] 6. Generar reporte
+- [x] Definir tipografía (Inter + Roboto)
+- [x] Configurar Tailwind CSS con paleta personalizada
+- [x] Crear componentes Tailwind reutilizables:
+  - [x] Botones (.btn-primary, .btn-secondary)
+  - [x] Inputs de formulario (.input)
+  - [x] Cards (.card)
+- [x] Validar accesibilidad:
+  - [x] Contraste mínimo WCAG AA (4.5:1)
+  - [x] Navegación por teclado (focus-visible)
+  - [x] Tamaño mínimo táctil (44px)
+- [x] Documentar guía de estilo
 
-**Entregables esperados**:
-- [ ] Wireframes de 10 pantallas (Figma/Excalidraw)
-- [ ] Paleta de colores documentada
-- [ ] Guía de componentes Tailwind
-- [ ] Checklist de accesibilidad validado
+**Entregables producidos**:
+- ✅ Wireframes de 6 pantallas principales (`Documentacion/DISENO-UI-UX.md`)
+- ✅ Paleta de colores documentada (azul calmado + verde suave)
+- ✅ `tailwind.config.js` configurado con colores, tipografía, breakpoints
+- ✅ `index.css` con clases de utilidad (.btn-primary, .card, .input)
+- ✅ Fuente Inter integrada desde Google Fonts
+- ✅ Checklist de accesibilidad aplicado
 
+**Tiempo invertido**: 1 día (13 abril 2026)
 **Tiempo planificado**: 1 semana (23-29 marzo, paralelo con Act. 3)
+**Estado**: ⏰ **COMPLETADA** (pendiente de mockups de alta fidelidad - opcional)
 
 ---
 

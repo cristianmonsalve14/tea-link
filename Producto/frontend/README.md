@@ -1,73 +1,91 @@
-# React + TypeScript + Vite
+# Frontend - TEA Link
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Este directorio contiene la aplicacion web de TEA Link, desarrollada con **React, TypeScript y Vite**. El frontend consume la API del backend y muestra interfaces diferenciadas segun el rol del usuario autenticado.
 
-Currently, two official plugins are available:
+Para la vision general del proyecto, objetivos, arquitectura y alcance proyectado, revisar el [README principal](../../README.md).
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## Funcionalidades principales
 
-## React Compiler
+- Login con manejo de sesion mediante token JWT.
+- Rutas protegidas para usuarios autenticados.
+- Redireccion al dashboard correspondiente segun rol.
+- Panel de SUPERADMIN para instituciones, administradores y reportes globales.
+- Panel de ADMINISTRADOR institucional para perfiles y educadores.
+- Panel de EDUCADOR para observaciones y reportes.
+- Componentes modulares para gestion de usuarios, perfiles, observaciones y reportes.
+- Mensajes de error y validaciones basicas en formularios.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## Tecnologias
 
-## Expanding the ESLint configuration
+- React
+- TypeScript
+- Vite
+- React Router
+- Tailwind CSS
+- Zod
+- React Hook Form
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+## Configuracion local
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+Instalar dependencias:
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```powershell
+npm install
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+Levantar el servidor de desarrollo:
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```powershell
+npm run dev
 ```
+
+La aplicacion queda disponible normalmente en:
+
+```text
+http://localhost:5173
+```
+
+El backend debe estar corriendo en:
+
+```text
+http://localhost:3000
+```
+
+## Scripts disponibles
+
+- `npm run dev`: inicia Vite en modo desarrollo.
+- `npm run build`: compila TypeScript y genera build de produccion.
+- `npm run lint`: ejecuta ESLint.
+- `npm run preview`: previsualiza el build generado.
+
+## Estructura principal
+
+```text
+src/
+├── components/     # Componentes reutilizables y secciones por rol
+├── pages/          # Paginas principales como Login y Dashboard
+├── utils/          # Utilidades de autenticacion/sesion
+├── AppRouter.tsx   # Definicion de rutas
+└── main.tsx        # Punto de entrada React
+```
+
+## Roles y vistas
+
+- **SUPERADMIN:** administra instituciones, administradores institucionales y reportes globales.
+- **ADMINISTRADOR:** administra perfiles y educadores de su institucion.
+- **EDUCADOR:** registra observaciones y genera reportes desde observaciones seleccionadas.
+- **FAMILIA, PROFESIONAL y MEDICO:** roles definidos para flujos especificos y ampliacion funcional.
+
+## Usuarios de prueba
+
+Los usuarios de prueba se documentan en:
+
+```text
+../../Documentacion/usuarios_prueba.md
+```
+
+> Si algun usuario no existe en la base local, ejecutar el seed del backend o crearlo desde el panel correspondiente.
+
+## Estado actual
+
+El frontend se encuentra funcional en ambiente local para los flujos principales de login, navegacion por rol, administracion institucional, observaciones y reportes. Algunas funciones proyectadas del producto final continuan en validacion o desarrollo progresivo.

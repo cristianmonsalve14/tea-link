@@ -1,3 +1,28 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import 'tailwindcss';
+
+@theme {
+  /* Colores personalizados TEA */
+  --color-primary: #4A90E2;
+  --color-primary-light: #6AA8F0;
+  --color-primary-dark: #3178C6;
+  
+  --color-secondary: #7ED321;
+  --color-secondary-light: #96E03F;
+  --color-secondary-dark: #6ABC1B;
+  
+  --color-neutral-white: #FFFFFF;
+  --color-neutral-gray: #333333;
+  --color-neutral-gray-light: #F5F7FA;
+  --color-neutral-gray-medium: #9CA3AF;
+  
+  --color-status-warning: #F5A623;
+  --color-status-error: #D0021B;
+  --color-status-success: #7ED321;
+  
+  /* Fuentes */
+  --font-family-sans: 'Inter', 'Roboto', sans-serif;
+}
+
+body {
+  font-family: var(--font-family-sans);
+}

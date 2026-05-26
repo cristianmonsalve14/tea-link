@@ -1,119 +1,139 @@
 -- =====================================================
--- SCRIPT DE CREACIÓN DE BASE DE DATOS: TEA LINK
+-- SCRIPT DE CREACION DE BASE DE DATOS: TEA LINK
 -- =====================================================
--- Fecha: 27 de Marzo 2026
 -- Autor: Cristian Monsalve Budrovich
--- Descripción: Base de datos para sistema de seguimiento
---              de observaciones de personas con TEA
+-- Proyecto: TEA Link
+-- Descripcion:
+--   Script SQL actualizado segun el modelo Prisma actual.
+--   La fuente principal del modelo es:
+--   Producto/backend/prisma/schema.prisma
 -- =====================================================
 
--- PASO 1: Crear base de datos (ejecutar en PostgreSQL/postgres)
--- Nota: Descomentar si vas a crear la BD desde cero
--- CREATE DATABASE tea_link
---   WITH OWNER = postgres
---   ENCODING = 'UTF8'
---   LC_COLLATE = 'Spanish_Chile.1252'
---   LC_CTYPE = 'Spanish_Chile.1252'
---   TABLESPACE = pg_default
---   CONNECTION LIMIT = -1;
+-- Crear la base manualmente si no existe y luego conectarse a tea_link.
+-- CREATE DATABASE tea_link WITH OWNER = postgres ENCODING = 'UTF8';
 
--- PASO 2: Conectar a la base de datos tea_link antes de ejecutar el resto
--- En pgAdmin: Click derecho en tea_link → Query Tool
-
--- =====================================================
--- ELIMINAR TABLAS EXISTENTES (si existen)
--- =====================================================
 DROP TABLE IF EXISTS observaciones_en_reportes CASCADE;
+DROP TABLE IF EXISTS auditoria_admin CASCADE;
 DROP TABLE IF EXISTS reportes CASCADE;
 DROP TABLE IF EXISTS observaciones CASCADE;
+DROP TABLE IF EXISTS perfil_usuario CASCADE;
 DROP TABLE IF EXISTS perfiles CASCADE;
 DROP TABLE IF EXISTS usuarios CASCADE;
+DROP TABLE IF EXISTS instituciones CASCADE;
 
--- Eliminar tipos ENUM existentes
+DROP TYPE IF EXISTS tipo_institucion_enum CASCADE;
 DROP TYPE IF EXISTS rol_enum CASCADE;
+DROP TYPE IF EXISTS rol_perfil_enum CASCADE;
 DROP TYPE IF EXISTS categoria_observacion_enum CASCADE;
+DROP TYPE IF EXISTS privacidad_observacion_enum CASCADE;
 DROP TYPE IF EXISTS formato_reporte_enum CASCADE;
 
--- =====================================================
--- CREAR TIPOS ENUMERADOS
--- =====================================================
-
--- Enum para roles de usuario
-CREATE TYPE rol_enum AS ENUM (
+CREATE TYPE tipo_institucion_enum AS ENUM (
   'FAMILIA',
-  'EDUCADOR', 
-  'PROFESIONAL'
+  'CENTRO_EDUCACIONAL',
+  'CENTRO_MEDICO',
+  'CENTRO_PROFESIONAL',
+  'SISTEMA'
 );
 
--- Enum para categorías de observaciones
+CREATE TYPE rol_enum AS ENUM (
+  'FAMILIA',
+  'EDUCADOR',
+  'PROFESIONAL',
+  'ADMINISTRADOR',
+  'MEDICO',
+  'SUPERADMIN'
+);
+
+CREATE TYPE rol_perfil_enum AS ENUM (
+  'TUTOR',
+  'EDUCADOR',
+  'PROFESIONAL',
+  'MEDICO'
+);
+
 CREATE TYPE categoria_observacion_enum AS ENUM (
   'CONDUCTA',
   'COMUNICACION',
   'SOCIAL',
-  'ACADEMICO'
+  'ACADEMICO',
+  'SENSORIAL',
+  'MOTOR',
+  'CLINICO',
+  'OTRO'
 );
 
--- Enum para formatos de reporte
+CREATE TYPE privacidad_observacion_enum AS ENUM (
+  'PUBLICA',
+  'PRIVADA',
+  'MULTINIVEL'
+);
+
 CREATE TYPE formato_reporte_enum AS ENUM (
   'PDF',
   'EXCEL'
 );
 
--- =====================================================
--- TABLA: usuarios
--- =====================================================
+CREATE TABLE instituciones (
+  id SERIAL PRIMARY KEY,
+  nombre VARCHAR(255) NOT NULL,
+  tipo tipo_institucion_enum NOT NULL,
+  direccion VARCHAR(255),
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
 CREATE TABLE usuarios (
   id SERIAL PRIMARY KEY,
   email VARCHAR(255) UNIQUE NOT NULL,
   password_hash VARCHAR(255) NOT NULL,
   nombre_completo VARCHAR(255) NOT NULL,
   rol rol_enum NOT NULL,
+  institucion_id INTEGER,
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_usuarios_institucion
+    FOREIGN KEY (institucion_id) REFERENCES instituciones(id)
 );
 
--- Índice para búsquedas por email (login)
 CREATE INDEX idx_usuarios_email ON usuarios(email);
+CREATE INDEX idx_usuarios_institucion_id ON usuarios(institucion_id);
 
--- Comentarios descriptivos
-COMMENT ON TABLE usuarios IS 'Usuarios del sistema (familias, educadores, profesionales)';
-COMMENT ON COLUMN usuarios.id IS 'ID único autoincremental';
-COMMENT ON COLUMN usuarios.email IS 'Email único para login';
-COMMENT ON COLUMN usuarios.password_hash IS 'Contraseña encriptada con bcrypt';
-COMMENT ON COLUMN usuarios.rol IS 'Rol del usuario: FAMILIA, EDUCADOR o PROFESIONAL';
-
--- =====================================================
--- TABLA: perfiles
--- =====================================================
 CREATE TABLE perfiles (
   id SERIAL PRIMARY KEY,
   nombre VARCHAR(255) NOT NULL,
-  edad INTEGER CHECK (edad > 0 AND edad < 120),
+  edad INTEGER,
   diagnostico VARCHAR(500),
   fecha_nacimiento DATE,
   notas TEXT,
-  usuario_id INTEGER NOT NULL,
+  institucion_id INTEGER NOT NULL,
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  
-  -- Foreign Key
-  CONSTRAINT fk_perfiles_usuario
-    FOREIGN KEY (usuario_id)
-    REFERENCES usuarios(id)
+  CONSTRAINT fk_perfil_institucion
+    FOREIGN KEY (institucion_id) REFERENCES instituciones(id)
     ON DELETE CASCADE
 );
 
--- Índices
-CREATE INDEX idx_perfiles_usuario_id ON perfiles(usuario_id);
+CREATE INDEX idx_perfil_institucion_id ON perfiles(institucion_id);
 
--- Comentarios
-COMMENT ON TABLE perfiles IS 'Perfiles de personas con TEA';
-COMMENT ON COLUMN perfiles.usuario_id IS 'Usuario que gestiona este perfil (relación 1:N)';
-COMMENT ON COLUMN perfiles.diagnostico IS 'Diagnóstico médico o nivel de apoyo';
+CREATE TABLE perfil_usuario (
+  perfil_id INTEGER NOT NULL,
+  usuario_id INTEGER NOT NULL,
+  rol_en_perfil rol_perfil_enum NOT NULL,
+  puede_editar BOOLEAN NOT NULL DEFAULT FALSE,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (perfil_id, usuario_id),
+  CONSTRAINT fk_perfil_usuario_perfil
+    FOREIGN KEY (perfil_id) REFERENCES perfiles(id)
+    ON DELETE CASCADE,
+  CONSTRAINT fk_perfil_usuario_usuario
+    FOREIGN KEY (usuario_id) REFERENCES usuarios(id)
+    ON DELETE CASCADE
+);
 
--- =====================================================
--- TABLA: observaciones
--- =====================================================
+CREATE INDEX idx_perfil_usuario_perfil_id ON perfil_usuario(perfil_id);
+CREATE INDEX idx_perfil_usuario_usuario_id ON perfil_usuario(usuario_id);
+
 CREATE TABLE observaciones (
   id SERIAL PRIMARY KEY,
   titulo VARCHAR(255) NOT NULL,
@@ -122,40 +142,22 @@ CREATE TABLE observaciones (
   fecha_evento TIMESTAMP NOT NULL,
   perfil_id INTEGER NOT NULL,
   autor_id INTEGER NOT NULL,
+  privacidad privacidad_observacion_enum NOT NULL DEFAULT 'PUBLICA',
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  
-  -- Foreign Keys
   CONSTRAINT fk_observaciones_perfil
-    FOREIGN KEY (perfil_id)
-    REFERENCES perfiles(id)
+    FOREIGN KEY (perfil_id) REFERENCES perfiles(id)
     ON DELETE CASCADE,
-  
   CONSTRAINT fk_observaciones_autor
-    FOREIGN KEY (autor_id)
-    REFERENCES usuarios(id)
-    ON DELETE RESTRICT -- No permitir eliminar usuario si tiene observaciones
+    FOREIGN KEY (autor_id) REFERENCES usuarios(id)
 );
 
--- Índices para optimización de consultas
 CREATE INDEX idx_observaciones_perfil_id ON observaciones(perfil_id);
 CREATE INDEX idx_observaciones_autor_id ON observaciones(autor_id);
 CREATE INDEX idx_observaciones_fecha_evento ON observaciones(fecha_evento);
 CREATE INDEX idx_observaciones_categoria ON observaciones(categoria);
-
--- Índice compuesto para consultas frecuentes (perfil + fecha)
 CREATE INDEX idx_observaciones_perfil_fecha ON observaciones(perfil_id, fecha_evento DESC);
 
--- Comentarios
-COMMENT ON TABLE observaciones IS 'Observaciones registradas sobre los perfiles';
-COMMENT ON COLUMN observaciones.categoria IS 'Tipo de observación: CONDUCTA, COMUNICACION, SOCIAL, ACADEMICO';
-COMMENT ON COLUMN observaciones.fecha_evento IS 'Fecha cuando ocurrió el evento observado';
-COMMENT ON COLUMN observaciones.perfil_id IS 'Perfil sobre el que se hace la observación';
-COMMENT ON COLUMN observaciones.autor_id IS 'Usuario que registró la observación';
-
--- =====================================================
--- TABLA: reportes
--- =====================================================
 CREATE TABLE reportes (
   id SERIAL PRIMARY KEY,
   titulo VARCHAR(255) NOT NULL,
@@ -165,57 +167,47 @@ CREATE TABLE reportes (
   url_archivo VARCHAR(500),
   creador_id INTEGER NOT NULL,
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  
-  -- Validación: fecha_fin debe ser mayor o igual a fecha_inicio
   CONSTRAINT chk_reportes_fechas CHECK (fecha_fin >= fecha_inicio),
-  
-  -- Foreign Key
   CONSTRAINT fk_reportes_creador
-    FOREIGN KEY (creador_id)
-    REFERENCES usuarios(id)
-    ON DELETE RESTRICT
+    FOREIGN KEY (creador_id) REFERENCES usuarios(id)
 );
 
--- Índices
 CREATE INDEX idx_reportes_creador_id ON reportes(creador_id);
 CREATE INDEX idx_reportes_created_at ON reportes(created_at DESC);
 
--- Comentarios
-COMMENT ON TABLE reportes IS 'Reportes generados en PDF o Excel';
-COMMENT ON COLUMN reportes.url_archivo IS 'URL del archivo generado (storage)';
-
--- =====================================================
--- TABLA: observaciones_en_reportes (relación N:N)
--- =====================================================
 CREATE TABLE observaciones_en_reportes (
   reporte_id INTEGER NOT NULL,
   observacion_id INTEGER NOT NULL,
-  
-  -- Clave primaria compuesta
   PRIMARY KEY (reporte_id, observacion_id),
-  
-  -- Foreign Keys
   CONSTRAINT fk_observaciones_reportes_reporte
-    FOREIGN KEY (reporte_id)
-    REFERENCES reportes(id)
+    FOREIGN KEY (reporte_id) REFERENCES reportes(id)
     ON DELETE CASCADE,
-  
   CONSTRAINT fk_observaciones_reportes_observacion
-    FOREIGN KEY (observacion_id)
-    REFERENCES observaciones(id)
+    FOREIGN KEY (observacion_id) REFERENCES observaciones(id)
     ON DELETE CASCADE
 );
 
--- Índices
 CREATE INDEX idx_obs_reportes_reporte_id ON observaciones_en_reportes(reporte_id);
 CREATE INDEX idx_obs_reportes_observacion_id ON observaciones_en_reportes(observacion_id);
 
--- Comentarios
-COMMENT ON TABLE observaciones_en_reportes IS 'Tabla intermedia: relación N:N entre reportes y observaciones';
+CREATE TABLE auditoria_admin (
+  id SERIAL PRIMARY KEY,
+  admin_id INTEGER NOT NULL,
+  accion VARCHAR(100) NOT NULL,
+  entidad VARCHAR(50),
+  entidad_id INTEGER,
+  detalles VARCHAR(500),
+  ip_address VARCHAR(45),
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_auditoria_admin
+    FOREIGN KEY (admin_id) REFERENCES usuarios(id)
+    ON DELETE CASCADE
+);
 
--- =====================================================
--- FUNCIÓN: Actualizar timestamp updated_at
--- =====================================================
+CREATE INDEX idx_auditoria_admin_id ON auditoria_admin(admin_id);
+CREATE INDEX idx_auditoria_created_at ON auditoria_admin(created_at DESC);
+CREATE INDEX idx_auditoria_accion ON auditoria_admin(accion);
+
 CREATE OR REPLACE FUNCTION update_updated_at_column()
 RETURNS TRIGGER AS $$
 BEGIN
@@ -224,9 +216,11 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
--- =====================================================
--- TRIGGERS: Auto-actualizar updated_at
--- =====================================================
+CREATE TRIGGER trg_instituciones_updated_at
+  BEFORE UPDATE ON instituciones
+  FOR EACH ROW
+  EXECUTE FUNCTION update_updated_at_column();
+
 CREATE TRIGGER trg_usuarios_updated_at
   BEFORE UPDATE ON usuarios
   FOR EACH ROW
@@ -243,101 +237,64 @@ CREATE TRIGGER trg_observaciones_updated_at
   EXECUTE FUNCTION update_updated_at_column();
 
 -- =====================================================
--- DATOS DE PRUEBA (SEED)
+-- DATOS DE PRUEBA MINIMOS
 -- =====================================================
+INSERT INTO instituciones (id, nombre, tipo, direccion) VALUES
+(1, 'Sistema TEA-LINK', 'SISTEMA', NULL),
+(2, 'colegio de prueba', 'CENTRO_EDUCACIONAL', 'Direccion de prueba'),
+(3, 'Centro Medico de Prueba', 'CENTRO_MEDICO', 'Direccion de prueba');
 
--- Usuario 1: Familia (Padre)
-INSERT INTO usuarios (email, password_hash, nombre_completo, rol) VALUES
-('juan.perez@example.com', '$2b$10$abcdefghijklmnopqrstuvwxyz1234567890', 'Juan Pérez Soto', 'FAMILIA');
+INSERT INTO usuarios (id, email, password_hash, nombre_completo, rol, institucion_id) VALUES
+(1, 'cr.monsalveb@duocuc.cl', '$2b$10$/JUwlXGp0i9Jl7wZXER6iuyw38ZJUI1i50Gg2UsQ5EWhPoOeslxqC', 'Super Administrador', 'SUPERADMIN', 1),
+(2, 'admin.colegio@tealink.com', '$2b$10$CidV/56svr60WsAp1uTg8O/vYLcqugY5s/ZyYHvh/iXgyG2AJoEHG', 'Administrador Colegio Prueba', 'ADMINISTRADOR', 2),
+(3, 'educador2@tealink.com', '$2b$10$3y7oLIppx4Sw773BTemXNugbFpcc3Vz7O3cuxzoZiM1aS2XEu5bk2', 'Educador Prueba', 'EDUCADOR', 2),
+(4, 'medico@tealink.com', '$2b$10$0./PPCwBC79qNnOq9VrBweZVb/DIQKKAw6d3h93r.Sj8P0PWv8Y6i', 'Dr. Roberto Fernandez', 'MEDICO', 3);
 
--- Usuario 2: Educadora
-INSERT INTO usuarios (email, password_hash, nombre_completo, rol) VALUES
-('maria.gonzalez@escuela.cl', '$2b$10$abcdefghijklmnopqrstuvwxyz1234567890', 'María González López', 'EDUCADOR');
+INSERT INTO perfiles (id, nombre, edad, diagnostico, fecha_nacimiento, notas, institucion_id) VALUES
+(1, 'Juanito Perez Marin', 9, 'TEA nivel de apoyo 2', '2017-06-15', 'Perfil de prueba para colegio.', 2);
 
--- Usuario 3: Fonoaudióloga
-INSERT INTO usuarios (email, password_hash, nombre_completo, rol) VALUES
-('ana.martinez@clinica.cl', '$2b$10$abcdefghijklmnopqrstuvwxyz1234567890', 'Ana Martínez Rojas', 'PROFESIONAL');
+INSERT INTO perfil_usuario (perfil_id, usuario_id, rol_en_perfil, puede_editar) VALUES
+(1, 3, 'EDUCADOR', FALSE),
+(1, 4, 'MEDICO', FALSE);
 
--- Perfil 1: Niño con TEA
-INSERT INTO perfiles (nombre, edad, diagnostico, fecha_nacimiento, notas, usuario_id) VALUES
-('Matías Pérez', 7, 'TEA nivel de apoyo 2', '2019-05-15', 'Requiere apoyo comunicacional con pictogramas', 1);
+INSERT INTO observaciones (id, titulo, descripcion, categoria, fecha_evento, perfil_id, autor_id, privacidad) VALUES
+(1, 'Mejoras motrices', 'Registro de avance observado durante actividad educativa.', 'COMUNICACION', '2026-05-23 10:00:00', 1, 3, 'PUBLICA');
 
--- Perfil 2: Niña con TEA
-INSERT INTO perfiles (nombre, edad, diagnostico, fecha_nacimiento, notas, usuario_id) VALUES
-('Sofía Ramírez', 5, 'TEA nivel de apoyo 1', '2021-03-22', 'Buena comunicación verbal, dificultades sociales', 1);
+INSERT INTO reportes (id, titulo, fecha_inicio, fecha_fin, formato, creador_id) VALUES
+(1, 'Informe prueba', '2026-04-27', '2026-05-22', 'PDF', 3);
 
--- Observaciones de ejemplo
-INSERT INTO observaciones (titulo, descripcion, categoria, fecha_evento, perfil_id, autor_id) VALUES
-('Buena comunicación en terapia', 
- 'Durante la sesión de fonoaudiología logró expresar sus necesidades usando pictogramas. Mostró interés en comunicarse.', 
- 'COMUNICACION', 
- '2026-03-26 10:30:00', 
- 1, 
- 3);
-
-INSERT INTO observaciones (titulo, descripcion, categoria, fecha_evento, perfil_id, autor_id) VALUES
-('Crisis sensorial en recreo', 
- 'Durante el recreo presentó sobrecarga sensorial por ruido excesivo. Buscó espacio tranquilo y se calmó en 10 minutos.', 
- 'CONDUCTA', 
- '2026-03-26 11:15:00', 
- 1, 
- 2);
-
-INSERT INTO observaciones (titulo, descripcion, categoria, fecha_evento, perfil_id, autor_id) VALUES
-('Interacción positiva con compañeros', 
- 'Inició juego paralelo con dos compañeros en área de bloques. Mantuvo interacción por 15 minutos.', 
- 'SOCIAL', 
- '2026-03-27 09:45:00', 
- 1, 
- 2);
-
-INSERT INTO observaciones (titulo, descripcion, categoria, fecha_evento, perfil_id, autor_id) VALUES
-('Avance en lectura', 
- 'Reconoció 5 palabras nuevas durante actividad de lectura. Mostró entusiasmo al identificarlas.', 
- 'ACADEMICO', 
- '2026-03-27 14:00:00', 
- 1, 
- 2);
-
--- Reporte de ejemplo
-INSERT INTO reportes (titulo, fecha_inicio, fecha_fin, formato, creador_id) VALUES
-('Reporte Mensual Marzo 2026', '2026-03-01', '2026-03-27', 'PDF', 1);
-
--- Asociar observaciones al reporte
 INSERT INTO observaciones_en_reportes (reporte_id, observacion_id) VALUES
-(1, 1),
-(1, 2),
-(1, 3),
-(1, 4);
+(1, 1);
+
+INSERT INTO auditoria_admin (admin_id, accion, entidad, entidad_id, detalles, ip_address) VALUES
+(2, 'CREAR_PERFIL', 'perfiles', 1, 'Perfil de prueba creado para validacion local', '127.0.0.1');
+
+SELECT setval('instituciones_id_seq', (SELECT MAX(id) FROM instituciones));
+SELECT setval('usuarios_id_seq', (SELECT MAX(id) FROM usuarios));
+SELECT setval('perfiles_id_seq', (SELECT MAX(id) FROM perfiles));
+SELECT setval('observaciones_id_seq', (SELECT MAX(id) FROM observaciones));
+SELECT setval('reportes_id_seq', (SELECT MAX(id) FROM reportes));
+SELECT setval('auditoria_admin_id_seq', (SELECT MAX(id) FROM auditoria_admin));
 
 -- =====================================================
--- VERIFICACIÓN DE DATOS
+-- VERIFICACION
 -- =====================================================
-
--- Contar registros por tabla
-SELECT 
+SELECT
+  (SELECT COUNT(*) FROM instituciones) AS total_instituciones,
   (SELECT COUNT(*) FROM usuarios) AS total_usuarios,
   (SELECT COUNT(*) FROM perfiles) AS total_perfiles,
+  (SELECT COUNT(*) FROM perfil_usuario) AS total_perfil_usuario,
   (SELECT COUNT(*) FROM observaciones) AS total_observaciones,
   (SELECT COUNT(*) FROM reportes) AS total_reportes,
-  (SELECT COUNT(*) FROM observaciones_en_reportes) AS total_obs_en_reportes;
+  (SELECT COUNT(*) FROM observaciones_en_reportes) AS total_obs_en_reportes,
+  (SELECT COUNT(*) FROM auditoria_admin) AS total_auditoria;
 
--- Mostrar estructura de la base de datos
-SELECT 
-  table_name,
-  (SELECT COUNT(*) FROM information_schema.columns WHERE table_name = t.table_name) AS num_columnas
-FROM information_schema.tables t
-WHERE table_schema = 'public' 
-  AND table_type = 'BASE TABLE'
-ORDER BY table_name;
-
--- =====================================================
--- SCRIPT COMPLETADO
--- =====================================================
--- ✅ 5 tablas creadas
--- ✅ 3 tipos ENUM creados
--- ✅ 11 índices creados para optimización
--- ✅ 3 triggers para auto-actualización de timestamps
--- ✅ Datos de prueba insertados
--- ✅ Verificaciones de integridad
--- =====================================================
+-- Resumen esperado:
+-- instituciones: 3
+-- usuarios: 4
+-- perfiles: 1
+-- perfil_usuario: 2
+-- observaciones: 1
+-- reportes: 1
+-- observaciones_en_reportes: 1
+-- auditoria_admin: 1
