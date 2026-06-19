@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import {
   crearObservacion,
+  getObservacionById,
   getUltimasObservaciones,
   listObservaciones,
   actualizarObservacion,
@@ -23,6 +24,12 @@ router.post(
   authenticateToken,
   authorizeRoles('EDUCADOR', 'FAMILIA', 'PROFESIONAL', 'MEDICO'),
   crearObservacion
+);
+router.get(
+  '/:id',
+  authenticateToken,
+  authorizeRoles('EDUCADOR', 'FAMILIA', 'PROFESIONAL', 'MEDICO'),
+  getObservacionById
 );
 router.put(
   '/:id',

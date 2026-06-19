@@ -1,52 +1,53 @@
 import React from "react";
-import { useNavigate } from "react-router-dom";
-import { clearSession, getRole } from "../utils/auth";
+import { getRole } from "../utils/auth";
+import { RoleThemeProvider } from "../context/RoleThemeContext";
+import { AppShell } from "../components/layout/AppShell";
 import { AdminInstitucionDashboard } from "../components/AdminInstitucionDashboard";
-import { ObservacionesRolDashboard } from "../components/ObservacionesRolDashboard";
+import { EducadorDashboard } from "../components/EducadorDashboard";
+import { FamiliaDashboard } from "../components/FamiliaDashboard";
+import { ProfesionalDashboard } from "../components/ProfesionalDashboard";
+import { MedicoDashboard } from "../components/MedicoDashboard";
+import { ROL_PANEL_TITULO } from "../theme/roleTheme";
+import { Card } from "../components/ui/Card";
 
 const Dashboard: React.FC = () => {
-  const navigate = useNavigate();
-
-  const handleLogout = () => {
-    clearSession();
-    navigate("/login", { replace: true });
-  };
-
   const rol = getRole();
   const institucion = localStorage.getItem("institucion");
+  const panelTitle = (rol && ROL_PANEL_TITULO[rol]) || "Panel de usuario";
 
-  let contenido;
+  let contenido: React.ReactNode;
   switch (rol) {
     case "ADMINISTRADOR":
       contenido = <AdminInstitucionDashboard institucionNombre={institucion} />;
       break;
     case "EDUCADOR":
+      contenido = <EducadorDashboard />;
+      break;
     case "FAMILIA":
+      contenido = <FamiliaDashboard />;
+      break;
     case "PROFESIONAL":
+      contenido = <ProfesionalDashboard />;
+      break;
     case "MEDICO":
-      contenido = (
-        <ObservacionesRolDashboard rol={rol!} institucionNombre={institucion} />
-      );
+      contenido = <MedicoDashboard />;
       break;
     default:
       contenido = (
-        <>
-          <h1 className="text-3xl font-bold mb-4">Bienvenido al Dashboard</h1>
-          <p className="text-lg mb-6">¡Has iniciado sesión correctamente!</p>
-        </>
+        <Card title="Bienvenido">
+          <p className="text-lg text-neutral-gray-medium">
+            Has iniciado sesión correctamente. Tu rol aún no tiene un panel asignado.
+          </p>
+        </Card>
       );
   }
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-gray-50">
-      {contenido}
-      <button
-        onClick={handleLogout}
-        className="bg-red-500 text-white px-6 py-2 rounded hover:bg-red-600 font-semibold"
-      >
-        Cerrar sesión
-      </button>
-    </div>
+    <RoleThemeProvider rol={rol}>
+      <AppShell title={panelTitle} institucionNombre={institucion}>
+        {contenido}
+      </AppShell>
+    </RoleThemeProvider>
   );
 };
 

@@ -2,10 +2,12 @@ import { Response } from 'express';
 import { AuthRequest } from '../middleware/authMiddleware';
 import { PrismaClient, privacidad_observacion_enum } from '@prisma/client';
 import { z } from 'zod';
+import {
+  getPerfilIdsAccesibles,
+  usuarioTieneAccesoPerfil
+} from '../utils/perfilAccess';
 
 const prisma = new PrismaClient();
-
-const ROLES_OBSERVACION = ['EDUCADOR', 'FAMILIA', 'PROFESIONAL', 'MEDICO'] as const;
 
 const observacionSchema = z.object({
   titulo: z.string().min(1),
@@ -38,11 +40,15 @@ function privacidadVisibleParaRol(rol: string): privacidad_observacion_enum[] {
   }
 }
 
-async function perfilDeInstitucion(perfilId: number, institucionId: number | undefined) {
-  if (!institucionId) return null;
-  return prisma.perfil.findFirst({
-    where: { id: perfilId, institucion_id: institucionId }
-  });
+const ROLES_OBSERVACION = ['EDUCADOR', 'FAMILIA', 'PROFESIONAL', 'MEDICO'] as const;
+
+async function assertAccesoPerfil(
+  userId: number,
+  perfilId: number,
+  institucionId?: number | null
+) {
+  const ok = await usuarioTieneAccesoPerfil(userId, perfilId, institucionId);
+  return ok;
 }
 
 export const getUltimasObservaciones = async (_req: AuthRequest, res: Response) => {
@@ -73,15 +79,23 @@ export const listObservaciones = async (req: AuthRequest, res: Response) => {
       return res.status(403).json({ error: 'Rol no autorizado' });
     }
 
+    if (!user?.userId) {
+      return res.status(401).json({ error: 'No autenticado' });
+    }
+
     const perfilId = req.query.perfil_id ? Number(req.query.perfil_id) : undefined;
     if (perfilId !== undefined && isNaN(perfilId)) {
       return res.status(400).json({ error: 'perfil_id inválido' });
     }
 
+    const perfilIdsAccesibles = await getPerfilIdsAccesibles(user.userId, user.institucion_id);
+    if (perfilIdsAccesibles.length === 0) {
+      return res.json({ observaciones: [] });
+    }
+
     if (perfilId) {
-      const perfil = await perfilDeInstitucion(perfilId, user.institucion_id);
-      if (!perfil) {
-        return res.status(404).json({ error: 'Perfil no encontrado en su institución' });
+      if (!perfilIdsAccesibles.includes(perfilId)) {
+        return res.status(404).json({ error: 'Perfil no encontrado o sin acceso' });
       }
     }
 
@@ -90,8 +104,7 @@ export const listObservaciones = async (req: AuthRequest, res: Response) => {
     const observaciones = await prisma.observacion.findMany({
       where: {
         privacidad: { in: visibles },
-        ...(perfilId ? { perfil_id: perfilId } : {}),
-        perfil: { institucion_id: user.institucion_id ?? -1 }
+        perfil_id: perfilId ?? { in: perfilIdsAccesibles }
       },
       orderBy: { fecha_evento: 'desc' },
       include: {
@@ -104,6 +117,51 @@ export const listObservaciones = async (req: AuthRequest, res: Response) => {
   } catch (error) {
     console.error('[OBSERVACIONES][LIST]', error);
     return res.status(500).json({ error: 'Error al obtener observaciones' });
+  }
+};
+
+export const getObservacionById = async (req: AuthRequest, res: Response) => {
+  try {
+    const user = req.user;
+    if (!user?.rol || user.rol === 'ADMINISTRADOR' || user.rol === 'SUPERADMIN') {
+      return res.status(403).json({ error: 'No autorizado' });
+    }
+    if (!ROLES_OBSERVACION.includes(user.rol as (typeof ROLES_OBSERVACION)[number])) {
+      return res.status(403).json({ error: 'Rol no autorizado' });
+    }
+
+    const id = Number(req.params.id);
+    if (isNaN(id)) return res.status(400).json({ error: 'ID inválido' });
+
+    const visibles = privacidadVisibleParaRol(user.rol);
+    const observacion = await prisma.observacion.findFirst({
+      where: {
+        id,
+        OR: [{ privacidad: { in: visibles } }, { autor_id: user.userId }]
+      },
+      include: {
+        autor: { select: { id: true, nombre_completo: true, rol: true } },
+        perfil: { select: { id: true, nombre: true } }
+      }
+    });
+
+    if (!observacion) {
+      return res.status(404).json({ error: 'Observación no encontrada' });
+    }
+
+    const tieneAcceso = await assertAccesoPerfil(
+      user.userId,
+      observacion.perfil_id,
+      user.institucion_id
+    );
+    if (!tieneAcceso) {
+      return res.status(404).json({ error: 'Observación no encontrada' });
+    }
+
+    return res.json({ observacion });
+  } catch (error) {
+    console.error('[OBSERVACIONES][GET]', error);
+    return res.status(500).json({ error: 'Error al obtener observación' });
   }
 };
 
@@ -123,9 +181,13 @@ export const crearObservacion = async (req: AuthRequest, res: Response) => {
     }
 
     const data = observacionSchema.parse(req.body);
-    const perfil = await perfilDeInstitucion(data.perfil_id, user.institucion_id);
-    if (!perfil) {
-      return res.status(404).json({ error: 'Perfil no encontrado en su institución' });
+    const tieneAcceso = await assertAccesoPerfil(
+      user.userId,
+      data.perfil_id,
+      user.institucion_id
+    );
+    if (!tieneAcceso) {
+      return res.status(404).json({ error: 'Perfil no encontrado o sin acceso' });
     }
 
     let privacidad: privacidad_observacion_enum = 'PUBLICA';
@@ -168,13 +230,16 @@ export const actualizarObservacion = async (req: AuthRequest, res: Response) => 
       return res.status(403).json({ error: 'No autorizado' });
     }
 
-    const existente = await prisma.observacion.findFirst({
-      where: {
-        id,
-        perfil: { institucion_id: user.institucion_id ?? -1 }
-      }
-    });
+    const existente = await prisma.observacion.findUnique({ where: { id } });
     if (!existente) {
+      return res.status(404).json({ error: 'Observación no encontrada' });
+    }
+    const tieneAcceso = await assertAccesoPerfil(
+      user.userId,
+      existente.perfil_id,
+      user.institucion_id
+    );
+    if (!tieneAcceso) {
       return res.status(404).json({ error: 'Observación no encontrada' });
     }
     if (existente.autor_id !== user.userId) {
@@ -190,6 +255,10 @@ export const actualizarObservacion = async (req: AuthRequest, res: Response) => 
         ...(data.categoria && { categoria: data.categoria }),
         ...(data.fecha_evento && { fecha_evento: new Date(data.fecha_evento) }),
         ...(user.rol === 'MEDICO' && data.privacidad && { privacidad: data.privacidad })
+      },
+      include: {
+        autor: { select: { id: true, nombre_completo: true, rol: true } },
+        perfil: { select: { id: true, nombre: true } }
       }
     });
 
@@ -211,13 +280,16 @@ export const eliminarObservacion = async (req: AuthRequest, res: Response) => {
       return res.status(403).json({ error: 'No autorizado' });
     }
 
-    const existente = await prisma.observacion.findFirst({
-      where: {
-        id,
-        perfil: { institucion_id: user.institucion_id ?? -1 }
-      }
-    });
+    const existente = await prisma.observacion.findUnique({ where: { id } });
     if (!existente) {
+      return res.status(404).json({ error: 'Observación no encontrada' });
+    }
+    const tieneAcceso = await assertAccesoPerfil(
+      user.userId,
+      existente.perfil_id,
+      user.institucion_id
+    );
+    if (!tieneAcceso) {
       return res.status(404).json({ error: 'Observación no encontrada' });
     }
     if (existente.autor_id !== user.userId) {

@@ -1,6 +1,17 @@
 import { useCallback, useEffect, useState } from "react";
 import { FaPlus, FaUserGraduate, FaUsers } from "react-icons/fa";
 import { AdminEquipoSection } from "./AdminEquipoSection";
+import { Tabs } from "./ui/Tabs";
+import { Card } from "./ui/Card";
+import { Button } from "./ui/Button";
+import { Alert } from "./ui/Alert";
+import { Modal } from "./ui/Modal";
+import { Field } from "./ui/Field";
+import { Input } from "./ui/Input";
+import { Textarea } from "./ui/Textarea";
+import { useRoleTheme } from "../context/RoleThemeContext";
+import { cn } from "../theme/cn";
+import { getSectionTheme } from "../theme/roleTheme";
 
 type Perfil = {
   id: number;
@@ -29,6 +40,8 @@ type Props = {
 };
 
 export function AdminInstitucionDashboard({ institucionNombre }: Props) {
+  const theme = useRoleTheme();
+  const section = getSectionTheme("default");
   const [tab, setTab] = useState<"perfiles" | "equipo">("perfiles");
   const [perfiles, setPerfiles] = useState<Perfil[]>([]);
   const [loading, setLoading] = useState(true);
@@ -170,206 +183,146 @@ export function AdminInstitucionDashboard({ institucionNombre }: Props) {
   };
 
   return (
-    <div className="w-full max-w-4xl mx-auto">
-      <h1 className="text-3xl font-bold mb-2 text-blue-800">Panel de Administrador</h1>
-      <p className="text-lg mb-4 text-gray-700">
-        Institución:{" "}
-        <span className="font-semibold text-blue-700">
-          {institucionNombre || "(sin institución)"}
-        </span>
+    <div className="w-full">
+      <p className="text-sm text-neutral-gray-medium mb-6 max-w-2xl">
+        Gestiona los <strong>perfiles de estudiantes</strong> y el <strong>equipo de educadores</strong> de{" "}
+        <strong>{institucionNombre || "tu institución"}</strong>. Las observaciones las registran los educadores.
       </p>
 
-      <p className="text-sm text-gray-500 mb-4">
-        Como administrador del <strong>colegio</strong> gestionas los{" "}
-        <strong>perfiles de tus alumnos</strong> y los <strong>educadores</strong> de tu
-        institución. Las observaciones las registran los educadores; tú no las creas ni las ves.
-      </p>
-
-      <div className="flex gap-2 mb-6">
-        <button
-          type="button"
-          onClick={() => setTab("perfiles")}
-          className={`px-4 py-2 rounded-xl font-semibold flex items-center gap-2 ${
-            tab === "perfiles"
-              ? "bg-blue-500 text-white"
-              : "bg-white text-blue-700 border border-blue-200"
-          }`}
-        >
-          <FaUserGraduate /> Perfiles
-        </button>
-        <button
-          type="button"
-          onClick={() => setTab("equipo")}
-          className={`px-4 py-2 rounded-xl font-semibold flex items-center gap-2 ${
-            tab === "equipo"
-              ? "bg-green-500 text-white"
-              : "bg-white text-green-700 border border-green-200"
-          }`}
-        >
-          <FaUsers /> Educadores
-        </button>
-      </div>
+      <Tabs
+        variant="pills"
+        active={tab}
+        onChange={setTab}
+        items={[
+          { id: "perfiles", label: "Perfiles", icon: <FaUserGraduate /> },
+          { id: "equipo", label: "Educadores", icon: <FaUsers /> }
+        ]}
+      />
 
       {tab === "equipo" && <AdminEquipoSection />}
 
       {tab === "perfiles" && (
-      <section className="bg-white rounded-2xl shadow-lg p-6 border border-blue-100">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
-          <h2 className="text-xl font-semibold text-blue-700 flex items-center gap-2">
-            <FaUserGraduate /> Perfiles de estudiantes
-          </h2>
-          <button
-            type="button"
-            onClick={abrirCrear}
-            className="flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-blue-500 text-white font-semibold hover:bg-blue-600"
-          >
-            <FaPlus /> Nuevo perfil
-          </button>
-        </div>
+        <Card
+          title={
+            <>
+              <FaUserGraduate /> Perfiles de estudiantes
+            </>
+          }
+          description="Registra los perfiles de niños/as o estudiantes. Cada perfil concentrará sus observaciones."
+          action={
+            <Button onClick={abrirCrear}>
+              <FaPlus /> Nuevo perfil
+            </Button>
+          }
+        >
+          {error && <Alert variant="error">{error}</Alert>}
 
-        <p className="text-sm text-gray-500 mb-4">
-          Registra aquí los perfiles de niños/as o estudiantes de tu institución. Cada perfil
-          concentrará sus observaciones.
-        </p>
-
-        {error && (
-          <div className="mb-4 text-red-600 text-sm bg-red-50 border border-red-200 rounded-lg px-3 py-2">
-            {error}
-          </div>
-        )}
-
-        {loading ? (
-          <p className="text-gray-500">Cargando perfiles...</p>
-        ) : perfiles.length === 0 ? (
-          <div className="text-center py-10 bg-blue-50 rounded-xl border border-dashed border-blue-200">
-            <p className="text-gray-600 mb-3">Aún no hay perfiles en esta institución.</p>
-            <button
-              type="button"
-              onClick={abrirCrear}
-              className="px-4 py-2 rounded-lg bg-blue-500 text-white font-semibold hover:bg-blue-600"
+          {loading ? (
+            <p className="text-neutral-gray-medium">Cargando perfiles...</p>
+          ) : perfiles.length === 0 ? (
+            <div
+              className={cn(
+                "text-center py-10 rounded-xl border border-dashed",
+                section.accentBgEmpty,
+                section.accentBorderDashed
+              )}
             >
-              Crear el primer perfil
-            </button>
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="min-w-full text-sm">
-              <thead>
-                <tr className="bg-blue-50 text-blue-800">
-                  <th className="px-3 py-2 text-left">Nombre</th>
-                  <th className="px-3 py-2 text-left">Edad</th>
-                  <th className="px-3 py-2 text-left">Diagnóstico</th>
-                  <th className="px-3 py-2 text-left">Acciones</th>
-                </tr>
-              </thead>
-              <tbody>
-                {perfiles.map(p => (
-                  <tr key={p.id} className="border-b hover:bg-blue-50/50">
-                    <td className="px-3 py-2 font-medium">{p.nombre}</td>
-                    <td className="px-3 py-2">{p.edad ?? "—"}</td>
-                    <td className="px-3 py-2 max-w-xs truncate">{p.diagnostico ?? "—"}</td>
-                    <td className="px-3 py-2 whitespace-nowrap">
-                      <button
-                        type="button"
-                        className="text-blue-600 hover:underline mr-2"
-                        onClick={() => abrirEditar(p)}
-                      >
-                        Editar
-                      </button>
-                      <button
-                        type="button"
-                        className="text-red-600 hover:underline disabled:opacity-50"
-                        onClick={() => handleEliminar(p)}
-                        disabled={eliminandoId === p.id}
-                      >
-                        {eliminandoId === p.id ? "..." : "Eliminar"}
-                      </button>
-                    </td>
+              <p className="text-neutral-gray-medium mb-3">
+                Aún no hay perfiles en esta institución.
+              </p>
+              <Button onClick={abrirCrear}>Crear el primer perfil</Button>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="min-w-full text-sm">
+                <thead>
+                  <tr className={section.tableHead}>
+                    <th className="px-3 py-2 text-left font-semibold">Nombre</th>
+                    <th className="px-3 py-2 text-left font-semibold">Edad</th>
+                    <th className="px-3 py-2 text-left font-semibold">Diagnóstico</th>
+                    <th className="px-3 py-2 text-left font-semibold">Acciones</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </section>
+                </thead>
+                <tbody>
+                  {perfiles.map(p => (
+                    <tr key={p.id} className={cn("border-b", section.tableRowHover)}>
+                      <td className="px-3 py-2 font-medium">{p.nombre}</td>
+                      <td className="px-3 py-2">{p.edad ?? "—"}</td>
+                      <td className="px-3 py-2 max-w-xs truncate">{p.diagnostico ?? "—"}</td>
+                      <td className="px-3 py-2 whitespace-nowrap">
+                        <button
+                          type="button"
+                          className={cn(theme.link, "mr-3 text-sm font-medium")}
+                          onClick={() => abrirEditar(p)}
+                        >
+                          Editar
+                        </button>
+                        <button
+                          type="button"
+                          className="text-status-error text-sm font-medium hover:underline disabled:opacity-50"
+                          onClick={() => handleEliminar(p)}
+                          disabled={eliminandoId === p.id}
+                        >
+                          {eliminandoId === p.id ? "..." : "Eliminar"}
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </Card>
       )}
 
-      {tab === "perfiles" && modalOpen && (
-        <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-xl p-6 w-full max-w-md">
-            <h3 className="text-lg font-bold text-blue-700 mb-4">
-              {modalMode === "edit" ? "Editar perfil" : "Nuevo perfil"}
-            </h3>
-            <form onSubmit={handleGuardar} className="space-y-3">
-              <div>
-                <label className="block text-sm font-medium mb-1">Nombre *</label>
-                <input
-                  className="w-full border rounded-lg px-3 py-2"
-                  value={nombre}
-                  onChange={e => setNombre(e.target.value)}
-                  required
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-1">Edad</label>
-                <input
-                  type="number"
-                  min={1}
-                  max={120}
-                  className="w-full border rounded-lg px-3 py-2"
-                  value={edad}
-                  onChange={e => setEdad(e.target.value)}
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-1">Fecha de nacimiento</label>
-                <input
-                  type="date"
-                  className="w-full border rounded-lg px-3 py-2"
-                  value={fechaNacimiento}
-                  onChange={e => setFechaNacimiento(e.target.value)}
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-1">Diagnóstico</label>
-                <input
-                  className="w-full border rounded-lg px-3 py-2"
-                  value={diagnostico}
-                  onChange={e => setDiagnostico(e.target.value)}
-                  maxLength={500}
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-1">Notas</label>
-                <textarea
-                  className="w-full border rounded-lg px-3 py-2"
-                  rows={3}
-                  value={notas}
-                  onChange={e => setNotas(e.target.value)}
-                />
-              </div>
-              {formError && <p className="text-red-500 text-sm">{formError}</p>}
-              <div className="flex gap-2 justify-end pt-2">
-                <button
-                  type="button"
-                  className="px-4 py-2 rounded-lg bg-gray-100 hover:bg-gray-200"
-                  onClick={cerrarModal}
-                  disabled={formLoading}
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="submit"
-                  className="px-4 py-2 rounded-lg bg-blue-500 text-white font-semibold hover:bg-blue-600 disabled:opacity-50"
-                  disabled={formLoading}
-                >
-                  {formLoading ? "Guardando..." : "Guardar"}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+      <Modal
+        open={modalOpen}
+        onClose={cerrarModal}
+        title={modalMode === "edit" ? "Editar perfil" : "Nuevo perfil"}
+        footer={
+          <>
+            <Button variant="secondary" onClick={cerrarModal} disabled={formLoading}>
+              Cancelar
+            </Button>
+            <Button type="submit" form="perfil-form" disabled={formLoading}>
+              {formLoading ? "Guardando..." : "Guardar"}
+            </Button>
+          </>
+        }
+      >
+        <form id="perfil-form" onSubmit={handleGuardar} className="space-y-4">
+          <Field label="Nombre" required>
+            <Input value={nombre} onChange={e => setNombre(e.target.value)} required />
+          </Field>
+          <Field label="Edad">
+            <Input
+              type="number"
+              min={1}
+              max={120}
+              value={edad}
+              onChange={e => setEdad(e.target.value)}
+            />
+          </Field>
+          <Field label="Fecha de nacimiento">
+            <Input
+              type="date"
+              value={fechaNacimiento}
+              onChange={e => setFechaNacimiento(e.target.value)}
+            />
+          </Field>
+          <Field label="Diagnóstico">
+            <Input
+              value={diagnostico}
+              onChange={e => setDiagnostico(e.target.value)}
+              maxLength={500}
+            />
+          </Field>
+          <Field label="Notas">
+            <Textarea rows={3} value={notas} onChange={e => setNotas(e.target.value)} />
+          </Field>
+          {formError && <Alert variant="error" className="mb-0">{formError}</Alert>}
+        </form>
+      </Modal>
     </div>
   );
 }

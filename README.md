@@ -143,15 +143,18 @@ Desarrollar una aplicación web que centralice y facilite el registro colaborati
 ```
 tea-link/
 ├── Gestion/                           # Gestión del proyecto
-│   ├── 1.1.2 Documento de registro de definición...docx
-│   ├── Integrantes.txt               # Listado de integrantes del equipo
-│   ├── CONTROL-AVANCE-TEA-LINK.md    # Control de avance semanal
-│   └── INFORME-AVANCES-SEMANAL.md    # Reportes semanales de progreso
+│   └── Integrantes.txt               # Listado de integrantes del equipo
 │
-├── Documentacion/                     # Documentación técnica
-│   ├── INFORME-TECNICO-BASE-DATOS.md # Documentación de base de datos
+├── Documentacion/                     # Documentación técnica y evaluaciones
+│   ├── INFORME-FINAL-TEA-LINK.md     # Informe final de entrega (EV1–EV3)
+│   ├── EV3-PLAN-DE-PRUEBAS.md        # Plan de pruebas EV3
+│   ├── EV3-RESULTADOS-PRUEBAS.md     # Resultados y evidencias
+│   ├── usuarios_prueba.md            # Credenciales de demo
+│   ├── REGLAS_Y_PERMISOS_DE_ROLES.md
+│   ├── INFORME-TECNICO-BASE-DATOS.md
+│   ├── DISENO-UI-UX.md
+│   ├── evidencias-ev3/               # Capturas CP-01 a CP-13
 │   └── diagramas/
-│       ├── flujo-datos-arquitectura.png
 │       └── flujo-datos-arquitectura.puml
 │
 ├── Producto/                          # Código fuente y SQL
@@ -223,12 +226,12 @@ cd Producto/backend
 # Instalar dependencias
 npm install
 
-# Crear archivo .env con variables
-cp .env.example .env
-# Editar .env: DATABASE_URL, JWT_SECRET, etc.
+# Crear archivo .env con DATABASE_URL y JWT_SECRET (ver Producto/backend/README.md)
 
 # Aplicar migraciones Prisma
-npx prisma migrate dev --name init
+npx prisma migrate deploy
+
+# (Opcional) datos demo: npm run db:seed — solo si necesita resetear la BD
 
 # Iniciar servidor backend (puerto 3000)
 npm run dev
@@ -241,10 +244,6 @@ cd Producto/frontend
 # Instalar dependencias
 npm install
 
-# Crear archivo .env
-cp .env.example .env
-# VITE_API_URL=http://localhost:3000
-
 # Iniciar servidor de desarrollo (puerto 5173)
 npm run dev
 ```
@@ -252,8 +251,8 @@ npm run dev
 ### 4️⃣ Verificar
 - Frontend: http://localhost:5173
 - Backend API: http://localhost:3000
-- API Docs: http://localhost:3000/api-docs (Swagger)
-- DB: postgresql://localhost:5432/tea_link
+- Health: http://localhost:3000/health
+- Usuarios demo: ver `Documentacion/usuarios_prueba.md`
 
 ---
 
@@ -284,48 +283,51 @@ vercel
 
 ---
 
-## 📚 Documentación Completa
+## 📚 Documentación
 
-- **[GUÍA 1 COMPLETA](./GUIA-1-COMPLETA-TEA-LINK.md)** - Documento oficial con 9 secciones (70+ páginas)
-  - Contexto, objetivos, metodología, descripción técnica, plan trabajo, evidencias, planificación semestral
-
-- **[CONTROL DE AVANCE](./CONTROL-AVANCE-TEA-LINK.md)** - Tracking semanal
-  - Checklist de actividades
-  - Métricas de progreso
-  - Riesgos identificados
-  - Próximos pasos
+| Documento | Descripción |
+|-----------|-------------|
+| [Informe final](./Documentacion/INFORME-FINAL-TEA-LINK.md) | Entrega integral EV1–EV3 + cierre |
+| [Plan de pruebas EV3](./Documentacion/EV3-PLAN-DE-PRUEBAS.md) | Casos CP-01 a CP-28 y BD de pruebas |
+| [Resultados pruebas](./Documentacion/EV3-RESULTADOS-PRUEBAS.md) | Ejecución y capturas |
+| [Usuarios de prueba](./Documentacion/usuarios_prueba.md) | Credenciales demo |
+| [Reglas y permisos](./Documentacion/REGLAS_Y_PERMISOS_DE_ROLES.md) | RBAC y privacidad |
+| [Informe técnico BD](./Documentacion/INFORME-TECNICO-BASE-DATOS.md) | Diseño PostgreSQL |
+| [Diseño UI/UX](./Documentacion/DISENO-UI-UX.md) | Paleta y wireframes |
 
 ---
 
 ## ✨ Características Principales
 
 ### 👤 Gestión de Usuarios
-- [x] Registro y login seguro (JWT + bcrypt)
-- [x] Roles diferenciados: FAMILIA, EDUCADOR, PROFESIONAL
-- [x] Control de acceso granular (RBAC)
-- [x] Recuperación de contraseña (futuro)
+- [x] Login seguro (JWT + bcrypt)
+- [x] Roles: FAMILIA, EDUCADOR, PROFESIONAL, MEDICO, ADMINISTRADOR, SUPERADMIN
+- [x] Control de acceso granular (RBAC) por rol e institución
+- [x] Cambio de contraseña inicial obligatorio
+- [x] Reset de contraseña temporal por superadmin (administradores) y por admin institucional (equipo operativo)
+- [ ] Recuperación de contraseña por correo (futuro)
 
-### 👨‍👩‍👧 Perfiles de Personas con TEA
-- [x] Crear múltiples perfiles por usuario
-- [x] Información: nombre, edad, diagnóstico, historial
-- [x] Relación segura usuario-perfiles (1:N)
+### 👨‍👩‍👧 Perfiles y equipo interdisciplinario
+- [x] Perfiles estudiante por institución
+- [x] Vínculo de equipo vía `perfil_usuario` (multi-institucional)
+- [x] Información: nombre, edad, diagnóstico, notas
 
 ### 📝 Observaciones
-- [x] CRUD completo (crear, leer, actualizar, eliminar)
-- [x] Categorización: COMUNICACION, CONDUCTA, SOCIAL, ACADEMICO, SENSORIAL
-- [x] Filtros avanzados: fecha, categoría, autor
-- [x] Timeline de observaciones por perfil
+- [x] CRUD completo (crear, leer, editar, eliminar propias)
+- [x] Privacidad: PUBLICA, MULTINIVEL, PRIVADA
+- [x] Categorías: CONDUCTA, COMUNICACION, SOCIAL, ACADEMICO, SENSORIAL, MOTOR, CLINICO, OTRO
+- [x] Bitácora con búsqueda, filtros por rol y vistas agrupadas
 - [x] Validación frontend y backend (Zod)
 
 ### 📊 Reportes
-- [x] Generación de reportes personalizados
-- [x] Exportación a PDF y Excel
-- [x] Filtrado de observaciones por rango de fechas
-- [x] Historial de reportes descargables
+- [x] Generación de informes personalizados
+- [x] Exportación PDF y CSV (Excel)
+- [x] Selección de observaciones y rango de fechas
+- [x] Historial de reportes del usuario
 
-### 🔔 Notificaciones (Fase 3)
-- [x] Alertas de nuevas observaciones
-- [x] Feedback visual en interfaz
+### 🔔 Notificaciones
+- [ ] Alertas push o en tiempo real (futuro)
+- [x] Feedback visual en formularios e interfaz
 
 ---
 
@@ -340,7 +342,7 @@ vercel
 | **Transporte** | Encriptación | HTTPS/TLS 1.3 |
 | **Base de datos** | Integridad | PostgreSQL ACID, Foreign Keys, CASCADE |
 | **Inyección SQL** | ORM parametrizado | Prisma previene SQL injection |
-| **Headers** | Seguridad adicional | Helmet.js (HSTS, CSP, X-Frame-Options) |
+| **Headers** | CORS configurado | Pendiente Helmet.js en producción |
 
 ---
 
@@ -416,13 +418,20 @@ Este es un proyecto de titulación individual. Para el futuro (v2.0):
 
 ---
 
-## 🎯 Próximos Pasos
+## 🎯 Estado del proyecto
 
-1. ✅ Completar configuración del entorno
-2. ✅ Diseñar base de datos (Schema Prisma + SQL)
-3. ✅ Limpieza y preparación del repositorio
-4. ⏳ Diseñar wireframes UI/UX
-5. 🔄 Sprint 1: Implementar autenticación (En curso - Semana 5-6)
+**Última actualización:** Junio 2026  
+**Estado:** Producto funcional en entorno local — entrega final  
+**Avance funcional estimado:** ~90% del núcleo (auth, roles, perfiles, observaciones, reportes, UI)
+
+### Evaluaciones
+
+| Evaluación | Estado |
+|------------|--------|
+| Parcial 1 — Planificación y diseño | Completada |
+| Parcial 2 — MVP | Completada |
+| Parcial 3 — Sistema integrado + pruebas | Completada |
+| Final — Informe + repositorio + defensa | En entrega |
 
 ---
 
@@ -455,6 +464,6 @@ Contactar a: Cristian Monsalve Budrovich
 
 ---
 
-**Última actualización:** 12 de abril de 2026  
-**Estado:** 🚀 Fase de Desarrollo (Semana 5 - Sprint 1 iniciado)  
-**Avance del proyecto:** 25% completado
+**Última actualización:** Junio 2026  
+**Estado:** Entrega final — repositorio documentado  
+**Repositorio:** https://github.com/cristianmonsalve14/tea-link

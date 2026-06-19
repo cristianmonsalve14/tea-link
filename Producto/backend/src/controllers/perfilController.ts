@@ -2,6 +2,11 @@ import { Response } from 'express';
 import { AuthRequest } from '../middleware/authMiddleware';
 import { PrismaClient } from '@prisma/client';
 import { z } from 'zod';
+import {
+  getPerfilesAccesibles,
+  vincularEquipoInstitucionAPerfil,
+  vincularUsuarioAPerfil
+} from '../utils/perfilAccess';
 
 const prisma = new PrismaClient();
 
@@ -48,6 +53,8 @@ export const crearPerfil = async (req: AuthRequest, res: Response) => {
       }
     });
 
+    await vincularEquipoInstitucionAPerfil(perfil.id, institucion_id);
+
     // Auditoría solo si es ADMINISTRADOR
     if (userRol === 'ADMINISTRADOR') {
       await prisma.auditoriaAdmin.create({
@@ -76,13 +83,29 @@ export const crearPerfil = async (req: AuthRequest, res: Response) => {
 ===================== */
 export const obtenerPerfiles = async (req: AuthRequest, res: Response) => {
   try {
+    const userId = req.user?.userId;
     const institucion_id = req.user?.institucion_id;
-    if (!institucion_id) {
-      return res.status(400).json({ error: 'Institución no encontrada' });
+    const rol = req.user?.rol;
+
+    if (!userId) {
+      return res.status(401).json({ error: 'No autenticado' });
     }
-    const perfiles = await prisma.perfil.findMany({
-      where: { institucion_id }
-    });
+
+    const rolesOperativos = ['EDUCADOR', 'FAMILIA', 'PROFESIONAL', 'MEDICO'];
+    let perfiles;
+
+    if (rol && rolesOperativos.includes(rol)) {
+      perfiles = await getPerfilesAccesibles(userId, institucion_id);
+    } else {
+      if (!institucion_id) {
+        return res.status(400).json({ error: 'Institución no encontrada' });
+      }
+      perfiles = await prisma.perfil.findMany({
+        where: { institucion_id },
+        orderBy: { nombre: 'asc' }
+      });
+    }
+
     return res.json({ perfiles });
   } catch {
     return res.status(500).json({ error: 'Error al obtener perfiles' });
@@ -199,5 +222,72 @@ export const eliminarPerfil = async (req: AuthRequest, res: Response) => {
     return res.json({ message: 'Perfil eliminado correctamente' });
   } catch {
     return res.status(500).json({ error: 'Error al eliminar perfil' });
+  }
+};
+
+const vincularMiembroSchema = z.object({
+  email: z.string().email()
+});
+
+/** Admin vincula a un usuario (p. ej. médico de otro centro) al perfil del estudiante. */
+export const vincularMiembroEquipo = async (req: AuthRequest, res: Response) => {
+  try {
+    const perfilId = Number(req.params.id);
+    if (isNaN(perfilId)) {
+      return res.status(400).json({ error: 'ID de perfil inválido' });
+    }
+    const admin = req.user;
+    if (!admin?.userId || admin.rol !== 'ADMINISTRADOR') {
+      return res.status(403).json({ error: 'Solo administradores pueden vincular miembros del equipo' });
+    }
+    const institucion_id = admin.institucion_id;
+    if (!institucion_id) {
+      return res.status(400).json({ error: 'Administrador sin institución' });
+    }
+
+    const perfil = await prisma.perfil.findFirst({
+      where: { id: perfilId, institucion_id }
+    });
+    if (!perfil) {
+      return res.status(404).json({ error: 'Perfil no encontrado en su institución' });
+    }
+
+    const { email } = vincularMiembroSchema.parse(req.body);
+    const usuario = await prisma.usuario.findFirst({
+      where: { email: { equals: email, mode: 'insensitive' } },
+      select: { id: true, email: true, nombre_completo: true, rol: true }
+    });
+    if (!usuario) {
+      return res.status(404).json({ error: 'Usuario no encontrado con ese correo' });
+    }
+    const rolesEquipo = ['FAMILIA', 'EDUCADOR', 'PROFESIONAL', 'MEDICO'];
+    if (!rolesEquipo.includes(usuario.rol)) {
+      return res.status(400).json({
+        error: 'Solo se pueden vincular usuarios con rol FAMILIA, EDUCADOR, PROFESIONAL o MÉDICO'
+      });
+    }
+
+    await vincularUsuarioAPerfil(perfilId, usuario.id, usuario.rol);
+
+    await prisma.auditoriaAdmin.create({
+      data: {
+        admin_id: admin.userId,
+        accion: 'VINCULAR_EQUIPO_PERFIL',
+        entidad: 'perfil',
+        entidad_id: perfilId,
+        detalles: `${usuario.rol} ${usuario.email} vinculado al perfil ${perfil.nombre}`,
+        ip_address: req.ip || null
+      }
+    });
+
+    return res.status(201).json({
+      message: `${usuario.nombre_completo} ahora puede ver y aportar observaciones en este perfil (según privacidad).`,
+      usuario
+    });
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ error: error.issues });
+    }
+    return res.status(500).json({ error: 'Error al vincular miembro del equipo' });
   }
 };

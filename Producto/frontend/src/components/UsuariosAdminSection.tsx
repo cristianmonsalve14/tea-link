@@ -1,5 +1,14 @@
 import { useCallback, useEffect, useState } from "react";
 import { FaKey, FaUserPlus, FaUsers } from "react-icons/fa";
+import { Card } from "./ui/Card";
+import { Button } from "./ui/Button";
+import { Alert } from "./ui/Alert";
+import { Modal } from "./ui/Modal";
+import { Field } from "./ui/Field";
+import { Input } from "./ui/Input";
+import { Select } from "./ui/Select";
+import { useRoleTheme } from "../context/RoleThemeContext";
+import { cn } from "../theme/cn";
 
 type InstitucionOption = { id: number; nombre: string; tipo?: string };
 
@@ -31,6 +40,7 @@ type Props = {
 };
 
 export function UsuariosAdminSection({ instituciones }: Props) {
+  const theme = useRoleTheme();
   const [administradores, setAdministradores] = useState<Administrador[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -218,42 +228,35 @@ export function UsuariosAdminSection({ instituciones }: Props) {
   };
 
   return (
-    <div className="bg-white rounded-2xl shadow-lg p-8">
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
-        <h2 className="text-2xl font-bold text-blue-700 flex items-center gap-2">
+    <Card
+      title={
+        <>
           <FaUsers /> Administradores de institución
-        </h2>
-        <button
-          type="button"
-          className="flex items-center gap-2 px-4 py-2 rounded-xl bg-blue-500 text-white font-semibold hover:bg-blue-600 transition-all shadow disabled:opacity-50"
+        </>
+      }
+      description="Los administradores gestionan usuarios y perfiles solo dentro de su institución."
+      action={
+        <Button
           onClick={abrirCrear}
           disabled={instituciones.length === 0}
           title={instituciones.length === 0 ? "Crea una institución primero" : undefined}
         >
           <FaUserPlus /> Nuevo administrador
-        </button>
-      </div>
-
-      <p className="text-sm text-gray-600 mb-4">
-        Los administradores gestionan usuarios y perfiles solo dentro de su institución.
-      </p>
-
-      {error && (
-        <div className="mb-4 text-red-600 text-sm bg-red-50 border border-red-200 rounded-lg px-3 py-2">
-          {error}
-        </div>
-      )}
+        </Button>
+      }
+    >
+      {error && <Alert variant="error">{error}</Alert>}
 
       {instituciones.length === 0 && (
-        <div className="mb-4 text-amber-700 text-sm bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+        <Alert variant="warning">
           Debes crear al menos una institución (no Sistema) antes de asignar administradores.
-        </div>
+        </Alert>
       )}
 
       <div className="overflow-x-auto">
         <table className="min-w-full text-sm">
           <thead>
-            <tr className="bg-blue-50 text-blue-700">
+            <tr className={theme.tableHead}>
               <th className="px-3 py-2 text-left font-semibold">ID</th>
               <th className="px-3 py-2 text-left font-semibold">Nombre</th>
               <th className="px-3 py-2 text-left font-semibold">Email</th>
@@ -278,7 +281,7 @@ export function UsuariosAdminSection({ instituciones }: Props) {
               administradores.map(admin => (
                 <tr
                   key={admin.id}
-                  className="border-b last:border-none hover:bg-blue-50 transition-all"
+                  className={cn("border-b last:border-none", theme.tableRowHover)}
                 >
                   <td className="px-3 py-2">{admin.id}</td>
                   <td className="px-3 py-2">{admin.nombre_completo}</td>
@@ -289,7 +292,7 @@ export function UsuariosAdminSection({ instituciones }: Props) {
                   <td className="px-3 py-2 whitespace-nowrap">
                     <button
                       type="button"
-                      className="text-blue-600 hover:underline mr-2"
+                      className={cn(theme.link, "mr-2 text-sm font-medium")}
                       onClick={() => abrirEditar(admin)}
                     >
                       Editar
@@ -301,7 +304,7 @@ export function UsuariosAdminSection({ instituciones }: Props) {
                       disabled={reseteandoId === admin.id}
                       title="Generar contraseña temporal"
                     >
-                      <FaKey className="inline mr-0.5" />
+                      <FaKey />
                       {reseteandoId === admin.id ? "..." : "Clave"}
                     </button>
                     <button
@@ -320,112 +323,71 @@ export function UsuariosAdminSection({ instituciones }: Props) {
         </table>
       </div>
 
-      {modalOpen && (
-        <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50">
-          <div className="bg-white rounded-2xl shadow-xl p-8 w-full max-w-md relative">
-            <button
-              type="button"
-              className="absolute top-3 right-3 text-gray-400 hover:text-red-500 text-xl font-bold"
-              onClick={cerrarModal}
-              aria-label="Cerrar"
+      <Modal
+        open={modalOpen}
+        onClose={cerrarModal}
+        title={modalMode === "edit" ? "Editar administrador" : "Nuevo administrador"}
+        footer={
+          <>
+            <Button variant="secondary" onClick={cerrarModal} disabled={formLoading}>
+              Cancelar
+            </Button>
+            <Button type="submit" form="admin-form" disabled={formLoading}>
+              {formLoading ? "Guardando..." : modalMode === "edit" ? "Guardar" : "Crear"}
+            </Button>
+          </>
+        }
+      >
+        <form id="admin-form" onSubmit={handleGuardar} className="space-y-4">
+          <Field label="Email" required={modalMode === "create"}>
+            <Input
+              type="email"
+              value={formEmail}
+              onChange={e => setFormEmail(e.target.value)}
+              disabled={modalMode === "edit"}
+              required={modalMode === "create"}
+            />
+          </Field>
+          <Field label="Nombre completo" required>
+            <Input
+              value={formNombre}
+              onChange={e => setFormNombre(e.target.value)}
+              required
+            />
+          </Field>
+          <Field label="Institución" required>
+            <Select
+              value={formInstitucionId}
+              onChange={e => setFormInstitucionId(e.target.value)}
+              required
             >
-              ×
-            </button>
-            <h3 className="text-xl font-bold mb-4 text-blue-700">
-              {modalMode === "edit" ? "Editar administrador" : "Nuevo administrador"}
-            </h3>
-            <form onSubmit={handleGuardar} className="space-y-4">
-              {modalMode === "create" && (
-                <div>
-                  <label className="block text-sm font-semibold mb-1 text-blue-700">Email</label>
-                  <input
-                    type="email"
-                    className="w-full rounded-xl border border-gray-200 px-3 py-2"
-                    value={formEmail}
-                    onChange={e => setFormEmail(e.target.value)}
-                    required
-                  />
-                </div>
-              )}
-              {modalMode === "edit" && (
-                <div>
-                  <label className="block text-sm font-semibold mb-1 text-blue-700">Email</label>
-                  <input
-                    type="email"
-                    className="w-full rounded-xl border border-gray-200 px-3 py-2 bg-gray-100"
-                    value={formEmail}
-                    disabled
-                  />
-                </div>
-              )}
-              <div>
-                <label className="block text-sm font-semibold mb-1 text-blue-700">
-                  Nombre completo
-                </label>
-                <input
-                  type="text"
-                  className="w-full rounded-xl border border-gray-200 px-3 py-2"
-                  value={formNombre}
-                  onChange={e => setFormNombre(e.target.value)}
-                  required
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-semibold mb-1 text-blue-700">Institución</label>
-                <select
-                  className="w-full rounded-xl border border-gray-200 px-3 py-2"
-                  value={formInstitucionId}
-                  onChange={e => setFormInstitucionId(e.target.value)}
-                  required
-                >
-                  <option value="">Seleccionar...</option>
-                  {instituciones.map(inst => (
-                    <option key={inst.id} value={inst.id}>
-                      {inst.nombre}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              {formError && <div className="text-red-500 text-sm">{formError}</div>}
-              <div className="flex gap-2 justify-end mt-4">
-                <button
-                  type="button"
-                  className="px-4 py-2 rounded-xl bg-gray-100 text-gray-700 font-semibold hover:bg-gray-200"
-                  onClick={cerrarModal}
-                  disabled={formLoading}
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="submit"
-                  className="px-4 py-2 rounded-xl bg-blue-500 text-white font-semibold hover:bg-blue-600"
-                  disabled={formLoading}
-                >
-                  {formLoading ? "Guardando..." : modalMode === "edit" ? "Guardar" : "Crear"}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+              <option value="">Seleccionar...</option>
+              {instituciones.map(inst => (
+                <option key={inst.id} value={inst.id}>
+                  {inst.nombre}
+                </option>
+              ))}
+            </Select>
+          </Field>
+          {formError && <Alert variant="error" className="mb-0">{formError}</Alert>}
+        </form>
+      </Modal>
 
-      {tempPasswordModal && (
-        <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-[60]">
-          <div className="bg-white rounded-2xl shadow-xl p-8 w-full max-w-md">
-            <h3 className="text-lg font-bold text-green-700 mb-3">Contraseña temporal</h3>
-            <p className="text-sm text-gray-700 whitespace-pre-wrap mb-4 font-mono bg-gray-50 p-3 rounded-lg">
-              {tempPasswordModal}
-            </p>
-            <button
-              type="button"
-              className="w-full px-4 py-2 rounded-xl bg-blue-500 text-white font-semibold hover:bg-blue-600"
-              onClick={() => setTempPasswordModal(null)}
-            >
-              Entendido
-            </button>
-          </div>
-        </div>
-      )}
-    </div>
+      <Modal
+        open={!!tempPasswordModal}
+        onClose={() => setTempPasswordModal(null)}
+        title="Contraseña temporal"
+        size="sm"
+        footer={
+          <Button fullWidth onClick={() => setTempPasswordModal(null)}>
+            Entendido
+          </Button>
+        }
+      >
+        <p className="text-sm whitespace-pre-wrap font-mono bg-neutral-gray-light p-4 rounded-lg border">
+          {tempPasswordModal}
+        </p>
+      </Modal>
+    </Card>
   );
 }

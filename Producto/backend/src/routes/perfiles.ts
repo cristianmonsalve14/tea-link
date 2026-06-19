@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { crearPerfil, obtenerPerfiles, obtenerPerfilPorId, actualizarPerfil, eliminarPerfil } from '../controllers/perfilController';
+import { crearPerfil, obtenerPerfiles, obtenerPerfilPorId, actualizarPerfil, eliminarPerfil, vincularMiembroEquipo } from '../controllers/perfilController';
 import { authenticateToken, authorizeRoles } from '../middleware/authMiddleware';
 
 const router = Router();
@@ -10,6 +10,14 @@ router.get('/', authenticateToken, obtenerPerfiles);
 
 // Crear perfil
 router.post('/', authenticateToken, crearPerfil);
+
+// Vincular miembro del equipo (médico, educador externo, etc.)
+router.post(
+  '/:id/vincular-equipo',
+  authenticateToken,
+  authorizeRoles('ADMINISTRADOR'),
+  vincularMiembroEquipo
+);
 
 // Obtener perfil por ID
 router.get('/:id', authenticateToken, obtenerPerfilPorId);

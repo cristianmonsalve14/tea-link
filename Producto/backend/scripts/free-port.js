@@ -1,41 +1,92 @@
 /**
- * Libera el puerto 3000 antes de arrancar el backend.
+ * Libera el puerto del backend antes de arrancar (Windows/Linux/macOS).
  */
 const path = require('path');
+const { execSync } = require('child_process');
 
 const port = Number(process.env.PORT || 3000);
 
+const POWERSHELL =
+  process.platform === 'win32'
+    ? path.join(
+        process.env.SystemRoot || 'C:\\Windows',
+        'System32',
+        'WindowsPowerShell',
+        'v1.0',
+        'powershell.exe'
+      )
+    : 'powershell';
+
+const NETSTAT =
+  process.platform === 'win32'
+    ? path.join(process.env.SystemRoot || 'C:\\Windows', 'System32', 'NETSTAT.EXE')
+    : 'netstat';
+
 async function main() {
-  try {
-    const killPort = require('kill-port');
-    await killPort(port, 'tcp');
-    console.log(`[free-port] Puerto ${port} liberado`);
-  } catch (err) {
-    const msg = String(err?.message || err);
-    if (/not found|no process/i.test(msg)) {
-      console.log(`[free-port] Puerto ${port} ya estaba libre`);
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    await killListeners(port);
+    await sleep(1000);
+    const busy = portInUse(port);
+    if (!busy) {
+      console.log(`[free-port] Puerto ${port} liberado`);
       return;
     }
-    console.warn(`[free-port] kill-port: ${msg}`);
-    await fallbackWindows(port);
+    console.warn(`[free-port] Intento ${attempt}/3: puerto ${port} aún en uso`);
   }
 
-  await sleep(1500);
+  console.error(`[free-port] No se pudo liberar el puerto ${port}.`);
+  console.error('  Cierre otras terminales con "npm run dev" del backend o ejecute:');
+  console.error('  npm run dev:kill-port');
+  process.exit(1);
 }
 
 function sleep(ms) {
   return new Promise(r => setTimeout(r, ms));
 }
 
-async function fallbackWindows(port) {
-  if (process.platform !== 'win32') return;
+async function killListeners(targetPort) {
+  try {
+    const killPort = require('kill-port');
+    await killPort(targetPort, 'tcp');
+  } catch (err) {
+    const msg = String(err?.message || err);
+    if (!/not found|no process/i.test(msg)) {
+      console.warn(`[free-port] kill-port: ${msg}`);
+    }
+  }
 
-  const { execSync } = require('child_process');
-  const myPid = process.pid;
-  const netstat = path.join(process.env.SystemRoot || 'C:\\Windows', 'System32', 'NETSTAT.EXE');
+  if (process.platform === 'win32') {
+    fallbackWindows(targetPort);
+  }
+}
+
+function portInUse(targetPort) {
+  if (process.platform === 'win32') {
+    try {
+      const out = execSync(`"${NETSTAT}" -ano | findstr :${targetPort}`, {
+        encoding: 'utf8',
+        shell: true,
+        stdio: ['pipe', 'pipe', 'ignore']
+      });
+      return /LISTENING/i.test(out);
+    } catch {
+      return false;
+    }
+  }
 
   try {
-    const out = execSync(`"${netstat}" -ano | findstr :${port}`, {
+    execSync(`lsof -i :${targetPort} -sTCP:LISTEN`, { stdio: 'ignore' });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function fallbackWindows(targetPort) {
+  const myPid = process.pid;
+
+  try {
+    const out = execSync(`"${NETSTAT}" -ano | findstr :${targetPort}`, {
       encoding: 'utf8',
       shell: true,
       stdio: ['pipe', 'pipe', 'ignore']
@@ -48,7 +99,7 @@ async function fallbackWindows(port) {
     }
     for (const pid of pids) {
       try {
-        execSync(`taskkill /PID ${pid} /F`, { stdio: 'ignore', shell: true });
+        execSync(`taskkill /PID ${pid} /F /T`, { stdio: 'ignore', shell: true });
         console.log(`[free-port] Cerrado PID ${pid}`);
       } catch {
         /* ignore */
@@ -60,7 +111,7 @@ async function fallbackWindows(port) {
 
   try {
     execSync(
-      `powershell -NoProfile -Command "Get-NetTCPConnection -LocalPort ${port} -ErrorAction SilentlyContinue | ForEach-Object { Stop-Process -Id $_.OwningProcess -Force -ErrorAction SilentlyContinue }"`,
+      `"${POWERSHELL}" -NoProfile -Command "Get-NetTCPConnection -LocalPort ${targetPort} -State Listen -ErrorAction SilentlyContinue | ForEach-Object { Stop-Process -Id $_.OwningProcess -Force -ErrorAction SilentlyContinue }"`,
       { stdio: 'ignore', shell: true }
     );
   } catch {

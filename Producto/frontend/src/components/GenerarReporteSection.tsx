@@ -1,5 +1,16 @@
-import { useCallback, useEffect, useState } from "react";
-import { FaDownload, FaFileAlt, FaSyncAlt, FaTrash } from "react-icons/fa";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { FaDownload, FaEye, FaFileAlt, FaSyncAlt, FaTrash } from "react-icons/fa";
+import { Card } from "./ui/Card";
+import { Button } from "./ui/Button";
+import { Alert } from "./ui/Alert";
+import { Modal } from "./ui/Modal";
+import { Field } from "./ui/Field";
+import { Input } from "./ui/Input";
+import { Select } from "./ui/Select";
+import { useRoleTheme } from "../context/RoleThemeContext";
+import { cn } from "../theme/cn";
+import { CATEGORIA_INFO } from "../config/observacionUi";
+import type { CategoriaObs } from "../config/rolPanelConfig";
 
 type Perfil = { id: number; nombre: string };
 
@@ -19,6 +30,32 @@ type ReporteItem = {
   created_at: string;
   _count: { observaciones: number };
 };
+
+type ReporteDetalleObs = {
+  id: number;
+  titulo: string;
+  descripcion: string;
+  categoria: string;
+  fecha_evento: string;
+  perfil: { nombre: string };
+  autor: { nombre_completo: string; rol: string };
+};
+
+type ReporteDetalle = {
+  id: number;
+  titulo: string;
+  fecha_inicio: string;
+  fecha_fin: string;
+  formato: string;
+  created_at: string;
+  creador: { nombre_completo: string; email?: string | null };
+  observaciones: Array<{ observacion: ReporteDetalleObs }>;
+};
+
+function categoriaLabel(cat: string) {
+  const key = cat.toUpperCase() as CategoriaObs;
+  return CATEGORIA_INFO[key]?.label ?? cat;
+}
 
 function parseApiError(errorData: Record<string, unknown>, fallback: string): string {
   if (Array.isArray(errorData?.error)) {
@@ -42,6 +79,7 @@ function formatFecha(v: string) {
 }
 
 export function GenerarReporteSection() {
+  const theme = useRoleTheme();
   const [perfiles, setPerfiles] = useState<Perfil[]>([]);
   const [perfilId, setPerfilId] = useState("");
   const [observaciones, setObservaciones] = useState<Observacion[]>([]);
@@ -60,6 +98,9 @@ export function GenerarReporteSection() {
   const [eliminandoId, setEliminandoId] = useState<number | null>(null);
   const [descargandoId, setDescargandoId] = useState<number | null>(null);
   const [downloadError, setDownloadError] = useState<string | null>(null);
+  const [verDetalle, setVerDetalle] = useState<ReporteDetalle | null>(null);
+  const [cargandoDetalleId, setCargandoDetalleId] = useState<number | null>(null);
+  const [detalleError, setDetalleError] = useState<string | null>(null);
 
   const token = () => localStorage.getItem("token");
 
@@ -140,12 +181,20 @@ export function GenerarReporteSection() {
     fetchMisReportes();
   }, [fetchMisReportes]);
 
-  const observacionesFiltradas = observaciones.filter(obs => {
+  const observacionesOrdenadas = useMemo(
+    () =>
+      [...observaciones].sort(
+        (a, b) => new Date(b.fecha_evento).getTime() - new Date(a.fecha_evento).getTime()
+      ),
+    [observaciones]
+  );
+
+  const fueraDePeriodo = (obs: Observacion) => {
     const f = new Date(obs.fecha_evento);
-    if (fechaDesde && f < new Date(fechaDesde)) return false;
-    if (fechaHasta && f > new Date(fechaHasta + "T23:59:59")) return false;
-    return true;
-  });
+    if (fechaDesde && f < new Date(fechaDesde)) return true;
+    if (fechaHasta && f > new Date(fechaHasta + "T23:59:59")) return true;
+    return false;
+  };
 
   const toggleObs = (id: number) => {
     setSelectedIds(prev => {
@@ -157,10 +206,10 @@ export function GenerarReporteSection() {
   };
 
   const toggleAll = () => {
-    if (selectedIds.size === observacionesFiltradas.length) {
+    if (selectedIds.size === observacionesOrdenadas.length) {
       setSelectedIds(new Set());
     } else {
-      setSelectedIds(new Set(observacionesFiltradas.map(o => o.id)));
+      setSelectedIds(new Set(observacionesOrdenadas.map(o => o.id)));
     }
   };
 
@@ -219,13 +268,39 @@ export function GenerarReporteSection() {
     }
   };
 
+  const handleVer = async (id: number) => {
+    setDetalleError(null);
+    setCargandoDetalleId(id);
+    try {
+      const res = await fetch(`http://localhost:3000/api/reportes/${id}`, {
+        headers: { Authorization: `Bearer ${token()}` }
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setDetalleError(parseApiError(data, "Error al cargar el informe"));
+        return;
+      }
+      const reporte = data.reporte as ReporteDetalle;
+      reporte.observaciones.sort(
+        (a, b) =>
+          new Date(b.observacion.fecha_evento).getTime() -
+          new Date(a.observacion.fecha_evento).getTime()
+      );
+      setVerDetalle(reporte);
+    } catch {
+      setDetalleError("Error de red al cargar el informe");
+    } finally {
+      setCargandoDetalleId(null);
+    }
+  };
+
   const handleDescargar = async (id: number, formatoReporte: string) => {
     setDownloadError(null);
     setDescargandoId(id);
     try {
       const authToken = token();
       if (!authToken) {
-        setDownloadError("Sesion expirada. Vuelva a iniciar sesion.");
+        setDownloadError("Sesión expirada. Vuelva a iniciar sesión.");
         return;
       }
 
@@ -255,8 +330,8 @@ export function GenerarReporteSection() {
             pareceJson
               ? `Error del servidor: ${preview}`
               : preview.startsWith("TEA-LINK")
-                ? "El backend en el puerto 3000 es una version antigua (devuelve texto). Cierre ese proceso, ejecute npm run dev en Producto/backend y vuelva a intentar."
-                : `Respuesta invalida (${preview.slice(0, 60)}...). Verifique que Producto/backend este corriendo con npm run dev.`
+                ? "El backend devuelve texto en lugar de PDF. Reinicie el backend con npm run dev."
+                : `Respuesta inválida (${preview.slice(0, 60)}...).`
           );
           return;
         }
@@ -278,9 +353,7 @@ export function GenerarReporteSection() {
       a.remove();
       setTimeout(() => URL.revokeObjectURL(url), 2000);
     } catch {
-      setDownloadError(
-        "No se pudo conectar al servidor. Verifique que el backend este en ejecucion (npm run dev)."
-      );
+      setDownloadError("No se pudo conectar con el servidor.");
     } finally {
       setDescargandoId(null);
     }
@@ -309,207 +382,299 @@ export function GenerarReporteSection() {
 
   return (
     <div className="space-y-6">
-      <section className="bg-white rounded-2xl shadow-lg p-6 border border-blue-100">
-        <h2 className="text-xl font-semibold text-blue-700 flex items-center gap-2 mb-4">
-          <FaFileAlt /> Generar reporte
-        </h2>
+      <Card
+        title={
+          <>
+            <FaFileAlt /> Generar reporte
+          </>
+        }
+      >
+        {error && <Alert variant="error">{error}</Alert>}
+        {success && <Alert variant="success">{success}</Alert>}
 
-        {error && (
-          <div className="mb-4 text-red-600 text-sm bg-red-50 border border-red-200 rounded-lg px-3 py-2">
-            {error}
-          </div>
-        )}
-        {success && (
-          <div className="mb-4 text-green-700 text-sm bg-green-50 border border-green-200 rounded-lg px-3 py-2">
-            {success}
-          </div>
-        )}
+        <Alert variant="info" className="mb-4">
+          <strong>Crear informe</strong> guarda un resumen con las observaciones que elija, el
+          periodo y el formato (PDF o Excel). Luego puede <strong>ver</strong> el contenido en
+          pantalla o <strong>descargarlo</strong> desde &quot;Mis reportes&quot;.
+        </Alert>
 
         <form onSubmit={handleCrear} className="space-y-4">
           <div className="grid sm:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-semibold text-blue-700 mb-1">
-                Estudiante / perfil
-              </label>
-              <select
-                className="w-full border rounded-lg px-3 py-2"
-                value={perfilId}
-                onChange={e => setPerfilId(e.target.value)}
-              >
+            <Field label="Estudiante / perfil">
+              <Select value={perfilId} onChange={e => setPerfilId(e.target.value)}>
                 <option value="">Seleccionar...</option>
                 {perfiles.map(p => (
                   <option key={p.id} value={p.id}>
                     {p.nombre}
                   </option>
                 ))}
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm font-semibold text-blue-700 mb-1">
-                Título del reporte *
-              </label>
-              <input
-                className="w-full border rounded-lg px-3 py-2"
+              </Select>
+            </Field>
+            <Field label="Título del reporte" required>
+              <Input
                 value={tituloReporte}
                 onChange={e => setTituloReporte(e.target.value)}
                 placeholder="Ej. Informe trimestral"
                 required
               />
-            </div>
+            </Field>
           </div>
 
           <div className="grid sm:grid-cols-3 gap-4">
-            <div>
-              <label className="block text-sm font-medium mb-1">Período desde *</label>
-              <input
+            <Field label="Período desde" required>
+              <Input
                 type="date"
-                className="w-full border rounded-lg px-3 py-2"
                 value={fechaDesde}
                 onChange={e => setFechaDesde(e.target.value)}
                 required
               />
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-1">Período hasta *</label>
-              <input
+            </Field>
+            <Field label="Período hasta" required>
+              <Input
                 type="date"
-                className="w-full border rounded-lg px-3 py-2"
                 value={fechaHasta}
                 onChange={e => setFechaHasta(e.target.value)}
                 required
               />
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-1">Formato</label>
-              <select
-                className="w-full border rounded-lg px-3 py-2"
+            </Field>
+            <Field label="Formato">
+              <Select
                 value={formato}
                 onChange={e => setFormato(e.target.value as "PDF" | "EXCEL")}
               >
                 <option value="PDF">PDF</option>
                 <option value="EXCEL">Excel (CSV)</option>
-              </select>
-            </div>
+              </Select>
+            </Field>
           </div>
 
           <div>
             <div className="flex justify-between items-center mb-2">
-              <label className="text-sm font-semibold text-blue-700">
+              <span className={cn("text-sm font-semibold", theme.accentText)}>
                 Observaciones a incluir *
-              </label>
-              {observacionesFiltradas.length > 0 && (
+              </span>
+              {observacionesOrdenadas.length > 0 && (
                 <button
                   type="button"
-                  className="text-sm text-blue-600 hover:underline"
+                  className={cn("text-sm font-medium", theme.link)}
                   onClick={toggleAll}
                 >
-                  {selectedIds.size === observacionesFiltradas.length
+                  {selectedIds.size === observacionesOrdenadas.length
                     ? "Desmarcar todas"
                     : "Marcar todas"}
                 </button>
               )}
             </div>
             {loadingObs ? (
-              <p className="text-gray-500 text-sm">Cargando observaciones...</p>
-            ) : observacionesFiltradas.length === 0 ? (
-              <p className="text-gray-500 text-sm py-4 text-center border rounded-lg bg-gray-50">
-                No hay observaciones para este perfil en el rango seleccionado.
+              <p className="text-neutral-gray-medium text-sm">Cargando observaciones...</p>
+            ) : observacionesOrdenadas.length === 0 ? (
+              <p className="text-neutral-gray-medium text-sm py-4 text-center border rounded-lg bg-neutral-gray-light">
+                No hay observaciones para este perfil. Registre observaciones en la pestaña
+                anterior o elija otro estudiante.
               </p>
             ) : (
-              <ul className="max-h-48 overflow-y-auto border rounded-lg divide-y">
-                {observacionesFiltradas.map(obs => (
-                  <li key={obs.id} className="flex items-start gap-3 px-3 py-2 hover:bg-gray-50">
+              <ul className="max-h-56 overflow-y-auto border border-neutral-gray-medium/30 rounded-lg divide-y">
+                {observacionesOrdenadas.map(obs => {
+                  const fuera = fueraDePeriodo(obs);
+                  return (
+                  <li
+                    key={obs.id}
+                    className={cn(
+                      "flex items-start gap-3 px-3 py-2 hover:bg-neutral-gray-light",
+                      fuera && "opacity-70"
+                    )}
+                  >
                     <input
                       type="checkbox"
-                      className="mt-1"
+                      className="mt-1 min-w-4 min-h-4"
                       checked={selectedIds.has(obs.id)}
                       onChange={() => toggleObs(obs.id)}
                     />
                     <div className="text-sm">
                       <span className="font-medium">{obs.titulo}</span>
-                      <span className="text-gray-500 ml-2">
+                      <span className="text-neutral-gray-medium ml-2">
                         {obs.categoria} · {formatFecha(obs.fecha_evento)}
                       </span>
+                      {fuera && fechaDesde && fechaHasta && (
+                        <span className="block text-xs text-amber-700 mt-0.5">
+                          Fuera del período indicado arriba
+                        </span>
+                      )}
                     </div>
                   </li>
-                ))}
+                  );
+                })}
               </ul>
             )}
           </div>
 
-          <button
-            type="submit"
-            disabled={creating || !perfilId || selectedIds.size === 0}
-            className="px-5 py-2 rounded-xl bg-blue-500 text-white font-semibold hover:bg-blue-600 disabled:opacity-50"
-          >
+          <Button type="submit" disabled={creating || !perfilId || selectedIds.size === 0}>
             {creating ? "Generando..." : "Crear reporte"}
-          </button>
+          </Button>
         </form>
-      </section>
+      </Card>
 
-      <section className="bg-white rounded-2xl shadow-lg p-6 border border-blue-100">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xl font-semibold text-blue-700">Mis reportes</h2>
+      <Card
+        title="Mis reportes"
+        action={
           <button
             type="button"
             onClick={() => fetchMisReportes()}
-            className="flex items-center gap-1 text-sm text-blue-600 hover:underline"
+            className={cn("flex items-center gap-1 text-sm font-medium", theme.link)}
           >
             <FaSyncAlt /> Actualizar
           </button>
-        </div>
-
-        {downloadError && (
-          <div className="mb-4 text-red-600 text-sm bg-red-50 border border-red-200 rounded-lg px-3 py-2">
-            {downloadError}
-          </div>
-        )}
+        }
+      >
+        {downloadError && <Alert variant="error">{downloadError}</Alert>}
+        {detalleError && <Alert variant="error">{detalleError}</Alert>}
 
         {loadingList ? (
-          <p className="text-gray-500">Cargando...</p>
+          <p className="text-neutral-gray-medium">Cargando...</p>
         ) : misReportes.length === 0 ? (
-          <p className="text-gray-500 text-center py-6">Aún no ha creado reportes.</p>
+          <p className="text-neutral-gray-medium text-center py-6">Aún no ha creado reportes.</p>
         ) : (
           <ul className="space-y-3">
             {misReportes.map(r => (
               <li
                 key={r.id}
-                className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border rounded-xl p-4 bg-gray-50"
+                className={cn(
+                  "flex flex-col sm:flex-row sm:items-center justify-between gap-2 border rounded-xl p-4",
+                  theme.accentBorder,
+                  theme.accentBgMuted
+                )}
               >
                 <div>
-                  <p className="font-semibold text-gray-900">{r.titulo}</p>
-                  <p className="text-sm text-gray-600">
+                  <p className="font-semibold">{r.titulo}</p>
+                  <p className="text-sm text-neutral-gray-medium">
                     {formatFecha(r.fecha_inicio)} – {formatFecha(r.fecha_fin)} · {r.formato} ·{" "}
                     {r._count.observaciones} observación(es)
                   </p>
-                  <p className="text-xs text-gray-400">
-                    Creado: {formatFecha(r.created_at)}
-                  </p>
                 </div>
-                <div className="flex gap-2 shrink-0">
-                  <button
-                    type="button"
+                <div className="flex flex-wrap gap-2 shrink-0">
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    disabled={cargandoDetalleId === r.id}
+                    onClick={() => handleVer(r.id)}
+                  >
+                    <FaEye />
+                    {cargandoDetalleId === r.id ? "..." : "Ver"}
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="secondary"
                     disabled={descargandoId === r.id}
                     onClick={() => handleDescargar(r.id, r.formato)}
-                    className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-green-100 text-green-800 text-sm font-medium hover:bg-green-200 disabled:opacity-50"
                   >
-                    <FaDownload />{" "}
-                    {descargandoId === r.id ? "Descargando..." : "Descargar"}
-                  </button>
-                  <button
-                    type="button"
+                    <FaDownload />
+                    {descargandoId === r.id ? "..." : "Descargar"}
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="danger"
                     disabled={eliminandoId === r.id}
                     onClick={() => handleEliminar(r.id, r.titulo)}
-                    className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-red-100 text-red-700 text-sm hover:bg-red-200 disabled:opacity-50"
                   >
                     <FaTrash /> Eliminar
-                  </button>
+                  </Button>
                 </div>
               </li>
             ))}
           </ul>
         )}
-      </section>
+      </Card>
+
+      <Modal
+        open={!!verDetalle}
+        onClose={() => setVerDetalle(null)}
+        title={verDetalle?.titulo ?? "Informe"}
+        size="lg"
+        footer={
+          verDetalle && (
+            <div className="flex flex-wrap gap-2 justify-end">
+              <Button variant="secondary" onClick={() => setVerDetalle(null)}>
+                Cerrar
+              </Button>
+              <Button
+                onClick={() => {
+                  handleDescargar(verDetalle.id, verDetalle.formato);
+                }}
+                disabled={descargandoId === verDetalle.id}
+              >
+                <FaDownload /> Descargar {verDetalle.formato}
+              </Button>
+            </div>
+          )
+        }
+      >
+        {verDetalle && (
+          <div className="space-y-4">
+            <div className="grid sm:grid-cols-2 gap-3 text-sm">
+              <p>
+                <span className="text-neutral-gray-medium">Periodo: </span>
+                {formatFecha(verDetalle.fecha_inicio)} – {formatFecha(verDetalle.fecha_fin)}
+              </p>
+              <p>
+                <span className="text-neutral-gray-medium">Formato: </span>
+                {verDetalle.formato}
+              </p>
+              <p>
+                <span className="text-neutral-gray-medium">Creado: </span>
+                {formatFecha(verDetalle.created_at)}
+              </p>
+              <p>
+                <span className="text-neutral-gray-medium">Por: </span>
+                {verDetalle.creador.nombre_completo}
+              </p>
+              {verDetalle.observaciones[0]?.observacion.perfil && (
+                <p className="sm:col-span-2">
+                  <span className="text-neutral-gray-medium">Perfil: </span>
+                  {verDetalle.observaciones[0].observacion.perfil.nombre}
+                </p>
+              )}
+            </div>
+
+            <div>
+              <p className={cn("text-sm font-semibold mb-2", theme.accentText)}>
+                Observaciones incluidas ({verDetalle.observaciones.length})
+              </p>
+              <ul className="space-y-3 max-h-[50vh] overflow-y-auto pr-1">
+                {verDetalle.observaciones.map(({ observacion: obs }, i) => (
+                  <li
+                    key={obs.id}
+                    className={cn(
+                      "border rounded-xl p-4 text-sm",
+                      theme.accentBorder,
+                      theme.accentBgMuted
+                    )}
+                  >
+                    <div className="flex flex-wrap items-center gap-2 mb-1">
+                      <span className="text-xs text-neutral-gray-medium">#{i + 1}</span>
+                      <span
+                        className={cn(
+                          "text-xs font-semibold px-2 py-0.5 rounded-full",
+                          theme.accentBgSubtle,
+                          theme.accentText
+                        )}
+                      >
+                        {categoriaLabel(obs.categoria)}
+                      </span>
+                    </div>
+                    <h4 className="font-semibold text-neutral-gray">{obs.titulo}</h4>
+                    <p className="text-neutral-gray-medium mt-2 whitespace-pre-wrap">
+                      {obs.descripcion}
+                    </p>
+                    <p className="text-xs text-neutral-gray-medium mt-2 pt-2 border-t border-neutral-gray-medium/20">
+                      {formatFecha(obs.fecha_evento)} · {obs.autor.nombre_completo}
+                    </p>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        )}
+      </Modal>
     </div>
   );
 }

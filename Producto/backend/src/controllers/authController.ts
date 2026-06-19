@@ -45,7 +45,10 @@ export const resetAdminPasswordBySuperadmin = async (req: AuthRequest, res: Resp
     // Generar nueva contraseña temporal
     const tempPassword = crypto.randomBytes(8).toString('base64url');
     const password_hash = await bcrypt.hash(tempPassword, 10);
-    await prisma.usuario.update({ where: { id: Number(id) }, data: { password_hash } });
+    await prisma.usuario.update({
+      where: { id: Number(id) },
+      data: { password_hash, must_change_password: true }
+    });
     // Auditoría
     await prisma.auditoriaAdmin.create({
       data: {
@@ -123,17 +126,18 @@ export const createAdministradorBySuperadmin = async (req: AuthRequest, res: Res
     if (!user || user.rol !== 'SUPERADMIN') {
       return res.status(403).json({ error: 'Solo SUPERADMIN puede crear administradores.' });
     }
-    const { email, nombre_completo, institucion_id } = req.body;
-    if (!email || !nombre_completo || !institucion_id) {
+    const { email: emailRaw, nombre_completo, institucion_id } = req.body;
+    if (!emailRaw || !nombre_completo || !institucion_id) {
       return res.status(400).json({ error: 'Faltan datos obligatorios.' });
     }
-    // Verificar que la institución existe
+    const email = normalizeEmail(String(emailRaw));
     const institucion = await prisma.institucion.findUnique({ where: { id: Number(institucion_id) } });
     if (!institucion) {
       return res.status(404).json({ error: 'Institución no encontrada.' });
     }
-    // Verificar que el email no esté en uso
-    const existing = await prisma.usuario.findUnique({ where: { email } });
+    const existing = await prisma.usuario.findFirst({
+      where: { email: { equals: email, mode: 'insensitive' } }
+    });
     if (existing) {
       return res.status(409).json({ error: 'El correo ya está registrado.' });
     }
@@ -147,7 +151,8 @@ export const createAdministradorBySuperadmin = async (req: AuthRequest, res: Res
         password_hash,
         nombre_completo,
         rol: 'ADMINISTRADOR',
-        institucion_id: Number(institucion_id)
+        institucion_id: Number(institucion_id),
+        must_change_password: true
       }
     });
     // Auditoría
@@ -176,6 +181,7 @@ import {
   rolesRegistroPorTipoInstitucion,
   etiquetaEquipoInstitucion
 } from '../utils/institucionRoles';
+import { vincularUsuarioAPerfilesInstitucion } from '../utils/perfilAccess';
 
 const prisma = new PrismaClient();
 
@@ -358,8 +364,12 @@ export const getUltimasAccionesAuditoria = async (_req: Request, res: Response) 
 
 const ROLES_REGISTRO_ADMIN = ['FAMILIA', 'EDUCADOR', 'PROFESIONAL', 'MEDICO'] as const;
 
+function normalizeEmail(email: string): string {
+  return email.trim().toLowerCase();
+}
+
 const registerSchema = z.object({
-  email: z.string().email(),
+  email: z.string().email().transform(normalizeEmail),
   password: z.string().min(6).optional(),
   nombre_completo: z.string().min(1),
   rol: z.enum(ROLES_REGISTRO_ADMIN)
@@ -468,35 +478,91 @@ export const register = async (req: AuthRequest, res: Response) => {
       });
     }
 
-    const existingUser = await prisma.usuario.findUnique({ where: { email: data.email } });
-    if (existingUser) {
-      return res.status(409).json({ error: 'El correo ya está registrado.' });
-    }
+    const existingUser = await prisma.usuario.findFirst({
+      where: { email: { equals: data.email, mode: 'insensitive' } }
+    });
+
     const tempPassword = data.password ?? crypto.randomBytes(8).toString('base64url');
     const password_hash = await bcrypt.hash(tempPassword, 10);
+
+    if (existingUser) {
+      if (existingUser.institucion_id === institucion_id) {
+        return res.status(409).json({
+          error: 'El correo ya está registrado en su institución.'
+        });
+      }
+      if (existingUser.institucion_id != null) {
+        return res.status(409).json({
+          error: 'El correo ya está registrado en otra institución.'
+        });
+      }
+      if (existingUser.rol !== data.rol) {
+        return res.status(409).json({
+          error: `El correo ya existe con otro rol (${existingUser.rol}). Use otro correo.`
+        });
+      }
+      const user = await prisma.usuario.update({
+        where: { id: existingUser.id },
+        data: {
+          nombre_completo: data.nombre_completo,
+          password_hash,
+          institucion_id,
+          must_change_password: !data.password
+        }
+      });
+      try {
+        await prisma.auditoriaAdmin.create({
+          data: {
+            admin_id: admin.userId,
+            accion: 'REASIGNAR_USUARIO_INSTITUCION',
+            entidad: 'usuario',
+            entidad_id: user.id,
+            detalles: `Usuario ${user.rol} reasignado: ${user.email}`,
+            ip_address: req.ip || null
+          }
+        });
+      } catch (auditErr) {
+        console.warn('[REGISTER] Auditoría no registrada:', auditErr);
+      }
+      await vincularUsuarioAPerfilesInstitucion(user.id, institucion_id, user.rol);
+      return res.status(201).json({
+        message: 'Usuario registrado correctamente',
+        user: {
+          id: user.id,
+          email: user.email,
+          nombre_completo: user.nombre_completo,
+          rol: user.rol,
+          institucion_id: user.institucion_id
+        },
+        tempPassword: data.password ? undefined : tempPassword
+      });
+    }
+
     const user = await prisma.usuario.create({
       data: {
         email: data.email,
         password_hash,
         nombre_completo: data.nombre_completo,
         rol: data.rol,
-        institucion_id
+        institucion_id,
+        must_change_password: !data.password
       }
     });
     try {
-    await prisma.auditoriaAdmin.create({
-      data: {
-        admin_id: admin.userId,
-        accion: 'CREAR_USUARIO_INSTITUCION',
-        entidad: 'usuario',
-        entidad_id: user.id,
-        detalles: `Usuario ${user.rol} creado: ${user.email}`,
-        ip_address: req.ip || null
-      }
-    });
+      await prisma.auditoriaAdmin.create({
+        data: {
+          admin_id: admin.userId,
+          accion: 'CREAR_USUARIO_INSTITUCION',
+          entidad: 'usuario',
+          entidad_id: user.id,
+          detalles: `Usuario ${user.rol} creado: ${user.email}`,
+          ip_address: req.ip || null
+        }
+      });
     } catch (auditErr) {
       console.warn('[REGISTER] Auditoría no registrada:', auditErr);
     }
+    await vincularUsuarioAPerfilesInstitucion(user.id, institucion_id, user.rol);
     return res.status(201).json({
       message: 'Usuario registrado correctamente',
       user: {
@@ -517,16 +583,15 @@ export const register = async (req: AuthRequest, res: Response) => {
 };
 
 const loginSchema = z.object({
-  email: z.string().email(),
+  email: z.string().email().transform(normalizeEmail),
   password: z.string().min(6)
 });
 
 export const login = async (req: Request, res: Response) => {
   try {
     const data = loginSchema.parse(req.body);
-    // Buscar usuario y su institución
-    const user = await prisma.usuario.findUnique({
-      where: { email: data.email },
+    const user = await prisma.usuario.findFirst({
+      where: { email: { equals: data.email, mode: 'insensitive' } },
       select: {
         id: true,
         email: true,
@@ -534,6 +599,7 @@ export const login = async (req: Request, res: Response) => {
         rol: true,
         institucion_id: true,
         password_hash: true,
+        must_change_password: true,
         institucion: {
           select: {
             nombre: true,
@@ -563,6 +629,87 @@ export const login = async (req: Request, res: Response) => {
       return res.status(400).json({ error: error.issues });
     }
     return res.status(500).json({ error: 'Error interno del servidor' });
+  }
+};
+
+const cambiarPasswordInicialSchema = z.object({
+  password_actual: z.string().min(6),
+  password_nueva: z.string().min(8)
+});
+
+/** Primer ingreso: el usuario define su contraseña definitiva */
+export const cambiarPasswordInicial = async (req: AuthRequest, res: Response) => {
+  try {
+    const userId = req.user?.userId;
+    if (!userId) {
+      return res.status(401).json({ error: 'No autenticado' });
+    }
+
+    const data = cambiarPasswordInicialSchema.parse(req.body);
+
+    const user = await prisma.usuario.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+        email: true,
+        nombre_completo: true,
+        rol: true,
+        institucion_id: true,
+        password_hash: true,
+        must_change_password: true,
+        institucion: { select: { nombre: true, tipo: true } }
+      }
+    });
+
+    if (!user) {
+      return res.status(404).json({ error: 'Usuario no encontrado' });
+    }
+
+    if (!user.must_change_password) {
+      return res.status(400).json({
+        error: 'Su cuenta no requiere cambio de contraseña inicial.'
+      });
+    }
+
+    const valid = await bcrypt.compare(data.password_actual, user.password_hash);
+    if (!valid) {
+      return res.status(401).json({ error: 'La contraseña actual no es correcta' });
+    }
+
+    if (data.password_actual === data.password_nueva) {
+      return res.status(400).json({
+        error: 'La nueva contraseña debe ser distinta a la temporal'
+      });
+    }
+
+    const password_hash = await bcrypt.hash(data.password_nueva, 10);
+    await prisma.usuario.update({
+      where: { id: userId },
+      data: { password_hash, must_change_password: false }
+    });
+
+    const token = jwt.sign(
+      { userId: user.id, rol: user.rol, institucion_id: user.institucion_id },
+      process.env.JWT_SECRET || 'secret',
+      { expiresIn: '8h' }
+    );
+
+    const { password_hash: _ph, ...userData } = user;
+    return res.json({
+      message: 'Contraseña actualizada. Ya puede usar el panel con normalidad.',
+      token,
+      user: {
+        ...userData,
+        must_change_password: false,
+        institucion_nombre: user.institucion?.nombre ?? null,
+        institucion_tipo: user.institucion?.tipo ?? null
+      }
+    });
+  } catch (error: unknown) {
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ error: error.issues });
+    }
+    return res.status(500).json({ error: 'Error al actualizar contraseña' });
   }
 };
 
@@ -609,7 +756,10 @@ export const updateUser = async (req: Request, res: Response) => {
     let updateData: any = {};
     if (data.nombre_completo) updateData.nombre_completo = data.nombre_completo;
     if (data.rol) updateData.rol = data.rol;
-    if (data.password) updateData.password_hash = await bcrypt.hash(data.password, 10);
+    if (data.password) {
+      updateData.password_hash = await bcrypt.hash(data.password, 10);
+      updateData.must_change_password = false;
+    }
     const updated = await prisma.usuario.update({
       where: { id: userId },
       data: updateData,
@@ -621,6 +771,63 @@ export const updateUser = async (req: Request, res: Response) => {
       return res.status(400).json({ error: error.issues });
     }
     return res.status(500).json({ error: 'Error interno del servidor' });
+  }
+};
+
+export const resetUserPasswordByAdmin = async (req: Request, res: Response) => {
+  try {
+    const admin = (req as AuthRequest).user;
+    if (!admin?.userId || admin.rol !== 'ADMINISTRADOR') {
+      return res.status(403).json({ error: 'Solo administradores pueden resetear contraseñas.' });
+    }
+    const userId = Number(req.params.id);
+    if (isNaN(userId)) {
+      return res.status(400).json({ error: 'ID de usuario inválido.' });
+    }
+    const institucion_id = await institucionIdDelAdmin(admin);
+    if (!institucion_id) {
+      return res.status(400).json({ error: 'Administrador sin institución asignada.' });
+    }
+    const user = await prisma.usuario.findUnique({
+      where: { id: userId },
+      select: { id: true, email: true, institucion_id: true, rol: true }
+    });
+    if (!user || user.institucion_id !== institucion_id) {
+      return res.status(404).json({ error: 'Usuario no encontrado en su institución.' });
+    }
+    const inst = await prisma.institucion.findUnique({
+      where: { id: institucion_id },
+      select: { tipo: true }
+    });
+    const rolesPermitidos = inst
+      ? rolesRegistroPorTipoInstitucion(inst.tipo)
+      : ['EDUCADOR'];
+    if (!rolesPermitidos.includes(user.rol)) {
+      return res.status(403).json({ error: 'No puede resetear la contraseña de este tipo de usuario.' });
+    }
+    const tempPassword = crypto.randomBytes(8).toString('base64url');
+    const password_hash = await bcrypt.hash(tempPassword, 10);
+    await prisma.usuario.update({
+      where: { id: userId },
+      data: { password_hash, must_change_password: true }
+    });
+    try {
+      await prisma.auditoriaAdmin.create({
+        data: {
+          admin_id: admin.userId,
+          accion: 'RESETEAR_PASSWORD_USUARIO',
+          entidad: 'usuario',
+          entidad_id: user.id,
+          detalles: `Password reseteado para ${user.rol} ${user.email}`,
+          ip_address: req.ip || null
+        }
+      });
+    } catch (auditErr) {
+      console.warn('[RESET_PASSWORD] Auditoría no registrada:', auditErr);
+    }
+    return res.json({ message: 'Contraseña reseteada', tempPassword });
+  } catch (error) {
+    return res.status(500).json({ error: 'Error al resetear contraseña' });
   }
 };
 
@@ -654,9 +861,42 @@ export const deleteUser = async (req: Request, res: Response) => {
     if (!rolesPermitidos.includes(user.rol)) {
       return res.status(403).json({ error: 'No puede eliminar este tipo de usuario.' });
     }
-    await prisma.usuario.delete({ where: { id: userId } });
-    return res.json({ message: 'Usuario eliminado correctamente.' });
-  } catch (error: any) {
-    return res.status(500).json({ error: 'Error interno del servidor' });
+
+    await prisma.$transaction(async tx => {
+      const observacionIds = await tx.observacion.findMany({
+        where: { autor_id: userId },
+        select: { id: true }
+      });
+      if (observacionIds.length > 0) {
+        await tx.observacionEnReporte.deleteMany({
+          where: { observacion_id: { in: observacionIds.map(o => o.id) } }
+        });
+        await tx.observacion.deleteMany({ where: { autor_id: userId } });
+      }
+
+      const reporteIds = await tx.reporte.findMany({
+        where: { creador_id: userId },
+        select: { id: true }
+      });
+      if (reporteIds.length > 0) {
+        await tx.observacionEnReporte.deleteMany({
+          where: { reporte_id: { in: reporteIds.map(r => r.id) } }
+        });
+        await tx.reporte.deleteMany({ where: { creador_id: userId } });
+      }
+
+      await tx.perfilUsuario.deleteMany({ where: { usuario_id: userId } });
+      await tx.usuario.delete({ where: { id: userId } });
+    });
+
+    return res.json({
+      message: 'Usuario eliminado correctamente (incluye observaciones y reportes asociados).'
+    });
+  } catch (error: unknown) {
+    console.error('[DELETE_USER]', error);
+    return res.status(500).json({
+      error:
+        'No se pudo eliminar el usuario. Si el problema continúa, contacte al soporte técnico.'
+    });
   }
 };

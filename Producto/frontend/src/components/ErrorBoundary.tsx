@@ -5,8 +5,11 @@ interface ErrorBoundaryState {
   error: any;
 }
 
-export class ErrorBoundary extends React.Component<{}, ErrorBoundaryState> {
-  constructor(props: {}) {
+export class ErrorBoundary extends React.Component<
+  { children: React.ReactNode },
+  ErrorBoundaryState
+> {
+  constructor(props: { children: React.ReactNode }) {
     super(props);
     this.state = { hasError: false, error: null };
   }
@@ -15,7 +18,7 @@ export class ErrorBoundary extends React.Component<{}, ErrorBoundaryState> {
     return { hasError: true, error };
   }
 
-  componentDidCatch(error: any, errorInfo: any) {
+  componentDidCatch(_error: unknown, _errorInfo: unknown) {
     // Puedes loguear el error aquí si lo deseas
     // console.error(error, errorInfo);
   }

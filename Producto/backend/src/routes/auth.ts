@@ -3,7 +3,7 @@
 import { Router } from 'express';
 import { PrismaClient } from '@prisma/client';
 import { authenticateToken, AuthRequest, authorizeRoles } from '../middleware/authMiddleware';
-import { register, login, updateUser, deleteUser, listUsuariosInstitucion, createEducadorByAdmin, createInstitucion, listInstituciones, updateInstitucion, deleteInstitucion, getSuperadminStats, getUltimasAccionesAuditoria, createAdministradorBySuperadmin, listAdministradores, resetAdminPasswordBySuperadmin, updateAdministradorBySuperadmin, deleteAdministradorBySuperadmin } from '../controllers/authController';
+import { register, login, cambiarPasswordInicial, updateUser, resetUserPasswordByAdmin, deleteUser, listUsuariosInstitucion, createEducadorByAdmin, createInstitucion, listInstituciones, updateInstitucion, deleteInstitucion, getSuperadminStats, getUltimasAccionesAuditoria, createAdministradorBySuperadmin, listAdministradores, resetAdminPasswordBySuperadmin, updateAdministradorBySuperadmin, deleteAdministradorBySuperadmin } from '../controllers/authController';
 
 const prisma = new PrismaClient();
 const router = Router();
@@ -85,8 +85,18 @@ router.post('/register', authenticateToken, authorizeRoles('ADMINISTRADOR'), reg
 // Login de usuario
 router.post('/login', login);
 
+// Cambio obligatorio de contraseña (primer ingreso con clave temporal)
+router.post(
+  '/cambiar-password-inicial',
+  authenticateToken,
+  cambiarPasswordInicial
+);
+
 // Editar usuario (solo admin de la misma institución)
 router.put('/usuario/:id', authenticateToken, authorizeRoles('ADMINISTRADOR'), updateUser);
+
+// Resetear contraseña de usuario operativo (solo admin de la misma institución)
+router.post('/usuario/:id/reset-password', authenticateToken, authorizeRoles('ADMINISTRADOR'), resetUserPasswordByAdmin);
 
 // Eliminar usuario (solo admin de la misma institución)
 router.delete('/usuario/:id', authenticateToken, authorizeRoles('ADMINISTRADOR'), deleteUser);

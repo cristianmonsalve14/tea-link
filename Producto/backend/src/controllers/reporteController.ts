@@ -3,6 +3,7 @@ import { AuthRequest } from '../middleware/authMiddleware';
 import { PrismaClient, privacidad_observacion_enum } from '@prisma/client';
 import { z } from 'zod';
 import { enviarReportePdf } from '../utils/reportePdf';
+import { usuarioTieneAccesoPerfil } from '../utils/perfilAccess';
 
 const prisma = new PrismaClient();
 
@@ -80,11 +81,21 @@ export const createReporte = async (req: AuthRequest, res: Response) => {
       return res.status(400).json({ error: 'La fecha fin debe ser posterior a la fecha inicio' });
     }
 
-    const perfil = await prisma.perfil.findFirst({
-      where: { id: data.perfil_id, institucion_id: user.institucion_id ?? -1 }
+    const perfil = await prisma.perfil.findUnique({
+      where: { id: data.perfil_id },
+      select: { id: true, nombre: true }
     });
     if (!perfil) {
-      return res.status(404).json({ error: 'Perfil no encontrado en su institución' });
+      return res.status(404).json({ error: 'Perfil no encontrado' });
+    }
+
+    const tieneAcceso = await usuarioTieneAccesoPerfil(
+      user.userId,
+      data.perfil_id,
+      user.institucion_id
+    );
+    if (!tieneAcceso) {
+      return res.status(404).json({ error: 'Perfil no encontrado o sin acceso' });
     }
 
     const visibles = privacidadVisibleParaRol(user.rol);
@@ -154,7 +165,15 @@ export const exportReporte = async (req: AuthRequest, res: Response) => {
     const reporte = await prisma.reporte.findUnique({
       where: { id },
       include: {
-        creador: { select: { nombre_completo: true, id: true } },
+        creador: {
+          select: {
+            id: true,
+            nombre_completo: true,
+            rol: true,
+            email: true,
+            institucion: { select: { nombre: true } }
+          }
+        },
         observaciones: {
           include: {
             observacion: {
@@ -206,7 +225,15 @@ export const exportReporte = async (req: AuthRequest, res: Response) => {
       titulo: reporte.titulo,
       fecha_inicio: reporte.fecha_inicio,
       fecha_fin: reporte.fecha_fin,
-      creador: reporte.creador,
+      emitidoEn: new Date(),
+      observacionIds: reporte.observaciones.map(o => o.observacion.id),
+      creador: {
+        id: reporte.creador.id,
+        nombre_completo: reporte.creador.nombre_completo,
+        rol: reporte.creador.rol,
+        email: reporte.creador.email
+      },
+      institucionNombre: reporte.creador.institucion?.nombre ?? null,
       perfilNombre,
       observaciones: reporte.observaciones.map(o => o.observacion)
     });
@@ -283,9 +310,11 @@ export const getReporteById = async (req: AuthRequest, res: Response) => {
               select: {
                 id: true,
                 titulo: true,
+                descripcion: true,
                 categoria: true,
                 fecha_evento: true,
-                perfil: { select: { nombre: true } }
+                perfil: { select: { nombre: true } },
+                autor: { select: { nombre_completo: true, rol: true } }
               }
             }
           }

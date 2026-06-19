@@ -1,5 +1,14 @@
 import { useCallback, useEffect, useState } from "react";
 import { FaEye, FaFileAlt, FaFilter, FaSyncAlt } from "react-icons/fa";
+import { Card } from "./ui/Card";
+import { Button } from "./ui/Button";
+import { Alert } from "./ui/Alert";
+import { Modal } from "./ui/Modal";
+import { Input } from "./ui/Input";
+import { Select } from "./ui/Select";
+import { cn } from "../theme/cn";
+import { getSectionTheme } from "../theme/roleTheme";
+import { useRoleTheme } from "../context/RoleThemeContext";
 
 type FormatoReporte = "PDF" | "EXCEL";
 
@@ -57,6 +66,8 @@ function formatFecha(value: string) {
 }
 
 export function ReportesSection() {
+  const theme = useRoleTheme();
+  const section = getSectionTheme("reports");
   const [reportes, setReportes] = useState<ReporteListItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -147,68 +158,49 @@ export function ReportesSection() {
   };
 
   return (
-    <div className="bg-white rounded-2xl shadow-lg p-8">
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
-        <h2 className="text-2xl font-bold text-blue-700 flex items-center gap-2">
+    <Card
+      className={cn("border", section.accentBorder)}
+      title={
+        <span className={cn("flex items-center gap-2", section.accentText)}>
           <FaFileAlt /> Reportes del sistema
-        </h2>
-        <button
-          type="button"
-          onClick={fetchReportes}
-          className="flex items-center gap-2 px-4 py-2 rounded-xl bg-blue-100 text-blue-700 font-semibold hover:bg-blue-200"
-        >
+        </span>
+      }
+      description="Reportes generados por usuarios (PDF/Excel) y sus observaciones asociadas."
+      action={
+        <Button variant="outline" onClick={fetchReportes}>
           <FaSyncAlt /> Actualizar
-        </button>
-      </div>
-
-      <p className="text-sm text-gray-600 mb-4">
-        Reportes generados por usuarios (PDF/Excel) y sus observaciones asociadas.
-      </p>
-
-      <div className="flex flex-wrap gap-3 mb-4 p-4 bg-gray-50 rounded-xl border border-gray-100">
-        <FaFilter className="text-gray-400 mt-2" />
-        <select
-          className="rounded-lg border border-gray-200 px-3 py-2 text-sm"
+        </Button>
+      }
+    >
+      <div className="flex flex-wrap gap-3 mb-4 p-4 bg-neutral-gray-light rounded-xl border border-gray-100 items-end">
+        <span className={cn("mb-2.5", section.accentText)}>
+          <FaFilter />
+        </span>
+        <Select
+          className="max-w-[180px]"
           value={filtroFormato}
           onChange={e => setFiltroFormato(e.target.value)}
         >
           <option value="">Todos los formatos</option>
           <option value="PDF">PDF</option>
           <option value="EXCEL">Excel</option>
-        </select>
-        <input
-          type="date"
-          className="rounded-lg border border-gray-200 px-3 py-2 text-sm"
-          value={filtroDesde}
-          onChange={e => setFiltroDesde(e.target.value)}
-          title="Desde"
-        />
-        <input
-          type="date"
-          className="rounded-lg border border-gray-200 px-3 py-2 text-sm"
-          value={filtroHasta}
-          onChange={e => setFiltroHasta(e.target.value)}
-          title="Hasta"
-        />
-        <button
-          type="button"
-          className="px-4 py-2 rounded-lg bg-blue-500 text-white text-sm font-semibold hover:bg-blue-600"
+        </Select>
+        <Input type="date" value={filtroDesde} onChange={e => setFiltroDesde(e.target.value)} />
+        <Input type="date" value={filtroHasta} onChange={e => setFiltroHasta(e.target.value)} />
+        <Button
+          className={cn(section.btnPrimary, section.btnPrimaryHover)}
           onClick={fetchReportes}
         >
           Filtrar
-        </button>
+        </Button>
       </div>
 
-      {error && (
-        <div className="mb-4 text-red-600 text-sm bg-red-50 border border-red-200 rounded-lg px-3 py-2">
-          {error}
-        </div>
-      )}
+      {error && <Alert variant="error">{error}</Alert>}
 
       <div className="overflow-x-auto">
         <table className="min-w-full text-sm">
           <thead>
-            <tr className="bg-purple-50 text-purple-800">
+            <tr className={section.tableHead}>
               <th className="px-3 py-2 text-left font-semibold">ID</th>
               <th className="px-3 py-2 text-left font-semibold">Título</th>
               <th className="px-3 py-2 text-left font-semibold">Formato</th>
@@ -233,7 +225,7 @@ export function ReportesSection() {
               </tr>
             ) : (
               reportes.map(r => (
-                <tr key={r.id} className="border-b last:border-none hover:bg-purple-50/50">
+                <tr key={r.id} className={cn("border-b last:border-none", section.tableRowHover)}>
                   <td className="px-3 py-2">{r.id}</td>
                   <td className="px-3 py-2 font-medium">{r.titulo}</td>
                   <td className="px-3 py-2">
@@ -260,10 +252,10 @@ export function ReportesSection() {
                   <td className="px-3 py-2 whitespace-nowrap">
                     <button
                       type="button"
-                      className="text-blue-600 hover:underline mr-2"
+                      className={cn(theme.link, "mr-2 text-sm font-medium")}
                       onClick={() => verDetalle(r.id)}
                     >
-                      <FaEye className="inline mr-0.5" /> Ver
+                      <FaEye /> Ver
                     </button>
                     {r.url_archivo && (
                       <a
@@ -291,22 +283,17 @@ export function ReportesSection() {
         </table>
       </div>
 
-      {(detalleLoading || detalle) && (
-        <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-xl p-8 w-full max-w-2xl max-h-[90vh] overflow-y-auto relative">
-            <button
-              type="button"
-              className="absolute top-3 right-3 text-gray-400 hover:text-red-500 text-xl font-bold"
-              onClick={() => setDetalle(null)}
-            >
-              ×
-            </button>
-            {detalleLoading ? (
-              <p className="text-gray-500">Cargando detalle...</p>
-            ) : detalle ? (
-              <>
-                <h3 className="text-xl font-bold text-purple-800 mb-2">{detalle.titulo}</h3>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm text-gray-700 mb-4">
+      <Modal
+        open={detalleLoading || !!detalle}
+        onClose={() => setDetalle(null)}
+        title={detalle?.titulo ?? "Detalle del reporte"}
+        size="lg"
+      >
+        {detalleLoading ? (
+          <p className="text-neutral-gray-medium">Cargando detalle...</p>
+        ) : detalle ? (
+          <>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm text-neutral-gray mb-4">
                   <p>
                     <span className="font-semibold">Formato:</span> {detalle.formato}
                   </p>
@@ -331,14 +318,14 @@ export function ReportesSection() {
                         href={detalle.url_archivo}
                         target="_blank"
                         rel="noreferrer"
-                        className="text-blue-600 hover:underline"
+                        className={theme.link}
                       >
                         Descargar archivo
                       </a>
                     </p>
                   )}
                 </div>
-                <h4 className="font-semibold text-gray-800 mb-2">
+            <h4 className={cn("font-semibold mb-2", theme.accentTextStrong)}>
                   Observaciones incluidas ({detalle.observaciones.length})
                 </h4>
                 {detalle.observaciones.length === 0 ? (
@@ -359,11 +346,9 @@ export function ReportesSection() {
                     ))}
                   </ul>
                 )}
-              </>
-            ) : null}
-          </div>
-        </div>
-      )}
-    </div>
+          </>
+        ) : null}
+      </Modal>
+    </Card>
   );
 }

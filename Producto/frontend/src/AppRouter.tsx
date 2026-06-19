@@ -1,14 +1,26 @@
 import React from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Login from "./pages/Login";
+import NuevaObservacionPage from "./pages/NuevaObservacionPage";
+import EditarObservacionPage from "./pages/EditarObservacionPage";
+import CambiarPasswordInicialPage from "./pages/CambiarPasswordInicialPage";
 import { DashboardByRole } from "./components/DashboardByRole";
 import { ProtectedRoute } from "./components/ProtectedRoute";
+import { CambiarPasswordRoute } from "./components/CambiarPasswordRoute";
 
 const AppRouter: React.FC = () => (
   <BrowserRouter>
     <Routes>
       <Route path="/" element={<Login />} />
       <Route path="/login" element={<Login />} />
+      <Route
+        path="/cambiar-contrasena"
+        element={
+          <CambiarPasswordRoute>
+            <CambiarPasswordInicialPage />
+          </CambiarPasswordRoute>
+        }
+      />
       <Route
         path="/dashboard"
         element={
@@ -17,16 +29,22 @@ const AppRouter: React.FC = () => (
           </ProtectedRoute>
         }
       />
-      {/*
-        IMPORTANTE:
-        Para agregar nuevas páginas privadas, protégelas así:
-        <Route path="/nueva-ruta" element={
+      <Route
+        path="/observaciones/nueva"
+        element={
           <ProtectedRoute>
-            <NuevaPagina />
+            <NuevaObservacionPage />
           </ProtectedRoute>
-        } />
-        Solo las rutas públicas (login, landing, registro, etc.) deben quedar sin ProtectedRoute.
-      */}
+        }
+      />
+      <Route
+        path="/observaciones/:id/editar"
+        element={
+          <ProtectedRoute>
+            <EditarObservacionPage />
+          </ProtectedRoute>
+        }
+      />
     </Routes>
   </BrowserRouter>
 );
