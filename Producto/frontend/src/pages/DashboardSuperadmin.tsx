@@ -25,14 +25,48 @@ import {
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts";
 
 // ==================== TIPOS AUDITORÍA ====================
-type AuditoriaRegistro = {
-  actor_usuario_id: string;
+type AuditoriaApiRow = {
+  id: number;
+  admin_id: number;
   accion: string;
-  entidad: string;
-  entidad_id: string;
+  entidad: string | null;
+  entidad_id: number | null;
+  detalles: string | null;
+  ip_address: string | null;
+  created_at: string;
+  admin: {
+    email: string;
+    nombre_completo: string;
+    rol: string;
+  };
+};
+
+type AuditoriaRegistro = {
+  id: number;
+  actorLabel: string;
+  accion: string;
+  entidadLabel: string;
   timestamp: string;
   ip: string;
 };
+
+function mapAuditoriaRow(row: AuditoriaApiRow): AuditoriaRegistro {
+  const entidadPartes = [row.entidad, row.entidad_id != null ? `#${row.entidad_id}` : null]
+    .filter(Boolean)
+    .join(" ");
+  const entidadLabel = row.detalles?.trim()
+    ? `${entidadPartes || "—"} — ${row.detalles}`
+    : entidadPartes || "—";
+
+  return {
+    id: row.id,
+    actorLabel: `${row.admin.nombre_completo} (${row.admin.email})`,
+    accion: row.accion,
+    entidadLabel,
+    timestamp: row.created_at,
+    ip: row.ip_address?.trim() || "—"
+  };
+}
 
 type AuditoriaChartData = {
   accion: string;
@@ -50,38 +84,41 @@ const AuditoriaSection: React.FC = () => {
 
   // Acciones únicas para filtro
   const accionesUnicas = Array.from(new Set(data.map(r => r.accion)));
-  const usuariosUnicos = Array.from(new Set(data.map(r => r.actor_usuario_id)));
+  const usuariosUnicos = Array.from(new Set(data.map(r => r.actorLabel)));
+
+  const reloadAuditoria = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch("http://localhost:3000/api/auth/superadmin/auditoria", {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (!res.ok) throw new Error("Error al obtener auditoría");
+      const json = (await res.json()) as { acciones?: AuditoriaApiRow[] };
+      const rows = Array.isArray(json.acciones) ? json.acciones : [];
+      setData(rows.map(mapAuditoriaRow));
+    } catch (e: unknown) {
+      if (typeof e === "object" && e && "message" in e) {
+        setError((e as { message?: string }).message ?? "Error desconocido");
+      } else {
+        setError("Error desconocido");
+      }
+      setData([]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Fetch datos
   useEffect(() => {
-    const fetchAuditoria = async () => {
-      setLoading(true);
-      setError(null);
-      try {
-        const token = localStorage.getItem("token");
-        const res = await fetch("http://localhost:3000/api/auth/superadmin/auditoria", {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        if (!res.ok) throw new Error("Error al obtener auditoría");
-        const registros: AuditoriaRegistro[] = await res.json();
-        setData(Array.isArray(registros) ? registros : []);
-      } catch (e: unknown) {
-        if (typeof e === "object" && e && "message" in e) {
-          setError((e as { message?: string }).message ?? "Error desconocido");
-        } else {
-          setError("Error desconocido");
-        }
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchAuditoria();
+    reloadAuditoria();
   }, []);
 
   // Filtros
   const dataFiltrada = data
     .filter(r => !accionFiltro || r.accion === accionFiltro)
-    .filter(r => !usuarioFiltro || r.actor_usuario_id === usuarioFiltro)
+    .filter(r => !usuarioFiltro || r.actorLabel === usuarioFiltro)
     .filter(r => !fechaFiltro || r.timestamp.startsWith(fechaFiltro));
 
   // Datos para gráfico
@@ -137,8 +174,8 @@ const AuditoriaSection: React.FC = () => {
               theme.accentText,
               "hover:opacity-90"
             )}
-            onClick={() => { setAccionFiltro(""); setUsuarioFiltro(""); setFechaFiltro(""); }}
-            title="Limpiar filtros"
+            onClick={() => { setAccionFiltro(""); setUsuarioFiltro(""); setFechaFiltro(""); reloadAuditoria(); }}
+            title="Limpiar filtros y recargar"
           >
             <FaSyncAlt /> Limpiar
           </button>
@@ -166,13 +203,17 @@ const AuditoriaSection: React.FC = () => {
           <div className="text-blue-600 py-8 text-center">Cargando auditoría...</div>
         ) : error ? (
           <div className="text-red-500 py-8 text-center">{error}</div>
+        ) : dataFiltrada.length === 0 ? (
+          <div className="text-slate-500 py-8 text-center">
+            No hay registros de auditoría. Las acciones administrativas (crear institución, reset de clave, etc.) aparecerán aquí.
+          </div>
         ) : (
           <table className="min-w-full text-sm">
             <thead>
               <tr className="bg-blue-50 text-blue-700">
                 <th className="px-3 py-2 text-left font-semibold">Usuario</th>
                 <th className="px-3 py-2 text-left font-semibold">Acción</th>
-                <th className="px-3 py-2 text-left font-semibold">Entidad</th>
+                <th className="px-3 py-2 text-left font-semibold">Detalle</th>
                 <th className="px-3 py-2 text-left font-semibold">Fecha</th>
                 <th className="px-3 py-2 text-left font-semibold">IP</th>
               </tr>
@@ -180,11 +221,11 @@ const AuditoriaSection: React.FC = () => {
             <tbody>
               {dataFiltrada
                 .sort((a, b) => b.timestamp.localeCompare(a.timestamp))
-                .map((r, i) => (
-                  <tr key={i} className="border-b last:border-none hover:bg-blue-50 transition-all">
-                    <td className="px-3 py-2">{r.actor_usuario_id}</td>
+                .map(r => (
+                  <tr key={r.id} className="border-b last:border-none hover:bg-blue-50 transition-all">
+                    <td className="px-3 py-2">{r.actorLabel}</td>
                     <td className="px-3 py-2">{r.accion}</td>
-                    <td className="px-3 py-2">{r.entidad}</td>
+                    <td className="px-3 py-2 max-w-md truncate" title={r.entidadLabel}>{r.entidadLabel}</td>
                     <td className="px-3 py-2 whitespace-nowrap">{new Date(r.timestamp).toLocaleString()}</td>
                     <td className="px-3 py-2">{r.ip}</td>
                   </tr>

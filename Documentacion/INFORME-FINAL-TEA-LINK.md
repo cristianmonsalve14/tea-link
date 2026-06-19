@@ -1,20 +1,49 @@
-# INFORME FINAL — PROYECTO TEA LINK
+<div align="center">
 
-## Sistema Web de Comunicación y Seguimiento Colaborativo para Personas con TEA
+**INSTITUTO PROFESIONAL DUOC UC**
 
 ---
 
-| Campo | Detalle |
-|-------|---------|
-| **Institución** | DuocUC |
-| **Carrera** | Ingeniería en Informática |
-| **Asignatura** | Taller de Programación / TPY1101 |
+**CARRERA:** Ingeniería en Informática
+
+**ASIGNATURA:** Taller Aplicado de Programación  
+**SIGLA:** TPY1101
+
+---
+
+# INFORME — ESTADO DE AVANCE N° 3
+
+**Evaluación Parcial 3 · Entrega de encargo**
+
+*Situación evaluativa: Ejecución práctica y documentación del producto*
+
+---
+
+## TEA LINK
+
+### Sistema Web de Comunicación y Seguimiento Colaborativo para Personas con TEA
+
+---
+
+| | |
+|---|---|
+| **Sección** | 001D — Taller Aplicado de Programación |
+| **Número de grupo** | 12 |
+| **Tipo de documento** | Informe final integrado (EV1 + EV2 + EV3) |
+| **Período académico** | Semestre 2026 (marzo – julio 2026) |
 | **Integrante** | Cristian Monsalve Budrovich |
 | **RUT** | 12.622.852-k |
-| **Correo** | cr.monsalveb@duocuc.cl |
-| **Repositorio** | https://github.com/cristianmonsalve14/tea-link |
-| **Fecha del informe** | Junio 2026 |
-| **Versión** | 1.0 — Informe final de entrega |
+| **Correo institucional** | cr.monsalveb@duocuc.cl |
+| **Docente(s) guía** | Maria Ignacia Cobo · Cesar Carrasco |
+| **Repositorio del proyecto** | https://github.com/cristianmonsalve14/tea-link |
+| **Fecha de entrega** | Junio 2026 |
+| **Versión del documento** | 1.5 |
+
+---
+
+*Proyecto desarrollado en modalidad individual (responsabilidades full stack: frontend, backend, base de datos y documentación).*
+
+</div>
 
 ---
 
@@ -22,8 +51,8 @@
 
 1. [Resumen ejecutivo](#1-resumen-ejecutivo)
 2. [Introducción](#2-introducción)
-3. [Integración Evaluación 1 — Planificación y diseño](#3-integración-evaluación-1--planificación-y-diseño)
-4. [Integración Evaluación 2 — Desarrollo del MVP](#4-integración-evaluación-2--desarrollo-del-mvp)
+3. [Evaluación Parcial 1 — Planificación y diseño](#3-evaluación-parcial-1--planificación-y-diseño)
+4. [Evaluación Parcial 2 — Desarrollo del MVP](#4-evaluación-parcial-2--desarrollo-del-mvp)
 5. [Estado del producto — Evaluación 3 y cierre](#5-estado-del-producto--evaluación-3-y-cierre)
 6. [IL3.1 — Plan de pruebas y base de datos de pruebas](#6-il31--plan-de-pruebas-y-base-de-datos-de-pruebas)
 7. [IL3.1 — Ejecución de pruebas y resultados](#7-il31--ejecución-de-pruebas-y-resultados)
@@ -31,8 +60,9 @@
 9. [IL3.2 — Mejoras implementadas tras validación](#9-il32--mejoras-implementadas-tras-validación)
 10. [Evaluación final — Cierre del semestre](#10-evaluación-final--cierre-del-semestre)
 11. [Conclusiones generales](#11-conclusiones-generales)
-12. [Trabajo futuro](#12-trabajo-futuro)
-13. [Anexos y documentos de referencia](#13-anexos-y-documentos-de-referencia)
+12. [Lecciones aprendidas](#12-lecciones-aprendidas)
+13. [Trabajo futuro](#13-trabajo-futuro)
+14. [Anexos y documentos de referencia](#14-anexos-y-documentos-de-referencia)
 
 ---
 
@@ -51,7 +81,7 @@ El proyecto recorre tres evaluaciones parciales más la entrega final:
 
 **Estado del producto (funcional):** aproximadamente **90% del núcleo** operativo en entorno local: autenticación JWT, seis roles, instituciones, perfiles, equipo interdisciplinario, observaciones con privacidad (PUBLICA, MULTINIVEL, PRIVADA), bitácora con filtros, edición de observaciones, reportes PDF/CSV y panel superadmin.
 
-**Pruebas ejecutadas:** 12 casos OK, 1 N/A, 13 capturas de evidencia (CP-01 a CP-13), cubriendo autenticación, RBAC, perfiles, observaciones, equipo interdisciplinario y privacidad.
+**Pruebas ejecutadas:** **13 casos** (CP-01 a CP-13): **12 OK**, **1 N/A** (CP-03), **13 capturas**, cubriendo autenticación, RBAC, perfiles, observaciones, equipo interdisciplinario y privacidad.
 
 ---
 
@@ -82,19 +112,164 @@ La comunicación en el ecosistema TEA suele ser fragmentada (mensajería informa
 
 ---
 
-## 3. Integración Evaluación 1 — Planificación y diseño
+## 3. Evaluación Parcial 1 — Planificación y diseño
 
-En EV1 se definieron problemática, objetivos, metodología iterativa (18 semanas), arquitectura 3 capas, modelo de datos normalizado y diseño UI/UX con paleta calmada y wireframes por rol.
+### 3.1 Problemática y justificación
 
-**Documentos de respaldo:** `README.md`, `Documentacion/INFORME-TECNICO-BASE-DATOS.md`, `Documentacion/DISENO-UI-UX.md`, `Documentacion/diagramas/flujo-datos-arquitectura.puml`.
+La comunicación en el ecosistema TEA se realiza de forma dispersa (WhatsApp, cuadernos, correos), sin trazabilidad ni control de acceso sobre datos sensibles de menores. EV1 formalizó la oportunidad de desarrollar **TEA Link**: una plataforma web que centralice observaciones colaborativas con roles diferenciados y registro histórico.
+
+### 3.2 Objetivos definidos
+
+| Tipo | Contenido |
+|------|-----------|
+| **General** | Centralizar el registro colaborativo de observaciones sobre personas con TEA, con RBAC y reportes. |
+| **Específicos** | (1) Gestión de usuarios con JWT y roles; (2) Módulo de observaciones categorizadas; (3) Reportes PDF/Excel; (4) Seguridad, privacidad y arquitectura escalable. |
+
+### 3.3 Metodología y cronograma
+
+Se adoptó desarrollo **iterativo en 18 semanas** (144 h pedagógicas), con fases de planificación, desarrollo core, reportes/mejoras y cierre con defensa. EV1 cubrió las semanas 1–4: definición del proyecto, configuración de entorno, diseño de base de datos y diseño UI/UX.
+
+### 3.4 Arquitectura de software
+
+Se definió arquitectura **3 capas (3-Tier)**:
+
+| Capa | Tecnología | Responsabilidad |
+|------|------------|-----------------|
+| Presentación | React + Vite + Tailwind | SPA, formularios, dashboards por rol |
+| Lógica de negocio | Node.js + Express + TypeScript | API REST, JWT, RBAC, validación Zod |
+| Datos | PostgreSQL + Prisma | Persistencia, integridad, migraciones |
+
+Diagrama de flujo documentado en `Documentacion/diagramas/flujo-datos-arquitectura.png` (caso de uso: crear observación con validación multicapa).
+
+### 3.5 Diseño de base de datos (EV1)
+
+En EV1 se modeló un esquema relacional **normalizado (3FN)** con entidades centrales: usuarios, perfiles, observaciones, reportes y tablas puente. Decisiones clave:
+
+- Uso de **ENUM** en PostgreSQL para roles y categorías (integridad en BD).
+- Relaciones **1:N** y **N:N** entre reportes y observaciones.
+- Índices en campos de consulta frecuente (`email`, `perfil_id` + `fecha_evento`).
+
+El diseño evolucionó en EV2/EV3 hacia **8 tablas** con multi-institucional y `perfil_usuario`; el informe técnico vigente está en `Documentacion/INFORME-TECNICO-BASE-DATOS.md` y el ER en `Documentacion/diagramas/modelo-er-base-datos.png`.
+
+### 3.6 Diseño UI/UX (EV1)
+
+Documentado en `Documentacion/DISENO-UI-UX.md`:
+
+- **Paleta calmada** orientada a usuarios TEA (azules/verdes suaves, alto contraste, evitar colores estridentes).
+- **Wireframes** por pantalla: login, dashboard, listado de observaciones, formulario nueva observación, generación de reportes.
+- **Navegación por rol**: familia, educador, profesional/médico y administrador con funciones diferenciadas.
+- Principios de accesibilidad: espaciado generoso, feedback visual claro, formularios con validación en cliente.
+
+### 3.7 Stack tecnológico seleccionado
+
+Frontend: React 18, TypeScript, Vite, Tailwind, React Router, Zod.  
+Backend: Node.js 20, Express, Prisma, JWT, bcrypt.  
+Base de datos: PostgreSQL 15.  
+Control de versiones: **Git + GitHub** (`https://github.com/cristianmonsalve14/tea-link`).
+
+### 3.8 Entregables EV1
+
+| Entregable | Ubicación |
+|------------|-----------|
+| Descripción general y objetivos | `README.md` |
+| Informe técnico de base de datos | `Documentacion/INFORME-TECNICO-BASE-DATOS.md` |
+| Diseño UI/UX | `Documentacion/DISENO-UI-UX.md` |
+| Diagrama flujo arquitectura | `Documentacion/diagramas/` |
+| Repositorio con estructura DuocUC | `Gestion/`, `Documentacion/`, `Producto/` |
+
+**Resultado EV1:** base conceptual, técnica y visual suficiente para iniciar el desarrollo del MVP en EV2.
 
 ---
 
-## 4. Integración Evaluación 2 — Desarrollo del MVP
+## 4. Evaluación Parcial 2 — Desarrollo del MVP
 
-EV2 entregó un MVP con login JWT, roles operativos y administrativos, instituciones, perfiles estudiante, observaciones categorizadas y API REST protegida.
+### 4.1 Alcance del MVP entregado
 
-**Limitaciones detectadas** que motivaron EV3: acceso solo por institución (sin equipo interdisciplinario), sin edición de observaciones, bitácora básica, errores en reportes cross-institución e interfaz sin unificar.
+EV2 (semanas 5–11) implementó un **producto mínimo viable** demostrable en local, con los módulos core del negocio operativos de extremo a extremo (frontend ↔ API ↔ PostgreSQL).
+
+### 4.2 Módulos implementados en EV2
+
+| Módulo | Funcionalidad entregada |
+|--------|-------------------------|
+| **Autenticación** | Login con JWT (24 h), hash bcrypt, middleware `authenticateToken` |
+| **Roles y RBAC** | Roles FAMILIA, EDUCADOR, PROFESIONAL, MEDICO, ADMINISTRADOR, SUPERADMIN; rutas protegidas con `authorizeRoles` |
+| **Instituciones** | CRUD por superadmin; usuarios y perfiles asociados a institución |
+| **Usuarios** | Alta/edición/eliminación por admin institucional; registro controlado |
+| **Perfiles estudiante** | CRUD de perfiles por institución |
+| **Observaciones** | Crear, listar por perfil, categorías ENUM, autoría registrada |
+| **Reportes** | Generación PDF/CSV con observaciones seleccionadas |
+| **Validación** | Esquemas Zod en backend (y validación en formularios frontend) |
+| **Auditoría admin** | Registro de acciones administrativas sensibles |
+
+### 4.3 API REST desarrollada (EV2)
+
+Rutas principales bajo `/api`:
+
+| Prefijo | Endpoints representativos |
+|---------|---------------------------|
+| `/api/auth` | `POST /login`, gestión usuarios/instituciones, rutas por rol |
+| `/api/perfiles` | CRUD perfiles estudiante |
+| `/api/observaciones` | CRUD observaciones por perfil |
+| `/api/reportes` | Crear, listar y exportar reportes |
+
+Todas las rutas de negocio exigen **Bearer JWT** salvo login.
+
+### 4.4 Frontend MVP (EV2)
+
+Páginas y flujos implementados:
+
+- Login y redirección según rol.
+- Dashboard por tipo de usuario (familia, educador, profesional, médico, admin, superadmin).
+- Selector de perfil estudiante.
+- Formulario de nueva observación y listado/bitácora básica.
+- Panel administrador: usuarios y perfiles de la institución.
+- Panel superadmin: instituciones y administradores.
+
+Stack: React + Vite + TypeScript + Tailwind CSS.
+
+### 4.5 Base de datos y Prisma (EV2)
+
+- Esquema en `Producto/backend/prisma/schema.prisma`.
+- Migraciones versionadas en `Producto/backend/prisma/migrations/`.
+- Seed inicial con usuarios y datos demo para pruebas manuales.
+- Conexión verificada con scripts de diagnóstico sobre Prisma Client.
+
+### 4.6 Seguridad aplicada en EV2
+
+| Medida | Implementación |
+|--------|----------------|
+| Contraseñas | bcrypt (10 rounds) |
+| Sesión | JWT en header Authorization |
+| Autorización | RBAC por rol e institución |
+| Inyección SQL | Prisma (consultas parametrizadas) |
+| Validación entrada | Zod en controladores |
+
+### 4.7 Pruebas en EV2
+
+Validación **manual** de flujos: login por rol, creación de observación, listado por perfil, restricción de rutas admin y generación de reporte. Sin suite automatizada en esta etapa.
+
+### 4.8 Entregables EV2
+
+| Entregable | Evidencia |
+|------------|-----------|
+| Código backend | `Producto/backend/` |
+| Código frontend | `Producto/frontend/` |
+| Esquema y migraciones | `Producto/backend/prisma/` |
+| Documentación RBAC inicial | `Documentacion/REGLAS_Y_PERMISOS_DE_ROLES.md` |
+| Repositorio actualizado | Commits en rama `develop` |
+
+### 4.9 Limitaciones detectadas al cierre de EV2
+
+Estas brechas motivaron el trabajo de EV3:
+
+1. Acceso a perfiles **solo por institución**, sin equipo interdisciplinario cross-institucional (`perfil_usuario`).
+2. **Sin edición** de observaciones ya publicadas.
+3. Bitácora **básica** (sin búsqueda/filtros avanzados).
+4. **Privacidad** clínica (MULTINIVEL/PRIVADA) no aplicada de forma consistente en servidor.
+5. Errores en reportes cuando el usuario accedía a perfiles de otra institución vía equipo.
+6. Interfaz **sin unificar** (estilos heterogéneos entre pantallas).
+
+**Resultado EV2:** MVP funcional y defendible, con deuda técnica y funcional abordada en EV3.
 
 ---
 
@@ -122,7 +297,7 @@ Perfil **Matías Pérez (ID 5)** — Familia Pérez Demo — con equipo: familia
 
 ## 6. IL3.1 — Plan de pruebas y base de datos de pruebas
 
-Plan de **28 casos (CP-01 a CP-28)** documentado en `Documentacion/EV3-PLAN-DE-PRUEBAS.md`.
+Plan de **13 casos (CP-01 a CP-13)** documentado en `Documentacion/EV3-PLAN-DE-PRUEBAS.md`.
 
 **Base de datos de pruebas:** 5 instituciones, 11 usuarios, 3 perfiles, 11 observaciones. Credenciales en `Documentacion/usuarios_prueba.md`.
 
@@ -140,10 +315,9 @@ Plan de **28 casos (CP-01 a CP-28)** documentado en `Documentacion/EV3-PLAN-DE-P
 
 | Métrica | Valor |
 |---------|-------|
-| Casos planificados | 28 |
+| Casos planificados | 13 |
 | Ejecutados OK | 12 |
 | N/A | 1 (CP-03) |
-| Pendientes formales | 15 (CP-14 a CP-28) |
 | Capturas | 13 |
 
 Detalle en `Documentacion/EV3-RESULTADOS-PRUEBAS.md`.
@@ -228,6 +402,91 @@ Detalle en `Documentacion/EV3-RESULTADOS-PRUEBAS.md`.
 | Usuarios de prueba | `Documentacion/usuarios_prueba.md` |
 | BD y diagramas | `Documentacion/INFORME-TECNICO-BASE-DATOS.md`, `diagramas/` |
 
+### 10.4 Control de versiones (Git y GitHub)
+
+El proyecto utiliza **Git** como sistema de control de versiones y **GitHub** como repositorio remoto, cumpliendo el requisito de documentar el historial de cambios del producto y la documentación.
+
+#### Herramienta y repositorio
+
+| Ítem | Valor |
+|------|--------|
+| Software | Git 2.x |
+| Hosting remoto | GitHub |
+| URL pública | https://github.com/cristianmonsalve14/tea-link |
+| Rama principal estable | `main` |
+| Rama de desarrollo activa | `develop` (rama de trabajo habitual) |
+| Total de commits | 16 (incluye entrega final EV3 — Junio 2026) |
+
+#### Estrategia de ramas
+
+```
+main     ─── versión estable / hitos de entrega
+develop  ─── integración continua del trabajo diario (rama activa)
+```
+
+- **`main`:** línea base del repositorio.
+- **`develop`:** creada en el commit `1640673` (*Se crea rama develop, para estrategia de branches*). Todo el avance de EV2 y EV3 se integró en esta rama.
+- **Flujo de trabajo:** desarrollo local → `git add` / `git commit` → `git push origin develop`. No se versionan secretos (`.env` excluido vía `.gitignore`).
+
+#### Estructura versionada en el repositorio
+
+```
+tea-link/
+├── Gestion/              # Integrantes del equipo
+├── Documentacion/        # Informes, plan de pruebas, diagramas, evidencias
+└── Producto/
+    ├── backend/          # API Express + Prisma
+    └── frontend/         # SPA React + Vite
+```
+
+#### Hitos del historial por evaluación
+
+| Evaluación | Período aprox. | Commits representativos | Contenido versionado |
+|------------|----------------|-------------------------|----------------------|
+| **EV1** | Abr 2026 | `d10c341`, `b1d6e0b`, `75c3169`, `2233622` | Estructura DuocUC, README, diseño UI/UX (Tailwind), diseño BD con relaciones N:N |
+| **EV2** | Abr–May 2026 | `2e4c347`, `fe0315b`, `a85d43b`, `f454cea`, `d73c446` | Auth JWT, RBAC, CRUD usuarios/perfiles, validación Zod, login frontend |
+| **EV3** | May–Jun 2026 | `a1fea3a`, `177f4fa` | Sistema integrado, privacidad, equipo interdisciplinario, plan de pruebas, reset clave admin |
+
+#### Tabla de commits relevantes
+
+| Hash | Fecha | Mensaje (resumen) |
+|------|-------|-------------------|
+| `d10c341` | 2026-04-12 | Primer commit — estructura de carpetas |
+| `1640673` | 2026-04-12 | Creación rama `develop` |
+| `75c3169` | 2026-04-13 | Diseño UI/UX y Tailwind (EV1) |
+| `2233622` | 2026-04-17 | Diseño BD completo (EV1) |
+| `2e4c347` | 2026-04-25 | Registro y auth con roles (EV2) |
+| `fe0315b` | 2026-04-25 | Middleware JWT y rutas protegidas (EV2) |
+| `f454cea` | 2026-04-26 | CRUD usuarios/perfiles + auditoría (EV2) |
+| `d73c446` | 2026-04-30 | Login frontend con validaciones (EV2) |
+| `a1fea3a` | 2026-05-26 | Avance funcional y documentación (EV3) |
+| `177f4fa` | 2026-06-19 | Reset clave admin, entrega EV3 y docs de pruebas |
+
+#### Buenas prácticas aplicadas
+
+| Práctica | Implementación |
+|----------|----------------|
+| Exclusión de secretos | `.env`, `.env.local` en `.gitignore` |
+| Mensajes descriptivos | Commits indican módulo y alcance (auth, BD, EV3…) |
+| Trazabilidad | Cada entrega parcial coincide con commits fechados en GitHub |
+| Migraciones de BD | `Producto/backend/prisma/migrations/` versionadas en Git |
+| Documentación junto al código | `Documentacion/` en el mismo repositorio que `Producto/` |
+
+#### Evidencia de control de versiones
+
+- Historial público de commits: https://github.com/cristianmonsalve14/tea-link/commits/develop  
+- Listado de integrantes: `Gestion/Integrantes.txt` y `Grupo_12.txt`  
+- Repositorio sincronizado con documentación EV3, evidencias (13 capturas), diagrama ER y depuración de artefactos obsoletos.
+
+#### Comandos Git de referencia
+
+```bash
+git status                    # Ver cambios pendientes
+git log --oneline -10         # Últimos 10 commits
+git branch -a                 # Ramas locales y remotas
+git push origin develop       # Publicar avances en GitHub
+```
+
 ---
 
 ## 11. Conclusiones generales
@@ -240,7 +499,38 @@ Detalle en `Documentacion/EV3-RESULTADOS-PRUEBAS.md`.
 
 ---
 
-## 12. Trabajo futuro
+## 12. Lecciones aprendidas
+
+### 12.1 Técnicas
+
+- **Diseñar la BD antes del código acelera el desarrollo**, pero el modelo debe revisarse cuando aparecen requisitos reales (equipo interdisciplinario, multi-institucional). La tabla `perfil_usuario` resolvió un caso de negocio que el diseño inicial no contemplaba.
+- **Prisma + PostgreSQL** redujeron errores de tipado y facilitaron migraciones; aun así, conviene dominar SQL para índices, ENUM y depuración.
+- **La seguridad no puede quedar solo en el frontend**: el filtrado de privacidad por rol debió aplicarse en el backend desde el inicio; centralizarlo en `observacionController.ts` evitó inconsistencias.
+- **RBAC + institución + vínculo de equipo** es más complejo que RBAC simple; documentar reglas en `REGLAS_Y_PERMISOS_DE_ROLES.md` ayudó a probar y defender el producto.
+- **Validación doble (Zod + constraints BD)** detecta errores temprano y mejora la calidad percibida en formularios.
+
+### 12.2 Metodológicas
+
+- **Documentar mientras se desarrolla** (no al final) facilitó armar EV3 con plan de pruebas, usuarios demo y capturas alineadas.
+- **Un escenario de demo único** (Matías Pérez #5 con equipo interdisciplinario) hizo más clara la defensa que dispersar pruebas en muchos datos inconsistentes.
+- **Depurar la BD de pruebas** antes de congelar el plan evitó casos fallidos por usuarios obsoletos o credenciales desactualizadas.
+- **Commits frecuentes en Git** permitieron recuperar avances y demostrar control de versiones ante evaluación.
+- Trabajar **individualmente asumiendo frontend, backend y BD** exige priorizar MVP y dejar mejoras para iteraciones posteriores (EV2 → EV3).
+
+### 12.3 Sobre pruebas y calidad
+
+- Las **13 pruebas manuales** fueron suficientes para validar flujos críticos, pero CP-03 (cambio obligatorio de contraseña) quedó N/A por no tener un usuario con `must_change_password` en la corrida; conviene preparar datos de prueba para **todos** los casos del plan.
+- Las **capturas de pantalla** son evidencia valiosa para el informe y la defensa oral cuando no hay tests automatizados.
+- Las mejoras post-validación (privacidad, equipo, UI, reset de clave) demostraron que **probar el producto con usuarios reales del dominio** (familia, educador, médico) revela brechas que no aparecen en pruebas aisladas por módulo.
+
+### 12.4 Ética y responsabilidad
+
+- Datos de menores con TEA exigen **mínimo privilegio por rol** y no exponer contraseñas ni secretos JWT en documentación pública.
+- La privacidad MULTINIVEL/PRIVADA no es solo técnica: refleja **confianza clínica** entre familia, colegio y centro médico.
+
+---
+
+## 13. Trabajo futuro
 
 | Ítem | Prioridad |
 |------|-----------|
@@ -248,12 +538,11 @@ Detalle en `Documentacion/EV3-RESULTADOS-PRUEBAS.md`.
 | Pruebas automatizadas (Jest, Vitest, Supertest) | Alta |
 | Documentación OpenAPI / Swagger | Media |
 | Recuperación de contraseña por correo (automática) | Media |
-| Completar ejecución formal CP-14 a CP-28 | Baja |
 | Notificaciones en tiempo real | Baja |
 
 ---
 
-## 13. Anexos y documentos de referencia
+## 14. Anexos y documentos de referencia
 
 | Anexo | Archivo |
 |-------|---------|
@@ -265,6 +554,7 @@ Detalle en `Documentacion/EV3-RESULTADOS-PRUEBAS.md`.
 | F — Informe BD | `Documentacion/INFORME-TECNICO-BASE-DATOS.md` |
 | G — Diseño UI/UX | `Documentacion/DISENO-UI-UX.md` |
 | H — Repositorio | https://github.com/cristianmonsalve14/tea-link |
+| I — Control de versiones | Sección [10.4](#104-control-de-versiones-git-y-github) de este informe |
 
 ---
 

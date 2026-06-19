@@ -3,8 +3,8 @@
 
 **Autor:** Cristian Monsalve Budrovich  
 **Institución:** DuocUC  
-**Fecha:** 27 de Marzo 2026  
-**Versión:** 1.0
+**Fecha:** Junio 2026  
+**Versión:** 2.0 — alineado a `schema.prisma` y diagrama ER
 
 ---
 
@@ -17,7 +17,7 @@
 5. [Diseño de Base de Datos](#diseño-de-base-de-datos)
 6. [Implementación con Prisma ORM](#implementación-con-prisma-orm)
 7. [Proceso de Configuración](#proceso-de-configuración)
-8. [Pruebas de Conexión](#pruebas-de-conexión)
+8. [Verificación de la Base de Datos](#8-verificación-de-la-base-de-datos)
 9. [Justificación de Decisiones Técnicas](#justificación-de-decisiones-técnicas)
 10. [Resultados y Métricas](#resultados-y-métricas)
 11. [Seguridad Implementada](#seguridad-implementada)
@@ -30,13 +30,12 @@
 Este informe documenta la configuración completa de la base de datos PostgreSQL para el proyecto **TEA Link**, un sistema web de seguimiento de observaciones para personas con Trastorno del Espectro Autista (TEA).
 
 ### Alcance del Trabajo Realizado:
-- ✅ Diseño de esquema relacional con 5 tablas principales
-- ✅ Implementación de enumerados (ENUM) para integridad referencial
-- ✅ Configuración de Prisma ORM como capa de abstracción
-- ✅ Establecimiento de conexión segura con PostgreSQL
-- ✅ Creación de datos de prueba (seed data)
-- ✅ Validación mediante scripts de testing
-- ✅ Optimización con índices para consultas frecuentes
+- ✅ Esquema relacional **8 tablas**, normalizado **3FN**
+- ✅ Modelo multi-institucional y equipo interdisciplinario (`perfil_usuario`)
+- ✅ Enumerados (ENUM) y migraciones con Prisma
+- ✅ Diagrama ER en `Documentacion/diagramas/`
+- ✅ Integridad referencial, índices y auditoría admin
+- ✅ Base de datos de pruebas documentada en `usuarios_prueba.md`
 
 ---
 
@@ -62,41 +61,103 @@ Las familias, educadores y profesionales que trabajan con personas con TEA neces
 
 ### 3.1 Modelo Relacional
 
+Diagrama ER actualizado (8 tablas, multi-institucional, equipo interdisciplinario):
+
+- **Fuente:** `Documentacion/diagramas/modelo-er-base-datos.puml`
+- **Imagen:** `Documentacion/diagramas/modelo-er-base-datos.png`
+
 ```
-┌─────────────┐
-│  USUARIOS   │
-│ (familia,   │
-│  educador,  │
-│ profesional)│
-└──────┬──────┘
-       │
-       │ 1:N (gestiona)
-       │
-       ▼
-┌─────────────┐       ┌──────────────┐
-│  PERFILES   │──────▶│ OBSERVACIONES│
-│ (personas   │ 1:N   │ (conducta,   │
-│  con TEA)   │       │ comunicación,│
-└─────────────┘       │ social, etc.)│
-                      └──────┬───────┘
-                             │
-                             │ N:N
-                             │
-                      ┌──────▼───────┐
-                      │   REPORTES   │
-                      │  (PDF, Excel)│
-                      └──────────────┘
+┌──────────────┐     ┌─────────────┐     ┌──────────────┐
+│ INSTITUCIONES│──1:N─│  USUARIOS   │──N:M─│PERFIL_USUARIO│
+└──────┬───────┘     └──────┬──────┘     └──────┬───────┘
+       │ 1:N                │ 1:N               │ N:1
+       ▼                    ▼                   ▼
+┌──────────────┐     ┌─────────────┐     ┌──────────────┐
+│   PERFILES   │────▶│OBSERVACIONES│◀────│  (equipo)    │
+└──────────────┘ 1:N └──────┬──────┘     └──────────────┘
+                            │ N:N
+                     ┌──────▼───────┐
+                     │   REPORTES   │
+                     └──────────────┘
 ```
 
 ### 3.2 Componentes Principales
 
 | Entidad | Propósito | Cardinalidad |
 |---------|-----------|--------------|
-| **Usuarios** | Personas que usan el sistema (3 roles) | Raíz del modelo |
-| **Perfiles** | Personas con TEA bajo seguimiento | N perfiles por 1 usuario |
-| **Observaciones** | Registros de eventos observados | N observaciones por 1 perfil |
-| **Reportes** | Documentos generados (PDF/Excel) | N reportes por 1 usuario |
-| **ObservacionesEnReportes** | Relación N:N | Tabla intermedia |
+| **Instituciones** | Familia, colegio, centro médico, etc. | Raíz multi-tenant |
+| **Usuarios** | 6 roles (FAMILIA … SUPERADMIN) | N por institución |
+| **Perfiles** | Estudiantes bajo seguimiento | N por institución |
+| **PerfilUsuario** | Equipo interdisciplinario por perfil | N:M usuario ↔ perfil |
+| **Observaciones** | Bitácora con privacidad | N por perfil |
+| **Reportes** | PDF / Excel | N por creador |
+| **ObservacionesEnReportes** | Tabla intermedia N:N | — |
+| **AuditoriaAdmin** | Trazabilidad acciones admin | N por admin |
+
+### 3.3 Normalización (1NF · 2NF · 3NF)
+
+**Fuente de verdad:** `Producto/backend/prisma/schema.prisma`  
+**Diagrama ER:** `Documentacion/diagramas/modelo-er-base-datos.png`
+
+#### Primera forma normal (1FN)
+
+| Criterio | Cumplimiento |
+|----------|--------------|
+| Valores atómicos (sin listas en un campo) | ✅ Todos los atributos son escalares |
+| Sin grupos repetitivos | ✅ Relaciones N:M resueltas con tablas puente (`perfil_usuario`, `observaciones_en_reportes`) |
+| Identificador único por fila | ✅ PK en cada tabla (`id` o clave compuesta en tablas puente) |
+| Dominios tipados | ✅ ENUMs PostgreSQL (`rol_enum`, `privacidad_observacion_enum`, etc.) |
+
+#### Segunda forma normal (2FN)
+
+Aplica a tablas con **clave primaria compuesta**:
+
+| Tabla | PK | Atributos no clave | ¿Dependen de la PK completa? |
+|-------|-----|-------------------|------------------------------|
+| `perfil_usuario` | `(perfil_id, usuario_id)` | `rol_en_perfil`, `puede_editar`, `created_at` | ✅ Sí — el rol en un perfil depende del par usuario+perfil |
+| `observaciones_en_reportes` | `(reporte_id, observacion_id)` | *(ninguno)* | ✅ Tabla puente pura |
+
+El resto de tablas tienen PK simple (`id`); 2FN se cumple automáticamente si se cumple 1FN.
+
+#### Tercera forma normal (3FN)
+
+No debe haber dependencias transitivas **entre atributos no clave** (A → B → C con B no clave).
+
+| Tabla | Verificación 3FN |
+|-------|------------------|
+| `instituciones` | ✅ `nombre`, `tipo`, `direccion` dependen solo de `id` |
+| `usuarios` | ✅ `institucion_id` es FK; no se duplica `nombre` ni `tipo` de la institución |
+| `perfiles` | ✅ `institucion_id` es FK; datos del estudiante dependen de `id` del perfil |
+| `observaciones` | ✅ `autor_id` y `perfil_id` son FK; no se guarda nombre del autor en la observación |
+| `reportes` | ✅ `creador_id` es FK; metadatos del informe dependen de `id` del reporte |
+| `auditoria_admin` | ✅ Registro de evento; `entidad` + `entidad_id` referencian de forma genérica (patrón auditoría) |
+
+**Relaciones N:M correctamente descompuestas:**
+
+```
+usuarios ←→ perfil_usuario ←→ perfiles     (equipo interdisciplinario)
+reportes ←→ observaciones_en_reportes ←→ observaciones
+```
+
+#### Integridad referencial (complemento a la normalización)
+
+| Regla | Implementación |
+|-------|----------------|
+| FK declaradas | Prisma `@relation` → constraints en PostgreSQL |
+| Unicidad | `usuarios.email` UNIQUE |
+| Eliminación controlada | CASCADE en perfiles/observaciones hijas; RESTRICT implícito en autor de observaciones |
+| Índices en FK | `idx_perfil_institucion_id`, `idx_observaciones_perfil_id`, etc. |
+
+#### Nota de diseño (redundancia controlada)
+
+| Campo | Observación |
+|-------|-------------|
+| `perfiles.edad` + `perfiles.fecha_nacimiento` | Pueden derivarse mutuamente; se mantienen ambos por **usabilidad en formularios**. No genera anomalía de actualización crítica en el dominio del proyecto. |
+| `usuarios.rol` vs `perfil_usuario.rol_en_perfil` | **No es redundancia indebida:** `rol` = rol del sistema; `rol_en_perfil` = rol en un perfil concreto (equipo interdisciplinario). |
+
+#### Conclusión para evaluación
+
+> El esquema actual de **8 tablas** cumple **1FN, 2FN y 3FN**. El diagrama ER refleja las mismas entidades, cardinalidades y tablas puente que `schema.prisma`. Las dependencias transitivas de datos de negocio se resuelven mediante **claves foráneas**, no duplicando atributos de otras entidades.
 
 ---
 
@@ -125,194 +186,50 @@ Las familias, educadores y profesionales que trabajan con personas con TEA neces
 
 ---
 
-## 5. DISEÑO DE BASE DE DATOS
+## 5. DISEÑO DE BASE DE DATOS (ESQUEMA VIGENTE)
 
-### 5.1 Tabla: `usuarios`
+**Fuente de verdad:** `Producto/backend/prisma/schema.prisma`  
+**Diagrama:** `Documentacion/diagramas/modelo-er-base-datos.png`  
+**Normalización:** ver §3.3
 
-**Propósito:** Almacenar credenciales y datos de usuarios del sistema
+No se duplica aquí el SQL manual: el esquema se genera y versiona con **Prisma Migrate** (`Producto/backend/prisma/migrations/`).
 
-```sql
-CREATE TABLE usuarios (
-  id SERIAL PRIMARY KEY,
-  email VARCHAR(255) UNIQUE NOT NULL,
-  password_hash VARCHAR(255) NOT NULL,  -- Bcrypt hash
-  nombre_completo VARCHAR(255) NOT NULL,
-  rol rol_enum NOT NULL,                -- FAMILIA | EDUCADOR | PROFESIONAL
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-```
+### 5.1 Tablas del modelo
 
-**Índices:**
-- `idx_usuarios_email` → Optimiza búsquedas de login
+| Tabla | PK | Relaciones principales |
+|-------|-----|------------------------|
+| `instituciones` | `id` | 1:N → `usuarios`, `perfiles` |
+| `usuarios` | `id` | FK `institucion_id`; 1:N → `observaciones`, `reportes`, `auditoria_admin` |
+| `perfiles` | `id` | FK `institucion_id`; 1:N → `observaciones`; N:M → `usuarios` vía `perfil_usuario` |
+| `perfil_usuario` | `(perfil_id, usuario_id)` | Tabla puente equipo interdisciplinario |
+| `observaciones` | `id` | FK `perfil_id`, `autor_id`; campo `privacidad` |
+| `reportes` | `id` | FK `creador_id`; N:M → `observaciones` |
+| `observaciones_en_reportes` | `(reporte_id, observacion_id)` | Tabla puente N:N |
+| `auditoria_admin` | `id` | FK `admin_id` |
 
-**Constraints:**
-- `UNIQUE` en email → Evita duplicados
-- `NOT NULL` en campos críticos
+### 5.2 Enumerados (PostgreSQL)
 
----
+| ENUM | Valores (resumen) |
+|------|-------------------|
+| `rol_enum` | FAMILIA, EDUCADOR, PROFESIONAL, MEDICO, ADMINISTRADOR, SUPERADMIN |
+| `rol_perfil_enum` | TUTOR, EDUCADOR, PROFESIONAL, MEDICO |
+| `tipo_institucion_enum` | FAMILIA, CENTRO_EDUCACIONAL, CENTRO_MEDICO, CENTRO_PROFESIONAL, SISTEMA |
+| `privacidad_observacion_enum` | PUBLICA, MULTINIVEL, PRIVADA |
+| `categoria_observacion_enum` | CONDUCTA, COMUNICACION, SOCIAL, ACADEMICO, SENSORIAL, MOTOR, CLINICO, OTRO |
+| `formato_reporte_enum` | PDF, EXCEL |
 
-### 5.2 Tabla: `perfiles`
+### 5.3 Índices relevantes
 
-**Propósito:** Datos de personas con TEA bajo seguimiento
+Definidos en `schema.prisma`, entre otros:
 
-```sql
-CREATE TABLE perfiles (
-  id SERIAL PRIMARY KEY,
-  nombre VARCHAR(255) NOT NULL,
-  edad INTEGER CHECK (edad > 0 AND edad < 120),
-  diagnostico VARCHAR(500),
-  fecha_nacimiento DATE,
-  notas TEXT,
-  usuario_id INTEGER NOT NULL,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  
-  CONSTRAINT fk_perfiles_usuario
-    FOREIGN KEY (usuario_id) REFERENCES usuarios(id)
-    ON DELETE CASCADE  -- Si se borra usuario, se borran perfiles
-);
-```
+- `idx_usuarios_email`
+- `idx_perfil_institucion_id`
+- `idx_observaciones_perfil_fecha` (compuesto: bitácora por perfil)
+- Índices en FK de tablas puente y auditoría
 
-**Índices:**
-- `idx_perfiles_usuario_id` → Consultas de perfiles por usuario
+### 5.4 Timestamps
 
-**Validaciones:**
-- `CHECK` en edad para valores razonables
-- `CASCADE` para mantener integridad referencial
-
----
-
-### 5.3 Tabla: `observaciones`
-
-**Propósito:** Registros de eventos observados (núcleo del sistema)
-
-```sql
-CREATE TABLE observaciones (
-  id SERIAL PRIMARY KEY,
-  titulo VARCHAR(255) NOT NULL,
-  descripcion TEXT NOT NULL,
-  categoria categoria_observacion_enum NOT NULL,  -- CONDUCTA | COMUNICACION | SOCIAL | ACADEMICO
-  fecha_evento TIMESTAMP NOT NULL,
-  perfil_id INTEGER NOT NULL,
-  autor_id INTEGER NOT NULL,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  
-  CONSTRAINT fk_observaciones_perfil
-    FOREIGN KEY (perfil_id) REFERENCES perfiles(id) ON DELETE CASCADE,
-  
-  CONSTRAINT fk_observaciones_autor
-    FOREIGN KEY (autor_id) REFERENCES usuarios(id) ON DELETE RESTRICT
-);
-```
-
-**Índices Optimizados:**
-```sql
-CREATE INDEX idx_observaciones_perfil_id ON observaciones(perfil_id);
-CREATE INDEX idx_observaciones_autor_id ON observaciones(autor_id);
-CREATE INDEX idx_observaciones_fecha_evento ON observaciones(fecha_evento);
-CREATE INDEX idx_observaciones_categoria ON observaciones(categoria);
-
--- Índice compuesto para consultas frecuentes
-CREATE INDEX idx_observaciones_perfil_fecha 
-  ON observaciones(perfil_id, fecha_evento DESC);
-```
-
-**Justificación de Índices:**
-- `perfil_id`: Listar observaciones de un perfil (consulta más frecuente)
-- `fecha_evento`: Ordenamiento temporal
-- Índice compuesto: Optimiza "observaciones de X perfil ordenadas por fecha"
-
----
-
-### 5.4 Tabla: `reportes`
-
-**Propósito:** Documentos generados (PDF/Excel)
-
-```sql
-CREATE TABLE reportes (
-  id SERIAL PRIMARY KEY,
-  titulo VARCHAR(255) NOT NULL,
-  fecha_inicio DATE NOT NULL,
-  fecha_fin DATE NOT NULL,
-  formato formato_reporte_enum NOT NULL,  -- PDF | EXCEL
-  url_archivo VARCHAR(500),
-  creador_id INTEGER NOT NULL,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  
-  CONSTRAINT chk_reportes_fechas CHECK (fecha_fin >= fecha_inicio),
-  CONSTRAINT fk_reportes_creador FOREIGN KEY (creador_id) REFERENCES usuarios(id)
-);
-```
-
-**Validaciones:**
-- `CHECK` para fechas lógicas (fin >= inicio)
-
----
-
-### 5.5 Tabla: `observaciones_en_reportes` (N:N)
-
-**Propósito:** Relación muchos a muchos entre reportes y observaciones
-
-```sql
-CREATE TABLE observaciones_en_reportes (
-  reporte_id INTEGER NOT NULL,
-  observacion_id INTEGER NOT NULL,
-  PRIMARY KEY (reporte_id, observacion_id),
-  
-  CONSTRAINT fk_obs_reportes_reporte 
-    FOREIGN KEY (reporte_id) REFERENCES reportes(id) ON DELETE CASCADE,
-  CONSTRAINT fk_obs_reportes_observacion 
-    FOREIGN KEY (observacion_id) REFERENCES observaciones(id) ON DELETE CASCADE
-);
-```
-
----
-
-### 5.6 Tipos Enumerados (ENUM)
-
-#### `rol_enum`
-```sql
-CREATE TYPE rol_enum AS ENUM ('FAMILIA', 'EDUCADOR', 'PROFESIONAL');
-```
-**Ventaja:** Validación a nivel de BD, no se pueden insertar roles inválidos
-
-#### `categoria_observacion_enum`
-```sql
-CREATE TYPE categoria_observacion_enum AS ENUM (
-  'CONDUCTA', 'COMUNICACION', 'SOCIAL', 'ACADEMICO'
-);
-```
-**Ventaja:** Categorización estandarizada
-
-#### `formato_reporte_enum`
-```sql
-CREATE TYPE formato_reporte_enum AS ENUM ('PDF', 'EXCEL');
-```
-
----
-
-### 5.7 Triggers Automáticos
-
-**Función para actualizar `updated_at`:**
-
-```sql
-CREATE OR REPLACE FUNCTION update_updated_at_column()
-RETURNS TRIGGER AS $$
-BEGIN
-  NEW.updated_at = CURRENT_TIMESTAMP;
-  RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
-
--- Aplicar a tablas
-CREATE TRIGGER trg_usuarios_updated_at
-  BEFORE UPDATE ON usuarios
-  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-```
-
-**Ventaja:** Auditoría automática de cambios sin código en aplicación
+Prisma `@updatedAt` mantiene `updated_at` en modelos principales; no se documentan triggers SQL manuales heredados del diseño inicial.
 
 ---
 
@@ -330,57 +247,9 @@ CREATE TRIGGER trg_usuarios_updated_at
 
 ### 6.2 Schema Prisma
 
-Archivo: `backend/prisma/schema.prisma`
+Archivo vigente: `Producto/backend/prisma/schema.prisma` (8 modelos, ENUMs y relaciones N:M).
 
-```prisma
-generator client {
-  provider = "prisma-client-js"
-}
-
-datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
-}
-
-model Usuario {
-  id              Int           @id @default(autoincrement())
-  email           String        @unique @db.VarChar(255)
-  password_hash   String        @db.VarChar(255)
-  nombre_completo String        @db.VarChar(255)
-  rol             rol_enum
-  created_at      DateTime      @default(now()) @db.Timestamp(6)
-  updated_at      DateTime      @default(now()) @updatedAt @db.Timestamp(6)
-  
-  // Relaciones
-  observaciones   Observacion[] @relation("AutorObservacion")
-  perfiles        Perfil[]
-  reportes        Reporte[]
-
-  @@index([email], map: "idx_usuarios_email")
-  @@map("usuarios")
-}
-
-model Perfil {
-  id               Int           @id @default(autoincrement())
-  nombre           String        @db.VarChar(255)
-  edad             Int?
-  diagnostico      String?       @db.VarChar(500)
-  fecha_nacimiento DateTime?     @db.Date
-  notas            String?
-  usuario_id       Int
-  created_at       DateTime      @default(now()) @db.Timestamp(6)
-  updated_at       DateTime      @default(now()) @updatedAt @db.Timestamp(6)
-  
-  // Relaciones
-  observaciones    Observacion[]
-  usuario          Usuario       @relation(fields: [usuario_id], references: [id], onDelete: Cascade)
-
-  @@index([usuario_id], map: "idx_perfiles_usuario_id")
-  @@map("perfiles")
-}
-
-// ... (modelos Observacion, Reporte, ObservacionEnReporte)
-```
+No se incluye un volcado completo aquí para evitar duplicar y desactualizar el documento; consultar el archivo y el diagrama ER en `Documentacion/diagramas/`.
 
 ### 6.3 Generación de Cliente
 
@@ -397,176 +266,64 @@ npx prisma generate
 
 ## 7. PROCESO DE CONFIGURACIÓN
 
-### 7.1 Pasos Ejecutados
+### 7.1 Requisitos
 
-#### Paso 1: Instalación de PostgreSQL
-```bash
-# Se instaló PostgreSQL 14 en localhost
-# Puerto: 5432
-# Usuario: postgres
-```
+- PostgreSQL 14+ en `localhost:5432` (o instancia remota)
+- Node.js y npm en `Producto/backend/`
+- Base de datos `tea_link` creada con encoding UTF-8
 
-#### Paso 2: Creación de Base de Datos
-```sql
-CREATE DATABASE tea_link
-  WITH OWNER = postgres
-  ENCODING = 'UTF8'
-  LC_COLLATE = 'Spanish_Chile.1252'
-  LC_CTYPE = 'Spanish_Chile.1252';
-```
+### 7.2 Variables de entorno
 
-#### Paso 3: Ejecución de Script SQL
-```bash
-# Ejecutado vía pgAdmin Query Tool
-psql -U postgres -d tea_link -f database/create_database_tea_link.sql
-```
-
-**Acciones del Script:**
-1. Creación de tipos ENUM
-2. Creación de tablas con constraints
-3. Creación de índices
-4. Creación de triggers
-5. Inserción de datos de prueba
-
-#### Paso 4: Configuración de Variables de Entorno
-
-Archivo: `backend/.env`
+Archivo: `Producto/backend/.env` (no versionado; ver `.env.example`)
 
 ```env
-DATABASE_URL="postgresql://postgres:monsalve1974@localhost:5432/tea_link"
+DATABASE_URL="postgresql://USUARIO:CONTRASEÑA@localhost:5432/tea_link"
 PORT=3000
 NODE_ENV=development
-JWT_SECRET="tea_link_secret_2026_cristian_monsalve_duocuc_jwt_token_key"
+JWT_SECRET="generar-un-secreto-largo-y-unico"
 ```
 
-**Componentes de DATABASE_URL:**
-- `postgresql://` → Protocolo
-- `postgres` → Usuario
-- `monsalve1974` → Contraseña (cifrada en producción)
-- `localhost:5432` → Host y puerto
-- `tea_link` → Nombre de BD
+Usar credenciales locales reales solo en `.env`; no documentar contraseñas ni secretos en el repositorio.
 
-#### Paso 5: Instalación de Dependencias
+### 7.3 Puesta en marcha con Prisma
 
 ```bash
-cd backend
+cd Producto/backend
 npm install
-npm install prisma @prisma/client --save
-npm install typescript ts-node @types/node --save-dev
-```
-
-#### Paso 6: Generación de Cliente Prisma
-
-```bash
 npx prisma generate
+npx prisma migrate deploy   # o migrate dev en desarrollo
+npx prisma db seed          # datos demo documentados en usuarios_prueba.md
 ```
 
-**Output:**
-```
-✔ Generated Prisma Client (v5.22.0) to ./node_modules/@prisma/client
-```
+Las migraciones versionadas están en `Producto/backend/prisma/migrations/`.
 
 ---
 
-## 8. PRUEBAS DE CONEXIÓN
+## 8. VERIFICACIÓN DE LA BASE DE DATOS
 
-### 8.1 Script de Testing
+### 8.1 Script de resumen
 
-Archivo: `backend/src/test-db.ts`
+Archivo: `Producto/backend/scripts/db-resumen.ts`
 
-```typescript
-import { PrismaClient } from '@prisma/client'
-
-const prisma = new PrismaClient()
-
-async function main() {
-  try {
-    // Test 1: Contar usuarios
-    const totalUsuarios = await prisma.usuario.count()
-    console.log(`✅ Total de usuarios: ${totalUsuarios}`)
-    
-    // Test 2: Listar usuarios con select específico
-    const usuarios = await prisma.usuario.findMany({
-      select: {
-        id: true,
-        email: true,
-        nombre_completo: true,
-        rol: true
-      }
-    })
-    
-    // Test 3: Consulta con relaciones (JOIN)
-    const perfiles = await prisma.perfil.findMany({
-      include: {
-        usuario: {
-          select: { nombre_completo: true, rol: true }
-        }
-      }
-    })
-    
-    // Test 4: Consulta compleja con múltiples relaciones
-    const observaciones = await prisma.observacion.findMany({
-      include: {
-        perfil: { select: { nombre: true } },
-        autor: { select: { nombre_completo: true, rol: true } }
-      },
-      orderBy: { fecha_evento: 'desc' }
-    })
-    
-  } catch (error) {
-    console.error('❌ Error:', error)
-  } finally {
-    await prisma.$disconnect()
-  }
-}
-```
-
-### 8.2 Ejecución de Tests
+Lista instituciones, usuarios, perfiles y vínculos `perfil_usuario` (equipo interdisciplinario).
 
 ```bash
-cd backend
-npx ts-node src/test-db.ts
+cd Producto/backend
+npx ts-node scripts/db-resumen.ts
 ```
 
-### 8.3 Resultados Obtenidos
+### 8.2 Estado de datos demo (Junio 2026)
 
-```
-🔍 Probando conexión a PostgreSQL...
+Documentado en `Documentacion/usuarios_prueba.md`:
 
-✅ Total de usuarios: 3
+| Métrica | Valor |
+|---------|-------|
+| Instituciones | 5 |
+| Usuarios | 11 |
+| Perfiles (estudiantes) | 3 |
+| Roles de sistema | FAMILIA, EDUCADOR, PROFESIONAL, MEDICO, ADMINISTRADOR, SUPERADMIN |
 
-📋 Usuarios en la base de datos:
-   - Juan Pérez Soto (juan.perez@example.com) - Rol: FAMILIA
-   - María González López (maria.gonzalez@escuela.cl) - Rol: EDUCADOR
-   - Ana Martínez Rojas (ana.martinez@clinica.cl) - Rol: PROFESIONAL
-
-✅ Total de perfiles: 2
-
-👤 Perfiles registrados:
-   - Matías Pérez (7 años) - Gestionado por: Juan Pérez Soto
-   - Sofía Ramírez (5 años) - Gestionado por: Juan Pérez Soto
-
-✅ Total de observaciones: 4
-
-📝 Observaciones registradas:
-   - [ACADEMICO] Avance en lectura
-     Perfil: Matías Pérez | Autor: María González López (EDUCADOR)
-   - [SOCIAL] Interacción positiva con compañeros
-     Perfil: Matías Pérez | Autor: María González López (EDUCADOR)
-   - [CONDUCTA] Crisis sensorial en recreo
-     Perfil: Matías Pérez | Autor: María González López (EDUCADOR)
-   - [COMUNICACION] Buena comunicación en terapia
-     Perfil: Matías Pérez | Autor: Ana Martínez Rojas (PROFESIONAL)
-
-✅ ¡Conexión exitosa! La base de datos está funcionando correctamente.
-```
-
-**Interpretación:**
-- ✅ Conexión establecida sin errores
-- ✅ Queries ejecutándose correctamente
-- ✅ JOINs funcionando (include con relaciones)
-- ✅ Tipos TypeScript verificados en compilación
-- ✅ Datos seed cargados correctamente
+La verificación incluye relaciones N:M, `privacidad` en observaciones, auditoría admin y `must_change_password` tras reset por administrador.
 
 ---
 
@@ -605,7 +362,9 @@ rol VARCHAR(20) CHECK (rol IN ('FAMILIA', 'EDUCADOR', 'PROFESIONAL'))
 
 **Opción 2: ENUM** (elegida)
 ```sql
-CREATE TYPE rol_enum AS ENUM ('FAMILIA', 'EDUCADOR', 'PROFESIONAL');
+CREATE TYPE rol_enum AS ENUM (
+  'FAMILIA', 'EDUCADOR', 'PROFESIONAL', 'MEDICO', 'ADMINISTRADOR', 'SUPERADMIN'
+);
 rol rol_enum NOT NULL;
 ```
 
@@ -628,21 +387,16 @@ CREATE INDEX idx_observaciones_perfil_fecha
 - Evita escaneo completo de tabla
 - Reduce tiempo de respuesta de ~500ms a ~5ms en 10,000 registros
 
-### 9.5 Estrategia de Cascading
+### 9.5 Estrategia de Cascading (esquema vigente)
 
-```sql
--- Caso 1: DELETE CASCADE
-CONSTRAINT fk_perfiles_usuario
-  FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE CASCADE
-```
-**Razón:** Si se elimina un usuario, sus perfiles deben eliminarse
+| Relación | ON DELETE | Razón |
+|----------|-----------|-------|
+| `perfil_usuario` → `perfiles` / `usuarios` | CASCADE | Al eliminar perfil o usuario, se limpian vínculos del equipo |
+| `observaciones.autor_id` → `usuarios` | RESTRICT | No borrar usuario con observaciones (auditoría) |
+| `observaciones.perfil_id` → `perfiles` | CASCADE | Observaciones ligadas al perfil del estudiante |
+| Tablas puente N:N | CASCADE | Coherencia al eliminar reporte u observación |
 
-```sql
--- Caso 2: DELETE RESTRICT
-CONSTRAINT fk_observaciones_autor
-  FOREIGN KEY (autor_id) REFERENCES usuarios(id) ON DELETE RESTRICT
-```
-**Razón:** No permitir eliminar usuario si tiene observaciones registradas (auditoría)
+El diseño antiguo con `perfiles.usuario_id` y `fk_perfiles_usuario` fue reemplazado por `perfil_usuario` (N:M) e `institucion_id` en perfiles y usuarios.
 
 ---
 
@@ -652,48 +406,22 @@ CONSTRAINT fk_observaciones_autor
 
 | Funcionalidad | Estado | Evidencia |
 |---------------|--------|-----------|
-| Almacenamiento de usuarios | ✅ | 3 usuarios insertados |
-| Gestión de perfiles TEA | ✅ | 2 perfiles activos |
-| Registro de observaciones | ✅ | 4 observaciones cargadas |
-| Relaciones entre entidades | ✅ | JOINs validados |
-| Validación de datos | ✅ | Constraints funcionando |
-| Optimización de consultas | ✅ | Índices creados |
-| Auditoría temporal | ✅ | Triggers `updated_at` |
+| Multi-institucional | ✅ | 5 instituciones en seed |
+| Usuarios y roles | ✅ | 11 usuarios, 6 roles |
+| Perfiles y equipo N:M | ✅ | 3 perfiles, tabla `perfil_usuario` |
+| Bitácora y privacidad | ✅ | ENUM `privacidad_observacion_enum` |
+| Reportes PDF/Excel | ✅ | Tabla `reportes` + puente N:N |
+| Auditoría admin | ✅ | Tabla `auditoria_admin` |
+| Migraciones versionadas | ✅ | `prisma/migrations/` |
+| API REST + JWT | ✅ | Backend Express en producción local |
 
-### 10.2 Performance Inicial
+### 10.2 Performance
 
-**Test de consulta compleja:**
-```typescript
-const resultado = await prisma.observacion.findMany({
-  where: { perfil_id: 1 },
-  include: { perfil: true, autor: true },
-  orderBy: { fecha_evento: 'desc' }
-})
-```
-
-- **Tiempo de ejecución:** ~8ms
-- **Registros retornados:** 4
-- **Uso de índice:** ✅ `idx_observaciones_perfil_fecha`
+Consultas frecuentes (bitácora por perfil, listado con `include`) usan índices definidos en `schema.prisma`, en particular `idx_observaciones_perfil_fecha`.
 
 ### 10.3 Integridad de Datos
 
-**Pruebas de constraints:**
-
-```typescript
-// ❌ Este código falla correctamente (email duplicado)
-await prisma.usuario.create({
-  data: { email: 'juan.perez@example.com', ... }
-})
-// Error: Unique constraint failed on 'email'
-
-// ❌ Este código falla correctamente (rol inválido)
-await prisma.usuario.create({
-  data: { rol: 'ADMIN', ... }  // ADMIN no existe en rol_enum
-})
-// Error: Invalid enum value
-```
-
----
+Prisma y PostgreSQL rechazan emails duplicados, valores ENUM inválidos y violaciones de FK. Las validaciones de negocio adicionales están en la capa API (Zod).
 
 ## 11. SEGURIDAD IMPLEMENTADA
 
@@ -736,14 +464,7 @@ const connectionString = process.env.DATABASE_URL
 
 ### 11.3 JWT Secret
 
-```env
-JWT_SECRET="tea_link_secret_2026_cristian_monsalve_duocuc_jwt_token_key"
-```
-
-**Características:**
-- ✅ String aleatorio largo (>32 caracteres)
-- ✅ En variable de entorno
-- ✅ Diferente en producción
+Definir en `.env` un secreto largo y distinto por entorno. No incluir el valor real en documentación ni en el repositorio.
 
 ### 11.4 Protección SQL Injection
 
@@ -767,13 +488,13 @@ prisma.usuario.findMany({ where: { email: input } })
 
 | Objetivo | Estado | Observación |
 |----------|--------|-------------|
-| Diseño de esquema relacional | ✅ | 5 tablas, relaciones 1:N y N:N |
+| Diseño de esquema relacional | ✅ | 8 tablas, relaciones 1:N y N:N, 3FN |
 | Configuración de PostgreSQL | ✅ | BD `tea_link` funcional |
 | Integración con Prisma ORM | ✅ | Cliente generado y probado |
 | Validación de integridad | ✅ | Constraints, ENUM, CHECK |
 | Optimización de consultas | ✅ | Índices estratégicos |
 | Seguridad básica | ✅ | Bcrypt, variables env |
-| Testing de conexión | ✅ | Script validado exitosamente |
+| Testing de conexión | ✅ | `scripts/db-resumen.ts` |
 | Datos de prueba | ✅ | Seed data funcional |
 
 ### 12.2 Conocimientos Aplicados
@@ -795,13 +516,17 @@ prisma.usuario.findMany({ where: { email: input } })
 - ✅ Prepared statements (anti SQL-Injection)
 - ✅ Separación de entornos (dev/prod)
 
-### 12.3 Próximos Pasos
+### 12.3 Estado actual del producto
 
-1. **Implementar Autenticación JWT** en endpoints Express
-2. **Crear Migraciones** con Prisma Migrate
-3. **Desarrollar API REST** para CRUD de observaciones
-4. **Implementar Validaciones** con Zod en capa de aplicación
-5. **Deploy** en Railway/Vercel + PostgreSQL en nube
+Lo planificado inicialmente como “próximos pasos” ya está implementado:
+
+- Autenticación JWT y middleware de roles
+- Migraciones Prisma y seed multi-institucional
+- API REST (observaciones, reportes, admin, reset de clave)
+- Validaciones Zod en backend
+- Frontend React/Vite con pruebas EV3 documentadas
+
+Evolución futura posible: despliegue en nube, backups automatizados y métricas de observabilidad.
 
 ### 12.4 Lecciones Aprendidas
 
@@ -839,18 +564,21 @@ npx prisma db pull --print
 
 ```
 proyecto/
-├── backend/
-│   ├── .env                    # Variables de entorno
-│   ├── prisma/
-│   │   └── schema.prisma       # Esquema de BD
-│   ├── src/
-│   │   ├── index.ts            # Servidor Express
-│   │   └── test-db.ts          # Script de testing
-│   └── package.json
-├── database/
-│   └── create_database_tea_link.sql  # Script SQL
-└── docs/
-    └── INFORME-TECNICO-BASE-DATOS.md  # Este documento
+├── Producto/
+│   ├── backend/
+│   │   ├── .env.example
+│   │   ├── prisma/
+│   │   │   ├── schema.prisma
+│   │   │   └── migrations/
+│   │   ├── scripts/
+│   │   │   └── db-resumen.ts
+│   │   └── src/
+│   └── frontend/
+└── Documentacion/
+    ├── INFORME-TECNICO-BASE-DATOS.md
+    ├── usuarios_prueba.md
+    └── diagramas/
+        └── modelo-er-base-datos.png
 ```
 
 ### Anexo C: Referencias
@@ -865,7 +593,7 @@ proyecto/
 ## FIRMA Y APROBACIÓN
 
 **Desarrollado por:** Cristian Monsalve Budrovich  
-**Fecha:** 27 de Marzo 2026  
+**Fecha:** Junio 2026  
 **Proyecto:** TEA Link - DuocUC  
 **Materia:** Taller de Programación  
 

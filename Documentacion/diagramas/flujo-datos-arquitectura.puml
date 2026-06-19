@@ -2,7 +2,7 @@
 !theme plain
 skinparam backgroundColor white
 skinparam defaultTextAlignment center
-skinparam rectangleBackgroundColor<<frontend>> #E8E8E8
+skinparam rectangleBackgroundColor<<frontend>> #E8F5E9
 skinparam rectangleBackgroundColor<<backend>> #E3F2FD
 skinparam rectangleBackgroundColor<<database>> #F3E5F5
 skinparam rectangleBorderColor #333333
@@ -10,50 +10,55 @@ skinparam arrowColor #FF6B35
 skinparam arrowThickness 2
 skinparam shadowing false
 
-title Flujo de Datos en Arquitectura 3-Capas\nTEA Link
+title Flujo de Datos — Crear observación\nArquitectura 3 capas · TEA Link (2026)
 
 actor Usuario as user #GRAY
-rectangle "**USUARIO**\n(Navegador)" as nav <<frontend>> #LIGHTGRAY
 
-rectangle "**BACKEND (Express)**" as backend <<backend>> #E3F2FD {
-  rectangle "**✓ Autenticación**\nValidar JWT" as auth #B3E5FC
-  rectangle "**✓ Autorización**\nVerificar rol" as authz #81D4FA
-  rectangle "**✓ Validación**\nBusiness rules" as validation #4FC3F7
+rectangle "**FRONTEND (React + Vite)**" as frontend <<frontend>> {
+  rectangle "Formulario\nNuevaObservacionForm" as form
+  rectangle "Validación UX\n(Zod en cliente)" as feval
 }
 
-rectangle "**DATABASE (PostgreSQL)**" as database <<database>> #F3E5F5 {
-  rectangle "**✓ Validar ENUM**\n**✓ Validar FK**" as dbvalidation #E1BEE7
-  rectangle "**INSERT observacion**" as insert #CE93D8
-  rectangle "**Actualizar índices**\n(automático)" as indexes #BA68C8
+rectangle "**BACKEND (Express + TypeScript)**" as backend <<backend>> {
+  rectangle "**① Autenticación**\nJWT (authMiddleware)" as auth #B3E5FC
+  rectangle "**② Autorización**\nRBAC por rol" as authz #81D4FA
+  rectangle "**③ Validación**\nZod (observacionSchema)" as validation #4FC3F7
+  rectangle "**④ Acceso perfil**\nperfilAccess.ts" as access #29B6F6
+  rectangle "**⑤ Privacidad**\nPUBLICA default;\nMEDICO: MULTINIVEL/PRIVADA" as privacy #039BE5
 }
 
-rectangle "**FRONTEND ACTUALIZA**\n• Lista de observaciones\n• Notificación éxito ✓" as response <<frontend>> #C8E6C9
+rectangle "**DATABASE (PostgreSQL + Prisma)**" as database <<database>> {
+  rectangle "**Constraints**\nENUM · FK · índices" as dbvalidation #E1BEE7
+  rectangle "**INSERT observaciones**" as insert #CE93D8
+}
 
-user --> nav
-nav --> backend : **①** HTTP Request\nPOST /api/observaciones\n+ JWT Token
+rectangle "**RESPUESTA**\n201 + observación\nBitácora actualizada" as response <<frontend>> #C8E6C9
+
+user --> form
+form --> feval
+feval --> backend : **HTTP POST**\n/api/observaciones\nAuthorization: Bearer JWT
+
 auth --> authz
 authz --> validation
-validation --> database : **②** Prisma Query
+validation --> access
+access --> privacy
+privacy --> database : **Prisma Client**
+
 dbvalidation --> insert
-insert --> indexes
-indexes --> response : **③** Response\n{ id: 5, ... }
+insert --> response
 
 note right of backend
-  **🔒 DEFENSA MULTICAPA**
-  Frontend → Validación UX
-  Backend → Seguridad (auth/roles)
-  Database → Integridad (ENUM/FK)
+  **Defensa multicapa**
+  · Frontend: UX + Zod
+  · Backend: JWT, roles, acceso perfil
+  · Listado: filtro privacidad por rol
+  · BD: integridad relacional
 end note
 
-note right of database
-  **⚡ TIEMPO TOTAL**
-  50-100ms
-end note
-
-note bottom
-  **📈 ESCALABLE**
-  Cada capa independiente
-  Load balancing por capa
+note bottom of database
+  Tablas: usuarios, perfiles,
+  perfil_usuario, observaciones,
+  reportes, auditoria_admin
 end note
 
 @enduml

@@ -351,7 +351,7 @@ export const getUltimasAccionesAuditoria = async (_req: Request, res: Response) 
   try {
     const acciones = await prisma.auditoriaAdmin.findMany({
       orderBy: { created_at: 'desc' },
-      take: 10,
+      take: 100,
       include: {
         admin: { select: { email: true, nombre_completo: true, rol: true } }
       }

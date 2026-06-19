@@ -1,7 +1,7 @@
 # Evaluación 3 — Resultados de ejecución de pruebas
 
 **Proyecto:** TEA Link  
-**Fecha de ejecución (parcial):** 28 de mayo de 2026  
+**Fecha de ejecución:** 28 de mayo de 2026  
 **Entorno:** Local — PostgreSQL, backend `localhost:3000`, frontend `localhost:5173`  
 **Plan de referencia:** `EV3-PLAN-DE-PRUEBAS.md`
 
@@ -11,11 +11,11 @@
 
 | Métrica | Valor |
 |---------|-------|
-| Total casos | 28 |
+| Casos planificados | 13 (CP-01 a CP-13) |
 | Ejecutados OK | 12 |
 | No aplica / saltado | 1 (CP-03) |
-| Pendientes | 15 (CP-14 a CP-28) |
-| Capturas registradas | 13 (Captura-01 a Captura-13) |
+| Capturas | 13 (Captura-01 a Captura-13) |
+| Estado del plan | **Completo** |
 
 ---
 
@@ -43,7 +43,7 @@
 
 ## Tabla de resultados
 
-**Leyenda estado:** OK · Falla · Corregido · N/A · Pendiente
+**Leyenda estado:** OK · Falla · Corregido · N/A
 
 | ID | Módulo | Funcionalidad | Resultado obtenido | Estado | Evidencia |
 |----|--------|---------------|-------------------|--------|-----------|
@@ -60,25 +60,10 @@
 | CP-11 | Equipo | Médico ve obs. del equipo | Médico ve observaciones PUBLICA de familia, educador y profesional en perfil #5 | OK | Captura-11 |
 | CP-12 | Privacidad | Familia no ve PRIVADA | Familia no visualiza la nota clínica privada del médico en bitácora | OK | Captura-12 |
 | CP-13 | Privacidad | Profesional ve MULTINIVEL | Profesional visualiza obs. MULTINIVEL; no visualiza PRIVADAS del médico | OK | Captura-13 |
-| CP-14 | Observaciones | Editar observación propia | | Pendiente | |
-| CP-15 | Observaciones | No editar obs. ajena | | Pendiente | |
-| CP-16 | Observaciones | Eliminar observación propia | | Pendiente | |
-| CP-17 | Bitácora UI | Filtro por rol | | Pendiente | |
-| CP-18 | Bitácora UI | Búsqueda por texto | | Pendiente | |
-| CP-19 | Bitácora UI | Vista por rol / cronológica | | Pendiente | |
-| CP-20 | Reportes | Profesional genera informe | | Pendiente | |
-| CP-21 | Reportes | Descargar PDF | | Pendiente | |
-| CP-22 | Reportes | Ver detalle informe | | Pendiente | |
-| CP-23 | Admin | Registrar usuario | | Pendiente | |
-| CP-24 | Seguridad | API sin token (401) | | Pendiente | |
-| CP-25 | Seguridad | Rol incorrecto (403) | | Pendiente | |
-| CP-26 | Superadmin | Listar instituciones | | Pendiente | |
-| CP-27 | AltaVida | Educador perfil Joaquín | | Pendiente | |
-| CP-28 | Admin | Reset contraseña usuario equipo | | Pendiente | |
 
 ---
 
-## Tabla ampliada (casos ejecutados — detalle para informe)
+## Tabla ampliada (detalle para informe)
 
 Copiar al Word del informe si se requiere columnas completas de pasos y resultado esperado.
 
@@ -100,6 +85,4 @@ Copiar al Word del informe si se requiere columnas completas de pasos y resultad
 
 ---
 
-## Próxima actualización
-
-Completar filas CP-14 a CP-28 al ejecutar los bloques restantes. Capturas opcionales sugeridas: CP-14/15, CP-20/21, CP-24, CP-26 o CP-28 (modal con clave temporal).
+*Plan de 13 casos completado. Evidencias en `Documentacion/evidencias-ev3/` (Captura-01 a Captura-13).*

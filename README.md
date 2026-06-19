@@ -6,6 +6,7 @@
 **Asignatura:** Taller Aplicado de Programación (TPY1101)  
 **Período:** Semestre 2026 (9 marzo - 12 julio 2026)  
 **Duración:** 18 semanas - 144 horas pedagógicas  
+**Grupo:** 12 · **Sección:** 001D  
 **Repositorio:** https://github.com/cristianmonsalve14/tea-link
 
 ---
@@ -14,7 +15,7 @@
 
 **TEA Link** es una aplicación web diseñada para centralizar y facilitar la comunicación entre familias, educadores, profesionales y medicos de apoyo que trabajan con personas dentro del **Trastorno del Espectro Autista (TEA)**.
 
-> **Nota:** Este README describe la visión general y el alcance proyectado de TEA Link como producto final. Algunas funcionalidades ya se encuentran implementadas y otras están planificadas para próximas etapas del desarrollo.
+> **Estado:** producto **funcional en entorno local** (EV1–EV3 completadas). Funcionalidades futuras: despliegue cloud, tests automatizados y recuperación de contraseña por correo.
 
 El sistema permite:
 - ✅ Registrar observaciones colaborativas de manera segura y organizada
@@ -50,9 +51,9 @@ TEA Link **centraliza toda la información** en una plataforma segura, accesible
 Desarrollar una aplicación web que centralice y facilite el registro colaborativo de observaciones sobre personas con TEA, mejorando la comunicación entre familias, educadores y profesionales de apoyo mediante una plataforma segura con control de acceso basado en roles, trazabilidad completa de eventos, y generación de reportes personalizados que permitan el seguimiento longitudinal del desarrollo.
 
 ### Objetivos Específicos
-1. **Implementar un módulo de gestión de usuarios** con registro, autenticación segura (JWT + bcrypt) y asignación de roles diferenciados (familia, educador, profesional) que permita control de acceso granular (RBAC) para proteger información sensible de menores.
+1. **Implementar un módulo de gestión de usuarios** con autenticación segura (JWT + bcrypt), seis roles (FAMILIA, EDUCADOR, PROFESIONAL, MEDICO, ADMINISTRADOR, SUPERADMIN), multi-institucional y RBAC para proteger información sensible.
 
-2. **Desarrollar un módulo de seguimiento de observaciones** que permita a usuarios autorizados registrar, categorizar (conducta, comunicación, social, académico), editar y consultar observaciones sobre personas con TEA, incluyendo filtrado por fecha, categoría y autor, con validación de datos en frontend y backend.
+2. **Desarrollar un módulo de seguimiento de observaciones** con registro, categorización, edición, privacidad (PUBLICA, MULTINIVEL, PRIVADA), bitácora con filtros y equipo interdisciplinario vía `perfil_usuario`, con validación Zod en frontend y backend.
 
 3. **Crear un módulo de reportes personalizados** que genere documentos (PDF/Excel) consolidados con observaciones seleccionadas, permitiendo a profesionales extraer información para evaluaciones médicas/educativas y facilitar la toma de decisiones basada en datos históricos.
 
@@ -104,35 +105,35 @@ Desarrollar una aplicación web que centralice y facilite el registro colaborati
 | Actividad | Duración | Estado | Evaluación |
 |-----------|----------|--------|-----------|
 | 1. Definición y planificación | 2 semanas | ✅ Completada | - |
-| 2. Configuración entorno | 1 semana | ⏳ En progreso | - |
-| 3. Diseño base de datos | 1 semana | ⏳ Próxima | - |
-| 4. Diseño UI/UX | 1 semana | ⏳ Próxima | - |
-| 5. Preparación Evaluación 1 | 1 semana | ⏳ Próxima | **Parcial 1 (25%)** |
+| 2. Configuración entorno | 1 semana | ✅ Completada | - |
+| 3. Diseño base de datos | 1 semana | ✅ Completada | - |
+| 4. Diseño UI/UX | 1 semana | ✅ Completada | - |
+| 5. Preparación Evaluación 1 | 1 semana | ✅ Completada | **Parcial 1 (25%)** |
 
 ### **FASE 2: Desarrollo Core** (Semanas 5-11)
 | Actividad | Duración | Estado | Evaluación |
 |-----------|----------|--------|-----------|
-| 6. Sprint 1: Autenticación | 2 semanas | ⏳ Próxima | - |
-| 7. Sprint 2: Usuarios y Roles | 2 semanas | ⏳ Próxima | - |
-| 8. Sprint 3: Perfiles TEA | 2 semanas | ⏳ Próxima | - |
-| 9. Sprint 4: Observaciones P1 | 2 semanas | ⏳ Próxima | - |
-| 10. Sprint 5: Observaciones P2 | 2 semanas | ⏳ Próxima | - |
-| 11. Preparación Evaluación 2 | 1 semana | ⏳ Próxima | **Parcial 2 (25%)** |
+| 6. Sprint 1: Autenticación | 2 semanas | ✅ Completada | - |
+| 7. Sprint 2: Usuarios y Roles | 2 semanas | ✅ Completada | - |
+| 8. Sprint 3: Perfiles TEA | 2 semanas | ✅ Completada | - |
+| 9. Sprint 4: Observaciones P1 | 2 semanas | ✅ Completada | - |
+| 10. Sprint 5: Observaciones P2 | 2 semanas | ✅ Completada | - |
+| 11. Preparación Evaluación 2 | 1 semana | ✅ Completada | **Parcial 2 (25%)** |
 
 ### **FASE 3: Reportes y Mejoras** (Semanas 12-15)
 | Actividad | Duración | Estado | Evaluación |
 |-----------|----------|--------|-----------|
-| 12. Sprint 6: Reportes P1 | 2 semanas | ⏳ Próxima | - |
-| 13. Sprint 7: Reportes P2 | 2 semanas | ⏳ Próxima | - |
-| 14. Sprint 8: Notificaciones UX | 2 semanas | ⏳ Próxima | - |
-| 15. Preparación Evaluación 3 | 1 semana | ⏳ Próxima | **Parcial 3 (25%)** |
+| 12. Sprint 6: Reportes P1 | 2 semanas | ✅ Completada | - |
+| 13. Sprint 7: Reportes P2 | 2 semanas | ✅ Completada | - |
+| 14. Sprint 8: UI/UX unificada | 2 semanas | ✅ Completada | - |
+| 15. Preparación Evaluación 3 | 1 semana | ✅ Completada | **Parcial 3 (35%)** |
 
 ### **FASE FINAL: Testing y Defensa** (Semanas 16-18)
 | Actividad | Duración | Estado | Evaluación |
 |-----------|----------|--------|-----------|
-| 16. Testing integral | 1 semana | ⏳ Próxima | - |
-| 17. Documentación técnica | 1 semana | ⏳ Próxima | - |
-| 18. Defensa final | 1 semana | ⏳ Próxima | **Final (25%)** |
+| 16. Testing integral (13 casos CP) | 1 semana | ✅ Completada | - |
+| 17. Documentación técnica | 1 semana | ✅ Completada | - |
+| 18. Defensa final | 1 semana | ⏳ Pendiente | **Final (25%)** |
 
 ---
 
@@ -154,20 +155,23 @@ tea-link/
 │   ├── INFORME-TECNICO-BASE-DATOS.md
 │   ├── DISENO-UI-UX.md
 │   ├── evidencias-ev3/               # Capturas CP-01 a CP-13
-│   └── diagramas/
-│       └── flujo-datos-arquitectura.puml
+│   └── diagramas/                    # Flujo 3 capas + ER (PlantUML/PNG)
+│       ├── flujo-datos-arquitectura.puml
+│       └── modelo-er-base-datos.puml
 │
-├── Producto/                          # Código fuente y SQL
+├── Producto/                          # Código fuente
 │   ├── backend/                      # API Express + TypeScript
 │   │   ├── src/
 │   │   │   ├── routes/              # Definición de endpoints
 │   │   │   ├── controllers/         # Lógica de negocio
 │   │   │   ├── middleware/          # Auth, RBAC, validación
 │   │   │   ├── types/               # TypeScript types
-│   │   │   ├── index.ts             # Punto de entrada
-│   │   │   └── test-db.ts           # Testing de conexión
+│   │   │   └── index.ts             # Punto de entrada
+│   │   ├── scripts/
+│   │   │   └── db-resumen.ts        # Resumen de BD demo
 │   │   ├── prisma/
-│   │   │   └── schema.prisma        # Definición de modelo datos
+│   │   │   ├── schema.prisma        # Definición de modelo datos
+│   │   │   └── migrations/          # Migraciones versionadas
 │   │   ├── package.json
 │   │   ├── package-lock.json
 │   │   └── tsconfig.json
@@ -192,10 +196,6 @@ tea-link/
 │   │   ├── tailwind.config.js
 │   │   ├── postcss.config.js
 │   │   └── eslint.config.js
-│   │
-│   └── database/                     # Scripts SQL
-│       ├── create_database_tea_link.sql  # Script de creación de BD
-│       └── INSTRUCCIONES_EJECUCION.md    # Guía de ejecución
 │
 ├── README.md                          # Este archivo
 ├── .gitignore
@@ -254,6 +254,12 @@ npm run dev
 - Health: http://localhost:3000/health
 - Usuarios demo: ver `Documentacion/usuarios_prueba.md`
 
+### 5️⃣ Verificar BD demo (opcional)
+```bash
+cd Producto/backend
+npx ts-node scripts/db-resumen.ts
+```
+
 ---
 
 ## 🚀 Deployment
@@ -288,12 +294,21 @@ vercel
 | Documento | Descripción |
 |-----------|-------------|
 | [Informe final](./Documentacion/INFORME-FINAL-TEA-LINK.md) | Entrega integral EV1–EV3 + cierre |
-| [Plan de pruebas EV3](./Documentacion/EV3-PLAN-DE-PRUEBAS.md) | Casos CP-01 a CP-28 y BD de pruebas |
+| [Plan de pruebas EV3](./Documentacion/EV3-PLAN-DE-PRUEBAS.md) | 13 casos CP-01 a CP-13 y BD de pruebas |
 | [Resultados pruebas](./Documentacion/EV3-RESULTADOS-PRUEBAS.md) | Ejecución y capturas |
 | [Usuarios de prueba](./Documentacion/usuarios_prueba.md) | Credenciales demo |
 | [Reglas y permisos](./Documentacion/REGLAS_Y_PERMISOS_DE_ROLES.md) | RBAC y privacidad |
 | [Informe técnico BD](./Documentacion/INFORME-TECNICO-BASE-DATOS.md) | Diseño PostgreSQL |
 | [Diseño UI/UX](./Documentacion/DISENO-UI-UX.md) | Paleta y wireframes |
+| [Diagramas](./Documentacion/diagramas/README.md) | Flujo arquitectura y modelo ER |
+
+---
+
+## 🔀 Control de versiones
+
+- **Git + GitHub:** rama activa `develop`, estable `main`
+- **Historial:** https://github.com/cristianmonsalve14/tea-link/commits/develop
+- **Detalle documentado:** `Documentacion/INFORME-FINAL-TEA-LINK.md` §10.4
 
 ---
 
@@ -348,33 +363,41 @@ vercel
 
 ## 📈 Modelo de Datos
 
-### Entidades Principales
+**Fuente de verdad:** `Producto/backend/prisma/schema.prisma`  
+**Diagrama ER:** `Documentacion/diagramas/modelo-er-base-datos.png`  
+**Normalización:** 3FN — detalle en `Documentacion/INFORME-TECNICO-BASE-DATOS.md`
 
-**Usuario** (5 campos)
-- id (entero autoincremental, primary key)
-- email (unique)
-- password_hash (bcrypt)
-- rol (ENUM: FAMILIA, EDUCADOR, PROFESIONAL)
-- fecha_creacion (timestamp)
+### Tablas (8)
 
-**Perfil** (8 campos)
-- id, usuario_id (FK), nombre, edad, diagnostico, descripcion, fecha_creacion, fecha_actualizacion
+| Tabla | Propósito |
+|-------|-----------|
+| `instituciones` | Familia, colegio, centro médico, centro profesional, sistema |
+| `usuarios` | Credenciales, rol, institución, `must_change_password` |
+| `perfiles` | Estudiantes bajo seguimiento (por institución) |
+| `perfil_usuario` | Equipo interdisciplinario N:M (usuario ↔ perfil) |
+| `observaciones` | Bitácora con categoría y privacidad |
+| `reportes` | Informes PDF/CSV generados |
+| `observaciones_en_reportes` | Puente N:N reporte ↔ observación |
+| `auditoria_admin` | Trazabilidad de acciones administrativas |
 
-**Observacion** (9 campos)
-- id, perfil_id (FK), autor_id (FK), titulo, descripcion, categoria (ENUM), fecha_evento, fecha_creacion, fecha_actualizacion
+### Roles (`rol_enum`)
 
-**Reporte** (7 campos)
-- id, usuario_id (FK), titulo, fecha_generacion, formato (PDF/Excel), url_descarga, fecha_expiracion
+FAMILIA · EDUCADOR · PROFESIONAL · MEDICO · ADMINISTRADOR · SUPERADMIN
 
-**ObservacionEnReporte** (tabla intermedia N:N)
-- id, reporte_id (FK), observacion_id (FK)
+### Privacidad en observaciones
 
-### Relaciones
-- Usuario → Perfil (1:N, CASCADE delete)
-- Perfil → Observacion (1:N, CASCADE delete)
-- Usuario → Observacion (1:N como autor, SET NULL)
-- Usuario → Reporte (1:N, CASCADE delete)
-- Reporte ↔ Observacion (N:N, tabla intermedia)
+| Nivel | Quién ve |
+|-------|----------|
+| PUBLICA | Todos los roles operativos |
+| MULTINIVEL | PROFESIONAL, MEDICO |
+| PRIVADA | Solo MEDICO |
+
+### Relaciones principales
+
+- Institución → Usuarios / Perfiles (1:N)
+- Perfil ↔ Usuarios vía `perfil_usuario` (N:M, equipo interdisciplinario)
+- Perfil → Observaciones (1:N); Usuario → Observaciones como autor (1:N)
+- Reporte ↔ Observaciones (N:N); Usuario → Reportes como creador (1:N)
 
 ---
 
@@ -465,5 +488,5 @@ Contactar a: Cristian Monsalve Budrovich
 ---
 
 **Última actualización:** Junio 2026  
-**Estado:** Entrega final — repositorio documentado  
+**Estado:** Entrega final EV3 — producto funcional en local, documentación al día  
 **Repositorio:** https://github.com/cristianmonsalve14/tea-link

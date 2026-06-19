@@ -1,0 +1,99 @@
+@startuml modelo-er-base-datos
+!theme plain
+skinparam linetype ortho
+skinparam backgroundColor white
+skinparam shadowing false
+skinparam classAttributeIconSize 0
+
+title Modelo Entidad-Relacion — TEA Link\nPostgreSQL · schema.prisma (Junio 2026)
+
+entity instituciones {
+  * id : INT <<PK>>
+  --
+  nombre : VARCHAR
+  tipo : ENUM
+  direccion : VARCHAR
+}
+
+entity usuarios {
+  * id : INT <<PK>>
+  --
+  email : VARCHAR <<UK>>
+  password_hash : VARCHAR
+  nombre_completo : VARCHAR
+  rol : ENUM
+  must_change_password : BOOLEAN
+  institucion_id : INT <<FK>>
+}
+
+entity perfiles {
+  * id : INT <<PK>>
+  --
+  nombre : VARCHAR
+  edad : INT
+  diagnostico : VARCHAR
+  institucion_id : INT <<FK>>
+}
+
+entity perfil_usuario {
+  * perfil_id : INT <<PK,FK>>
+  * usuario_id : INT <<PK,FK>>
+  --
+  rol_en_perfil : ENUM
+  puede_editar : BOOLEAN
+}
+
+entity observaciones {
+  * id : INT <<PK>>
+  --
+  titulo : VARCHAR
+  descripcion : TEXT
+  categoria : ENUM
+  privacidad : ENUM
+  perfil_id : INT <<FK>>
+  autor_id : INT <<FK>>
+}
+
+entity reportes {
+  * id : INT <<PK>>
+  --
+  titulo : VARCHAR
+  formato : ENUM
+  creador_id : INT <<FK>>
+}
+
+entity observaciones_en_reportes {
+  * reporte_id : INT <<PK,FK>>
+  * observacion_id : INT <<PK,FK>>
+}
+
+entity auditoria_admin {
+  * id : INT <<PK>>
+  --
+  admin_id : INT <<FK>>
+  accion : VARCHAR
+  entidad : VARCHAR
+}
+
+instituciones ||--o{ usuarios : tiene
+instituciones ||--o{ perfiles : tiene
+usuarios ||--o{ observaciones : autor
+perfiles ||--o{ observaciones : contiene
+usuarios }o--o{ perfil_usuario : equipo
+perfiles }o--o{ perfil_usuario : equipo
+usuarios ||--o{ reportes : crea
+reportes ||--o{ observaciones_en_reportes
+observaciones ||--o{ observaciones_en_reportes
+usuarios ||--o{ auditoria_admin : registra
+
+note bottom of instituciones
+  Normalizacion: 1FN · 2FN · 3FN
+  Ver INFORME-TECNICO seccion 3.3
+end note
+
+note right of perfil_usuario
+  Tabla puente N:M
+  Equipo interdisciplinario
+end note
+
+@enduml
