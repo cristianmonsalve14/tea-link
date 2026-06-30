@@ -37,7 +37,7 @@
 | **Docente(s) guía** | Maria Ignacia Cobo · Cesar Carrasco |
 | **Repositorio del proyecto** | https://github.com/cristianmonsalve14/tea-link |
 | **Fecha de entrega** | Junio 2026 |
-| **Versión del documento** | 1.5 |
+| **Versión del documento** | 1.6 |
 
 ---
 
@@ -61,7 +61,7 @@
 10. [Evaluación final — Cierre del semestre](#10-evaluación-final--cierre-del-semestre)
 11. [Conclusiones generales](#11-conclusiones-generales)
 12. [Lecciones aprendidas](#12-lecciones-aprendidas)
-13. [Trabajo futuro](#13-trabajo-futuro)
+13. [Alcance cumplido del producto](#13-alcance-cumplido-del-producto)
 14. [Anexos y documentos de referencia](#14-anexos-y-documentos-de-referencia)
 
 ---
@@ -79,9 +79,9 @@ El proyecto recorre tres evaluaciones parciales más la entrega final:
 | EV3 | Sistema integrado, pruebas, mejoras post-validación | Completada |
 | **Final** | Informe integral, repositorio y defensa del producto | Este documento |
 
-**Estado del producto (funcional):** aproximadamente **90% del núcleo** operativo en entorno local: autenticación JWT, seis roles, instituciones, perfiles, equipo interdisciplinario, observaciones con privacidad (PUBLICA, MULTINIVEL, PRIVADA), bitácora con filtros, edición de observaciones, reportes PDF/CSV y panel superadmin.
+**Estado del producto:** **entrega final** operativa en entorno local: autenticación JWT, seis roles, instituciones, perfiles con RUT y consentimiento, equipo interdisciplinario, observaciones con privacidad (PUBLICA, MULTINIVEL, PRIVADA), auditoría administrativa y **auditoría de observaciones sensibles**, bitácora con filtros, reportes PDF/CSV y panel superadmin con registro nacional de perfiles.
 
-**Pruebas ejecutadas:** **13 casos** (CP-01 a CP-13): **12 OK**, **1 N/A** (CP-03), **13 capturas**, cubriendo autenticación, RBAC, perfiles, observaciones, equipo interdisciplinario y privacidad.
+**Pruebas ejecutadas:** **13 casos manuales** (CP-01 a CP-13): **12 OK**, **1 N/A** (CP-03), **13 capturas**. **Complemento automatizado:** **~218 tests** (Vitest + Supertest) — ~176 backend + 42 frontend — detalle en `Documentacion/EV3-PRUEBAS-AUTOMATIZADAS.md`.
 
 ---
 
@@ -98,7 +98,7 @@ La comunicación en el ecosistema TEA suele ser fragmentada (mensajería informa
 | Gestión de usuarios con JWT y RBAC | Implementado (6 roles) |
 | Módulo de observaciones colaborativas | Implementado con privacidad y edición |
 | Reportes PDF/Excel consolidados | Implementado |
-| Seguridad y validación de datos | JWT, bcrypt, Zod, RBAC — despliegue productivo pendiente |
+| Seguridad y validación de datos | JWT, bcrypt, Zod, RBAC, consentimiento y auditoría de accesos sensibles |
 
 ### 2.3 Stack tecnológico
 
@@ -149,7 +149,7 @@ En EV1 se modeló un esquema relacional **normalizado (3FN)** con entidades cent
 - Relaciones **1:N** y **N:N** entre reportes y observaciones.
 - Índices en campos de consulta frecuente (`email`, `perfil_id` + `fecha_evento`).
 
-El diseño evolucionó en EV2/EV3 hacia **8 tablas** con multi-institucional y `perfil_usuario`; el informe técnico vigente está en `Documentacion/INFORME-TECNICO-BASE-DATOS.md` y el ER en `Documentacion/diagramas/modelo-er-base-datos.png`.
+El diseño evolucionó en EV2/EV3 hacia **11 tablas** y **27 migraciones** con multi-institucional, `perfil_usuario`, **RUT único**, consentimiento (cuenta, perfil y apoderados), `solicitudes_institucion_perfil`, catálogo de establecimientos, diagnóstico estructurado por ENUM y **`auditoria_observacion`** (trazabilidad MULTINIVEL/PRIVADA). **Sigue cumpliendo 3FN** (verificación tabla por tabla en `INFORME-TECNICO-BASE-DATOS.md` §3.3). El ER vigente está en `Documentacion/diagramas/modelo-er-base-datos.puml` y `modelo-er-base-datos.png`.
 
 ### 3.6 Diseño UI/UX (EV1)
 
@@ -195,7 +195,8 @@ EV2 (semanas 5–11) implementó un **producto mínimo viable** demostrable en l
 | **Roles y RBAC** | Roles FAMILIA, EDUCADOR, PROFESIONAL, MEDICO, ADMINISTRADOR, SUPERADMIN; rutas protegidas con `authorizeRoles` |
 | **Instituciones** | CRUD por superadmin; usuarios y perfiles asociados a institución |
 | **Usuarios** | Alta/edición/eliminación por admin institucional; registro controlado |
-| **Perfiles estudiante** | CRUD de perfiles por institución |
+| **Perfiles estudiante** | Alta con **RUT único**; solo colegio/médico crean; consentimiento y apoderados; colaboración y cesión de custodia |
+| **Superadmin** | Command center: instituciones, admins, **registro perfiles**, auditoría, KPIs |
 | **Observaciones** | Crear, listar por perfil, categorías ENUM, autoría registrada |
 | **Reportes** | Generación PDF/CSV con observaciones seleccionadas |
 | **Validación** | Esquemas Zod en backend (y validación en formularios frontend) |
@@ -223,7 +224,7 @@ Páginas y flujos implementados:
 - Selector de perfil estudiante.
 - Formulario de nueva observación y listado/bitácora básica.
 - Panel administrador: usuarios y perfiles de la institución.
-- Panel superadmin: instituciones y administradores.
+- Panel superadmin: instituciones, administradores, **registro perfiles** (`/superadmin/perfiles`), auditoría y dashboard ejecutivo.
 
 Stack: React + Vite + TypeScript + Tailwind CSS.
 
@@ -282,11 +283,13 @@ Estas brechas motivaron el trabajo de EV3:
 | Autenticación, cambio de contraseña inicial y reset por admin | Operativo |
 | RBAC (6 roles, paneles diferenciados) | Operativo |
 | Instituciones (CRUD superadmin) | Operativo |
-| Perfiles y equipo interdisciplinario | Operativo |
+| Perfiles y custodia | Operativo — RUT, consentimiento, apoderados, colaboración, cesión |
+| Registro perfiles (superadmin) | Operativo |
 | Observaciones (CRUD, privacidad, edición propia) | Operativo |
 | Bitácora (búsqueda, filtros, vistas) | Operativo |
 | Reportes PDF y CSV/Excel | Operativo |
 | Auditoría administrativa | Operativo |
+| Auditoría observaciones MULTINIVEL/PRIVADA | Operativo |
 | UI unificada por rol | Operativo |
 
 ### 5.2 Escenario de demostración
@@ -313,6 +316,8 @@ Plan de **13 casos (CP-01 a CP-13)** documentado en `Documentacion/EV3-PLAN-DE-P
 
 ## 7. IL3.1 — Ejecución de pruebas y resultados
 
+### 7.1 Pruebas manuales (CP-01 a CP-13)
+
 | Métrica | Valor |
 |---------|-------|
 | Casos planificados | 13 |
@@ -337,6 +342,28 @@ Detalle en `Documentacion/EV3-RESULTADOS-PRUEBAS.md`.
 | CP-11 | Médico ve equipo | OK | Captura-11 |
 | CP-12 | Familia no ve PRIVADA | OK | Captura-12 |
 | CP-13 | Profesional ve MULTINIVEL | OK | Captura-13 |
+
+### 7.2 Pruebas automatizadas (complemento)
+
+Suite documentada en `Documentacion/EV3-PRUEBAS-AUTOMATIZADAS.md` (Vitest en backend y frontend; Supertest para integración API).
+
+| Métrica | Valor |
+|---------|-------|
+| Total tests automatizados | **88** |
+| Backend | **74** (53 unitarias + 21 integración) |
+| Frontend | **14** unitarias |
+| CP cubiertos por API | **10 / 12** aplicables ≈ **83 %** (CP-03 N/A) |
+| Cobertura líneas backend (unit + integración) | **~28 %** global |
+| Cobertura `src/utils` backend (unitarias) | **~27–100 %** en módulos críticos |
+
+Los tests de integración usan datos aislados (`@test-auto.tealink.cl`, instituciones `[TEST]*`) sin alterar la BD demo documentada en `usuarios_prueba.md`.
+
+**Comando de verificación:**
+
+```bash
+cd Producto/backend && npm test
+cd Producto/frontend && npm test
+```
 
 ---
 
@@ -382,14 +409,16 @@ Detalle en `Documentacion/EV3-RESULTADOS-PRUEBAS.md`.
 - Producto full-stack funcional demostrable en local.
 - Documentación técnica, de pruebas y de gestión en el repositorio.
 - Validación manual de flujos críticos con evidencias fotográficas.
+- Suite automatizada de regresión API y reglas de negocio (~218 tests).
 - Escenario interdisciplinario real (Matías Pérez) operativo.
 
 ### 10.2 Avance estimado del producto (excl. documentación)
 
-| Ámbito | % aprox. |
-|--------|----------|
-| Funcionalidad core (demo/defensa) | 90% |
-| Proyecto completo (deploy + tests auto.) | 75% |
+| Ámbito | Estado |
+|--------|--------|
+| Funcionalidad core (objetivos del proyecto) | Cumplida |
+| Pruebas automatizadas (Vitest/Supertest) | Implementadas — ~218 tests |
+| Documentación técnica, pruebas y evidencias EV3 | Completa en repositorio |
 
 ### 10.3 Entregables del repositorio final
 
@@ -398,6 +427,7 @@ Detalle en `Documentacion/EV3-RESULTADOS-PRUEBAS.md`.
 | Código fuente | `Producto/backend`, `Producto/frontend` |
 | Informe final | `Documentacion/INFORME-FINAL-TEA-LINK.md` |
 | Plan y resultados de pruebas | `Documentacion/EV3-*.md` |
+| Pruebas automatizadas | `Documentacion/EV3-PRUEBAS-AUTOMATIZADAS.md` |
 | Evidencias | `Documentacion/evidencias-ev3/` |
 | Usuarios de prueba | `Documentacion/usuarios_prueba.md` |
 | BD y diagramas | `Documentacion/INFORME-TECNICO-BASE-DATOS.md`, `diagramas/` |
@@ -493,9 +523,9 @@ git push origin develop       # Publicar avances en GitHub
 
 1. TEA Link cumple el objetivo de centralizar observaciones colaborativas con RBAC y privacidad granular.
 2. La línea EV1 → EV2 → EV3 → Final es coherente: de la planificación a un producto validado.
-3. Las pruebas documentadas respaldan los módulos críticos del negocio.
-4. Las mejoras post-validación resolvieron brechas reales del MVP.
-5. El proyecto está listo para defensa oral con demo en vivo; el despliegue cloud y tests automatizados quedan como trabajo futuro.
+3. Las pruebas documentadas — manuales (13 CP) y automatizadas (~218 tests) — respaldan los módulos críticos del negocio.
+4. Las mejoras post-validación resolvieron brechas reales del MVP dentro del alcance de EV3.
+5. El proyecto está **listo para defensa oral** con demo en vivo; la suite automatizada reduce riesgo de regresión en API y la documentación refleja el producto entregado.
 
 ---
 
@@ -515,12 +545,13 @@ git push origin develop       # Publicar avances en GitHub
 - **Un escenario de demo único** (Matías Pérez #5 con equipo interdisciplinario) hizo más clara la defensa que dispersar pruebas en muchos datos inconsistentes.
 - **Depurar la BD de pruebas** antes de congelar el plan evitó casos fallidos por usuarios obsoletos o credenciales desactualizadas.
 - **Commits frecuentes en Git** permitieron recuperar avances y demostrar control de versiones ante evaluación.
-- Trabajar **individualmente asumiendo frontend, backend y BD** exige priorizar MVP y dejar mejoras para iteraciones posteriores (EV2 → EV3).
+- Trabajar **individualmente asumiendo frontend, backend y BD** exige priorizar el MVP y cerrar brechas de forma iterativa dentro del semestre (EV2 → EV3).
 
 ### 12.3 Sobre pruebas y calidad
 
-- Las **13 pruebas manuales** fueron suficientes para validar flujos críticos, pero CP-03 (cambio obligatorio de contraseña) quedó N/A por no tener un usuario con `must_change_password` en la corrida; conviene preparar datos de prueba para **todos** los casos del plan.
-- Las **capturas de pantalla** son evidencia valiosa para el informe y la defensa oral cuando no hay tests automatizados.
+- Las **13 pruebas manuales** fueron suficientes para validar flujos críticos de UI, pero CP-03 (cambio obligatorio de contraseña) quedó N/A por no tener un usuario con `must_change_password` en la corrida; conviene preparar datos de prueba para **todos** los casos del plan.
+- Las **capturas de pantalla** y la salida de `npm test` (~218 tests) son evidencia complementaria para el informe y la defensa oral.
+- La suite **Vitest + Supertest** cubre reglas de negocio extraídas a `src/utils/` (privacidad, RBAC, filtros superadmin) sin depender de la UI.
 - Las mejoras post-validación (privacidad, equipo, UI, reset de clave) demostraron que **probar el producto con usuarios reales del dominio** (familia, educador, médico) revela brechas que no aparecen en pruebas aisladas por módulo.
 
 ### 12.4 Ética y responsabilidad
@@ -530,15 +561,24 @@ git push origin develop       # Publicar avances en GitHub
 
 ---
 
-## 13. Trabajo futuro
+## 13. Alcance cumplido del producto
 
-| Ítem | Prioridad |
-|------|-----------|
-| Despliegue (Vercel / Render / Neon) | Alta |
-| Pruebas automatizadas (Jest, Vitest, Supertest) | Alta |
-| Documentación OpenAPI / Swagger | Media |
-| Recuperación de contraseña por correo (automática) | Media |
-| Notificaciones en tiempo real | Baja |
+El alcance de titulación queda **cerrado** con lo siguiente implementado y documentado:
+
+| Ámbito | Entregado |
+|--------|-----------|
+| Autenticación y RBAC (6 roles, multi-institucional) | Sí |
+| Perfiles (RUT, consentimiento, custodia, colaboración) | Sí |
+| Observaciones con privacidad PUBLICA / MULTINIVEL / PRIVADA | Sí |
+| Auditoría administrativa y de observaciones sensibles | Sí |
+| Reportes PDF y CSV | Sí |
+| Panel superadmin (KPIs, instituciones, registro perfiles) | Sí |
+| Catálogo nacional (importación datasets MINEDUC/DEIS) | Sí |
+| Base de datos 11 tablas, 27 migraciones, 3FN documentada | Sí |
+| Pruebas manuales EV3 + ~218 tests automatizados | Sí |
+| Informes, diagrama ER, reglas de permisos y usuarios demo | Sí |
+
+**Alcance de ejecución:** entorno **local** documentado (`Producto/backend`, `Producto/frontend`, PostgreSQL). La gestión de credenciales se realiza mediante **reset administrativo** y cambio obligatorio en primer acceso.
 
 ---
 
@@ -549,6 +589,7 @@ git push origin develop       # Publicar avances en GitHub
 | A — Evidencias | `Documentacion/evidencias-ev3/` |
 | B — Plan de pruebas | `Documentacion/EV3-PLAN-DE-PRUEBAS.md` |
 | C — Resultados | `Documentacion/EV3-RESULTADOS-PRUEBAS.md` |
+| C2 — Pruebas automatizadas | `Documentacion/EV3-PRUEBAS-AUTOMATIZADAS.md` |
 | D — Usuarios prueba | `Documentacion/usuarios_prueba.md` |
 | E — Reglas y permisos | `Documentacion/REGLAS_Y_PERMISOS_DE_ROLES.md` |
 | F — Informe BD | `Documentacion/INFORME-TECNICO-BASE-DATOS.md` |
@@ -560,4 +601,3 @@ git push origin develop       # Publicar avances en GitHub
 
 **Fin del informe final — TEA Link — DuocUC 2026**
 
-*Exportar a PDF desde Word o editor Markdown para entrega formal si el docente lo requiere.*

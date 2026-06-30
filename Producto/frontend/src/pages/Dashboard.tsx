@@ -3,6 +3,7 @@ import { getRole } from "../utils/auth";
 import { RoleThemeProvider } from "../context/RoleThemeContext";
 import { AppShell } from "../components/layout/AppShell";
 import { AdminInstitucionDashboard } from "../components/AdminInstitucionDashboard";
+import { FamiliaAdminSinPanel } from "../components/FamiliaAdminSinPanel";
 import { EducadorDashboard } from "../components/EducadorDashboard";
 import { FamiliaDashboard } from "../components/FamiliaDashboard";
 import { ProfesionalDashboard } from "../components/ProfesionalDashboard";
@@ -18,7 +19,12 @@ const Dashboard: React.FC = () => {
   let contenido: React.ReactNode;
   switch (rol) {
     case "ADMINISTRADOR":
-      contenido = <AdminInstitucionDashboard institucionNombre={institucion} />;
+      contenido =
+        localStorage.getItem("institucion_tipo") === "FAMILIA" ? (
+          <FamiliaAdminSinPanel />
+        ) : (
+          <AdminInstitucionDashboard institucionNombre={institucion} />
+        );
       break;
     case "EDUCADOR":
       contenido = <EducadorDashboard />;

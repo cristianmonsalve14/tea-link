@@ -1,7 +1,7 @@
 # Usuarios de prueba — TEA Link
 
 **Actualizado:** Junio 2026 (BD depurada — `npx ts-node scripts/db-resumen.ts`)  
-**Documentos relacionados:** `EV3-PLAN-DE-PRUEBAS.md`, `EV3-RESULTADOS-PRUEBAS.md`, `INFORME-FINAL-TEA-LINK.md`
+**Documentos relacionados:** `EV3-PLAN-DE-PRUEBAS.md`, `EV3-RESULTADOS-PRUEBAS.md`, `EV3-PRUEBAS-AUTOMATIZADAS.md`, `INFORME-FINAL-TEA-LINK.md`
 
 > Todas las credenciales de demo están documentadas abajo. Si se pierde una clave, ver *Gestión de contraseñas*.
 
@@ -20,6 +20,21 @@ En ambos casos se genera una **contraseña temporal** mostrada en un modal; el u
 
 ---
 
+## Flujo familia (modelo vigente)
+
+| Quién | Qué puede hacer |
+|-------|-----------------|
+| **Colegio / centro médico** | Crear perfiles de estudiantes e invitar al **apoderado principal** (email al crear el perfil). |
+| **Apoderado principal** (`familia@…`, rol FAMILIA) | Aceptar consentimiento, ver bitácora (solo observaciones **públicas**), crear observaciones públicas e **invitar hasta 2 apoderados más** (máx. 3 por perfil). |
+| **Apoderado adicional** | Debe confirmar su propio consentimiento por vínculo antes de acceder al perfil. |
+| **Institución tipo FAMILIA** | Contenedor técnico del tutor; **no** tiene panel de administrador ni crea perfiles. |
+
+> La cuenta `admin.familia@tealink.com` quedó **obsoleta** en el seed demo: no debe usarse. Si aún existe en una BD antigua, el login mostrará un aviso de que no hay panel admin para instituciones familia.
+
+**Demo con seed (`npm run db:seed`):** el perfil **Matías Pérez** pertenece al **Colegio Aurora Demo**; `familia@tealink.com` es apoderada principal vinculada desde el colegio.
+
+---
+
 ## Resumen — 11 usuarios, 3 perfiles, 5 instituciones
 
 ### Instituciones
@@ -34,15 +49,16 @@ En ambos casos se genera una **contraseña temporal** mostrada en un modal; el u
 
 ---
 
-## Gestión (5 cuentas)
+## Gestión (4–5 cuentas)
 
-| Correo | Rol | Institución | Contraseña |
-|--------|-----|-------------|------------|
-| cr.monsalveb@duocuc.cl | SUPERADMIN | Sistema TEA-LINK (#2) | `SuperAdmin123!` |
-| admin.familia@tealink.com | ADMINISTRADOR | Familia Pérez Demo (#11) | `AdminFamilia123!` |
-| admin.medico@tealink.com | ADMINISTRADOR | Centro Médico (#12) | `AdminMedico123!` |
-| directoraaltavida@email.com | ADMINISTRADOR | Colegio AltaVida (#14) | `Directora123!` |
-| centroterapeutico@email.com | ADMINISTRADOR | Centro terapeutico (#15) | `Adminterapeutico123!` |
+| Correo | Rol | Institución | Contraseña | Notas |
+|--------|-----|-------------|------------|-------|
+| cr.monsalveb@duocuc.cl | SUPERADMIN | Sistema TEA-LINK (#2) | `SuperAdmin123!` | Panel en `/superadmin`; registro perfiles en `/superadmin/perfiles` |
+| admin.medico@tealink.com | ADMINISTRADOR | Centro Médico (#12) | `AdminMedico123!` | |
+| directoraaltavida@email.com | ADMINISTRADOR | Colegio AltaVida (#14) | `Directora123!` | Crea perfiles e invita tutores |
+| centroterapeutico@email.com | ADMINISTRADOR | Centro terapeutico (#15) | `Adminterapeutico123!` | |
+
+~~`admin.familia@tealink.com`~~ — **retirada** (instituciones FAMILIA sin panel admin).
 
 ---
 
@@ -50,7 +66,7 @@ En ambos casos se genera una **contraseña temporal** mostrada en un modal; el u
 
 | Correo | Rol | Institución | Perfil principal | Obs. creadas | Contraseña |
 |--------|-----|-------------|------------------|--------------|------------|
-| familia@tealink.com | FAMILIA | Familia Pérez (#11) | Matías Pérez (#5) | 4 | `Familia123!` |
+| familia@tealink.com | FAMILIA | Familia Pérez (#11) | Matías Pérez (#5) — apoderada principal | 4 | `Familia123!` |
 | medico@tealink.com | MEDICO | Centro Médico (#12) | Matías #5 y Clínico #6 | 3 | `Medico123!` |
 | profesional@tealink.com | PROFESIONAL | Centro Médico (#12) | Matías #5 y Clínico #6 | 2 | `Profesional123!` |
 | eduardoaltavida@email.com | EDUCADOR | Colegio AltaVida (#14) | Joaquín (#8) | 1 | `Eduardo123!` |
@@ -63,11 +79,13 @@ En ambos casos se genera una **contraseña temporal** mostrada en un modal; el u
 
 ## Perfiles estudiante (3)
 
-| ID | Nombre | Institución | Equipo vinculado | Observaciones |
-|----|--------|-------------|------------------|---------------|
-| **5** | Matías Pérez | Familia Pérez Demo | familia, medico, profesional, educador1 | 7 |
-| 6 | Matías Pérez Clínico | Centro Médico | medico, profesional | 2 |
-| 8 | Joaquin Sanchez | Colegio AltaVida | eduardoaltavida, karlataiss | 2 |
+Cada perfil tiene un **RUT único** en TEA Link (registro de perfiles). Al crear uno nuevo, el formulario lo exige; si el RUT ya existe, el sistema rechaza el alta duplicada.
+
+| ID | Nombre | RUT (demo seed) | Institución | Equipo vinculado | Observaciones |
+|----|--------|-----------------|-------------|------------------|---------------|
+| **5** | Matías Pérez | 11.111.111-1 | Colegio AltaVida / Aurora (dueño del perfil) | familia (principal), medico, profesional, educador1 | 7 |
+| 6 | Matías Pérez Clínico | 33.333.333-3 | Centro Médico | medico, profesional | 2 |
+| 8 | Joaquin Sanchez | — | Colegio AltaVida | eduardoaltavida, karlataiss | 2 |
 
 **Demo principal:** perfil **#5 Matías Pérez**.
 
@@ -90,6 +108,7 @@ En ambos casos se genera una **contraseña temporal** mostrada en un modal; el u
 - **Reset de clave:** superadmin → admins; admin institucional → equipo operativo (ver *Gestión de contraseñas*).
 - Verificar BD: `cd Producto/backend` → `npx ts-node scripts/db-resumen.ts`
 - **No ejecutar `npm run db:seed`** si deseas conservar esta configuración.
+- **Tests automatizados de integración** usan otra cohorte (`@test-auto.tealink.cl`); ver `EV3-PRUEBAS-AUTOMATIZADAS.md` y `npm run test:seed` en backend.
 
 ---
 

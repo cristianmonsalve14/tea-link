@@ -1,14 +1,89 @@
 model Institucion {
-  id        Int                   @id @default(autoincrement())
-  nombre    String                @db.VarChar(255)
-  tipo      tipo_institucion_enum
-  direccion String?               @db.VarChar(255)
-  created_at DateTime             @default(now()) @db.Timestamp(6)
-  updated_at DateTime             @default(now()) @updatedAt @db.Timestamp(6)
+  id               Int                   @id @default(autoincrement())
+  nombre           String                @db.VarChar(255)
+  tipo             tipo_institucion_enum
+  region           region_chile_enum?
+  comuna           String?               @db.VarChar(100)
+  localidad        String?               @db.VarChar(120)
+  direccion        String?               @db.VarChar(255)
+  email_contacto   String?               @db.VarChar(255)
+  telefono_contacto String?              @db.VarChar(50)
+  registro_manual  Boolean               @default(true)
+  catalogo_establecimiento_id Int?       @unique
+  codigo_externo   String?               @db.VarChar(32)
+  catalogo_fuente  catalogo_fuente_enum?
+  tipo_oficial     String?               @db.VarChar(120)
+  dependencia_oficial String?            @db.VarChar(80)
+  created_at       DateTime              @default(now()) @db.Timestamp(6)
+  updated_at       DateTime              @default(now()) @updatedAt @db.Timestamp(6)
+  catalogo_establecimiento CatalogoEstablecimiento? @relation(fields: [catalogo_establecimiento_id], references: [id], onDelete: SetNull)
   usuarios   Usuario[]            @relation("InstitucionUsuarios")
   perfiles   Perfil[]             @relation("InstitucionPerfiles")
+  solicitudes_enviadas    SolicitudInstitucionPerfil[] @relation("SolicitudInstOrigen")
+  solicitudes_recibidas   SolicitudInstitucionPerfil[] @relation("SolicitudInstDestino")
 
+  @@index([region], map: "idx_institucion_region")
+  @@index([comuna], map: "idx_institucion_comuna")
+  @@index([catalogo_fuente, codigo_externo], map: "idx_institucion_catalogo_codigo")
   @@map("instituciones")
+}
+
+model CatalogoEstablecimiento {
+  id                  Int                   @id @default(autoincrement())
+  fuente              catalogo_fuente_enum
+  ambito              catalogo_ambito_enum
+  codigo_externo      String                @db.VarChar(32)
+  nombre              String                @db.VarChar(255)
+  nombre_busqueda     String                @db.VarChar(255)
+  tipo_oficial        String?               @db.VarChar(120)
+  region              region_chile_enum?
+  comuna              String?               @db.VarChar(100)
+  localidad           String?               @db.VarChar(120)
+  direccion           String?               @db.VarChar(255)
+  dependencia         String?               @db.VarChar(80)
+  sostenedor          String?               @db.VarChar(255)
+  tiene_pie           Boolean               @default(false)
+  es_escuela_especial Boolean               @default(false)
+  vigente             Boolean               @default(true)
+  metadata            Json?
+  institucion         Institucion?
+
+  @@unique([fuente, codigo_externo], map: "uq_catalogo_fuente_codigo")
+  @@index([ambito], map: "idx_catalogo_ambito")
+  @@index([region, comuna], map: "idx_catalogo_region_comuna")
+  @@index([nombre_busqueda], map: "idx_catalogo_nombre_busqueda")
+  @@index([tipo_oficial], map: "idx_catalogo_tipo_oficial")
+  @@map("catalogo_establecimientos")
+}
+
+enum catalogo_fuente_enum {
+  MINEDUC_ESCOLAR
+  DEIS_SALUD
+}
+
+enum catalogo_ambito_enum {
+  EDUCACION
+  SALUD
+  TERAPEUTICO
+}
+
+enum region_chile_enum {
+  ARICA_PARINACOTA
+  TARAPACA
+  ANTOFAGASTA
+  ATACAMA
+  COQUIMBO
+  VALPARAISO
+  METROPOLITANA
+  OHIGGINS
+  MAULE
+  NUBLE
+  BIOBIO
+  ARAUCANIA
+  LOS_RIOS
+  LOS_LAGOS
+  AYSEN
+  MAGALLANES
 }
 
 enum tipo_institucion_enum {
@@ -34,43 +109,162 @@ model Usuario {
   nombre_completo String           @db.VarChar(255)
   rol             rol_enum
   must_change_password Boolean       @default(false)
+  consentimiento_aceptado_at DateTime? @db.Timestamp(6)
+  consentimiento_version     String?   @db.VarChar(20)
   created_at      DateTime         @default(now()) @db.Timestamp(6)
   updated_at      DateTime         @default(now()) @updatedAt @db.Timestamp(6)
   observaciones   Observacion[]    @relation("AutorObservacion")
   perfiles        PerfilUsuario[]
   reportes        Reporte[]
   acciones_admin  AuditoriaAdmin[]
+  acciones_observacion AuditoriaObservacion[]
+  consentimientos_perfil Perfil[] @relation("PerfilConsentimientoTutor")
+  solicitudes_institucion_enviadas SolicitudInstitucionPerfil[] @relation("SolicitudEnviadaPor")
+  solicitudes_institucion_respondidas SolicitudInstitucionPerfil[] @relation("SolicitudRespondidaPor")
   institucion_id  Int?
   institucion     Institucion?     @relation("InstitucionUsuarios", fields: [institucion_id], references: [id])
+  niveles_educacionales nivel_educacional_enum[] @default([])
+  especialidad    especialidad_educador_enum?
 
   @@index([email], map: "idx_usuarios_email")
   @@map("usuarios")
 }
 
+enum nivel_educacional_enum {
+  PARVULARIA_NT1
+  PARVULARIA_NT2
+  BASICO_1
+  BASICO_2
+  BASICO_3
+  BASICO_4
+  BASICO_5
+  BASICO_6
+  BASICO_7
+  BASICO_8
+  MEDIO_1
+  MEDIO_2
+  MEDIO_3
+  MEDIO_4
+  ESPECIAL_TRANSICION
+  LABORAL
+  FORMACION_TECNICA
+  UNIVERSITARIO
+}
+
+enum especialidad_educador_enum {
+  DOCENTE_TITULAR
+  PROFESOR_JEFE
+  EDUCADOR_PARVULARIA
+  EDUCADOR_DIFERENCIAL
+  EDUCADOR_AULA_INTEGRADA
+  COORDINADOR_PIE
+  PSICOPEDAGOGO
+  ASISTENTE_AULA
+  ORIENTADOR
+  FONOAUDIOLOGO
+  KINESIOLOGO
+  TERAPEUTA_OCUPACIONAL
+  PSICOLOGO
+  NEUROPSICOLOGO
+  MUSICOTERAPEUTA
+  TRABAJADOR_SOCIAL
+  NUTRICIONISTA
+  TERAPEUTA_ABA
+  COORDINADOR_TERAPEUTICO
+  INTERVENCION_TEMPRANA
+}
+
+enum diagnostico_clinico_enum {
+  TEA
+  TDAH
+  TEL
+  DISCAPACIDAD_INTELECTUAL
+  SINDROME_DOWN
+  PARALISIS_CEREBRAL
+  DISCAPACIDAD_VISUAL
+  DISCAPACIDAD_AUDITIVA
+  EPILEPSIA
+  SINDROME_FRAGIL_X
+  RETRASO_GLOBAL_DESARROLLO
+  TRASTORNO_APRENDIZAJE
+  TRASTORNO_PSICOTICO_INFANTIL
+  TRASTORNO_MOVIMIENTO
+  ALTAS_CAPACIDADES
+}
+
+enum causa_discapacidad_enum {
+  FISICA
+  SENSORIAL_VISUAL
+  SENSORIAL_AUDITIVA
+  SENSORIAL_COMUNICACION
+  MENTAL_PSIQUICA
+  MENTAL_INTELECTUAL
+  MULTIPLE
+}
+
+enum grado_discapacidad_enum {
+  NO_CALIFICADO
+  SIN_DISCAPACIDAD
+  LEVE
+  MODERADA
+  SEVERA
+  PROFUNDA
+}
+
 model Perfil {
-  id               Int             @id @default(autoincrement())
-  nombre           String          @db.VarChar(255)
-  edad             Int?
-  diagnostico      String?         @db.VarChar(500)
-  fecha_nacimiento DateTime?       @db.Date
-  notas            String?
-  created_at       DateTime        @default(now()) @db.Timestamp(6)
-  updated_at       DateTime        @default(now()) @updatedAt @db.Timestamp(6)
-  institucion_id   Int
-  institucion      Institucion     @relation("InstitucionPerfiles", fields: [institucion_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_perfil_institucion")
-  observaciones    Observacion[]
-  usuarios         PerfilUsuario[]
+  id                         Int                         @id @default(autoincrement())
+  rut                        String?                     @unique @db.VarChar(12)
+  nombre                     String                      @db.VarChar(255)
+  edad                       Int?
+  nivel_educacional          nivel_educacional_enum?
+  diagnostico_clinico        diagnostico_clinico_enum
+  diagnostico_secundario     diagnostico_clinico_enum?
+  causa_discapacidad         causa_discapacidad_enum?
+  grado_discapacidad         grado_discapacidad_enum     @default(NO_CALIFICADO)
+  porcentaje_rnd             Int?
+  tiene_credencial_rnd       Boolean                     @default(false)
+  fecha_nacimiento           DateTime?                   @db.Date
+  notas                      String?
+  consentimiento_estado      consentimiento_estado_enum  @default(PENDIENTE)
+  consentimiento_sujeto      consentimiento_sujeto_enum  @default(TUTOR_LEGAL)
+  consentimiento_aceptado_at DateTime?                   @db.Timestamp(6)
+  consentimiento_version     String?                     @db.VarChar(20)
+  consentimiento_por_usuario_id Int?
+  consentimiento_por         Usuario?                    @relation("PerfilConsentimientoTutor", fields: [consentimiento_por_usuario_id], references: [id], onUpdate: NoAction, map: "fk_perfil_consentimiento_usuario")
+  created_at                 DateTime                    @default(now()) @db.Timestamp(6)
+  updated_at                 DateTime                    @default(now()) @updatedAt @db.Timestamp(6)
+  institucion_id             Int
+  institucion                Institucion                 @relation("InstitucionPerfiles", fields: [institucion_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_perfil_institucion")
+  observaciones              Observacion[]
+  usuarios                   PerfilUsuario[]
+  solicitudes_institucion    SolicitudInstitucionPerfil[]
 
   @@index([institucion_id], map: "idx_perfil_institucion_id")
+  @@index([consentimiento_estado], map: "idx_perfil_consentimiento_estado")
+  @@index([institucion_id, nivel_educacional], map: "idx_perfil_institucion_nivel")
+  @@index([diagnostico_clinico], map: "idx_perfil_diagnostico_clinico")
+  @@index([rut], map: "idx_perfil_rut")
   @@map("perfiles")
 }
 
+enum consentimiento_sujeto_enum {
+  TUTOR_LEGAL
+  TITULAR
+}
+
+enum consentimiento_estado_enum {
+  PENDIENTE
+  ACEPTADO
+  RECHAZADO
+}
+
 model PerfilUsuario {
-  perfil_id     Int
-  usuario_id    Int
-  rol_en_perfil rol_perfil_enum
-  puede_editar  Boolean         @default(false)
-  created_at    DateTime        @default(now()) @db.Timestamp(6)
+  perfil_id                  Int
+  usuario_id                 Int
+  rol_en_perfil              rol_perfil_enum
+  puede_editar               Boolean         @default(false)
+  consentimiento_aceptado_at DateTime?       @db.Timestamp(6)
+  created_at                 DateTime        @default(now()) @db.Timestamp(6)
   perfil        Perfil          @relation(fields: [perfil_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_perfil_usuario_perfil")
   usuario       Usuario         @relation(fields: [usuario_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_perfil_usuario_usuario")
 
@@ -156,6 +350,28 @@ model AuditoriaAdmin {
   @@map("auditoria_admin")
 }
 
+model AuditoriaObservacion {
+  id             Int                          @id @default(autoincrement())
+  usuario_id     Int
+  observacion_id Int?
+  perfil_id      Int?
+  reporte_id     Int?
+  accion         String                       @db.VarChar(80)
+  privacidad     privacidad_observacion_enum?
+  detalles       String?                      @db.VarChar(500)
+  ip_address     String?                      @db.VarChar(45)
+  created_at     DateTime                     @default(now()) @db.Timestamp(6)
+  usuario        Usuario                      @relation(fields: [usuario_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_auditoria_obs_usuario")
+
+  @@index([usuario_id], map: "idx_auditoria_obs_usuario")
+  @@index([observacion_id], map: "idx_auditoria_obs_observacion")
+  @@index([perfil_id], map: "idx_auditoria_obs_perfil")
+  @@index([created_at(sort: Desc)], map: "idx_auditoria_obs_created_at")
+  @@index([accion], map: "idx_auditoria_obs_accion")
+  @@index([privacidad], map: "idx_auditoria_obs_privacidad")
+  @@map("auditoria_observacion")
+}
+
 enum categoria_observacion_enum {
   CONDUCTA
   COMUNICACION
@@ -183,7 +399,35 @@ enum rol_enum {
 
 enum rol_perfil_enum {
   TUTOR
+  TITULAR
   EDUCADOR
   PROFESIONAL
   MEDICO
+}
+
+enum solicitud_institucion_estado_enum {
+  PENDIENTE
+  ACEPTADA
+  RECHAZADA
+}
+
+model SolicitudInstitucionPerfil {
+  id                         Int                              @id @default(autoincrement())
+  perfil_id                  Int
+  institucion_solicitante_id Int
+  institucion_invitada_id    Int
+  estado                     solicitud_institucion_estado_enum @default(PENDIENTE)
+  solicitado_por_id          Int
+  respondido_por_id          Int?
+  respondido_at              DateTime?                        @db.Timestamp(6)
+  created_at                 DateTime                         @default(now()) @db.Timestamp(6)
+  perfil                     Perfil                           @relation(fields: [perfil_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_solicitud_perfil")
+  institucion_solicitante    Institucion                      @relation("SolicitudInstOrigen", fields: [institucion_solicitante_id], references: [id], onUpdate: NoAction, map: "fk_solicitud_inst_origen")
+  institucion_invitada       Institucion                      @relation("SolicitudInstDestino", fields: [institucion_invitada_id], references: [id], onUpdate: NoAction, map: "fk_solicitud_inst_destino")
+  solicitado_por             Usuario                          @relation("SolicitudEnviadaPor", fields: [solicitado_por_id], references: [id], onUpdate: NoAction, map: "fk_solicitud_solicitado_por")
+  respondido_por             Usuario?                         @relation("SolicitudRespondidaPor", fields: [respondido_por_id], references: [id], onUpdate: NoAction, map: "fk_solicitud_respondido_por")
+
+  @@unique([perfil_id, institucion_invitada_id], map: "uq_solicitud_perfil_inst_invitada")
+  @@index([institucion_invitada_id, estado], map: "idx_solicitud_inst_invitada_estado")
+  @@map("solicitudes_institucion_perfil")
 }

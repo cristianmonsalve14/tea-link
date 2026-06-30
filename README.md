@@ -15,7 +15,7 @@
 
 **TEA Link** es una aplicación web diseñada para centralizar y facilitar la comunicación entre familias, educadores, profesionales y medicos de apoyo que trabajan con personas dentro del **Trastorno del Espectro Autista (TEA)**.
 
-> **Estado:** producto **funcional en entorno local** (EV1–EV3 completadas). Funcionalidades futuras: despliegue cloud, tests automatizados y recuperación de contraseña por correo.
+> **Estado:** producto **entregado y funcional en entorno local** (EV1–EV3 completadas). **~218 tests automatizados** (Vitest + Supertest).
 
 El sistema permite:
 - ✅ Registrar observaciones colaborativas de manera segura y organizada
@@ -57,7 +57,7 @@ Desarrollar una aplicación web que centralice y facilite el registro colaborati
 
 3. **Crear un módulo de reportes personalizados** que genere documentos (PDF/Excel) consolidados con observaciones seleccionadas, permitiendo a profesionales extraer información para evaluaciones médicas/educativas y facilitar la toma de decisiones basada en datos históricos.
 
-4. **Garantizar seguridad, privacidad y escalabilidad** mediante encriptación de contraseñas (bcrypt 10 rounds), tokens JWT con expiración (24h), HTTPS/TLS 1.3, validación de datos con Zod, y arquitectura escalable (3-Tier Layered) que mantenga integridad ACID de datos sensibles de menores.
+4. **Garantizar seguridad, privacidad y escalabilidad** mediante encriptación de contraseñas (bcrypt 10 rounds), tokens JWT con expiración, validación de datos con Zod, RBAC, auditoría de accesos sensibles y arquitectura en capas (3-Tier) con integridad ACID en PostgreSQL para datos de menores.
 
 ---
 
@@ -71,7 +71,7 @@ Desarrollar una aplicación web que centralice y facilite el registro colaborati
 - **Forms:** React Hook Form + Zod (validación)
 - **State Management:** Zustand (ligero, no Redux)
 - **HTTP Client:** Fetch API nativa + Axios (opcional)
-- **Deployment:** Vercel (CDN global, auto-deploy desde GitHub)
+- **Deployment:** Entorno local (Vite dev server)
 
 ### ⚙️ Backend
 - **Runtime:** Node.js 20.x LTS
@@ -79,12 +79,11 @@ Desarrollar una aplicación web que centralice y facilite el registro colaborati
 - **ORM:** Prisma 5.x (type-safe, migrations automáticas)
 - **Authentication:** JWT (24h expiry) + bcrypt (10 rounds)
 - **Validation:** Zod (schema validation)
-- **API Documentation:** Swagger/OpenAPI 3.0
-- **Deployment:** Render.com (PaaS con auto-scaling)
+- **Deployment:** Entorno local documentado (Node.js + PostgreSQL)
 
 ### 🗄️ Base de Datos
 - **Motor:** PostgreSQL 15.x
-- **Hosting:** Neon.tech (PostgreSQL serverless con branching)
+- **Hosting:** PostgreSQL local (desarrollo y demo)
 - **ORM Integration:** Prisma con migrations automáticas
 - **Normalization:** 3NF (Third Normal Form)
 - **Indices:** email (unique), fecha_evento, categoria para optimization
@@ -95,7 +94,7 @@ Desarrollar una aplicación web que centralice y facilite el registro colaborati
   - **Capa de Lógica de Negocio:** Express API (Render)
   - **Capa de Datos:** PostgreSQL (Neon)
 - **Protocolo:** REST API con 25+ endpoints
-- **Security:** HTTPS/TLS 1.3, CORS, RBAC, Helmet.js headers
+- **Security:** CORS, RBAC, JWT, bcrypt
 
 ---
 
@@ -150,6 +149,7 @@ tea-link/
 │   ├── INFORME-FINAL-TEA-LINK.md     # Informe final de entrega (EV1–EV3)
 │   ├── EV3-PLAN-DE-PRUEBAS.md        # Plan de pruebas EV3
 │   ├── EV3-RESULTADOS-PRUEBAS.md     # Resultados y evidencias
+│   ├── EV3-PRUEBAS-AUTOMATIZADAS.md  # Suite Vitest/Supertest (~218 tests)
 │   ├── usuarios_prueba.md            # Credenciales de demo
 │   ├── REGLAS_Y_PERMISOS_DE_ROLES.md
 │   ├── INFORME-TECNICO-BASE-DATOS.md
@@ -172,6 +172,7 @@ tea-link/
 │   │   ├── prisma/
 │   │   │   ├── schema.prisma        # Definición de modelo datos
 │   │   │   └── migrations/          # Migraciones versionadas
+│   │   ├── tests/                   # Pruebas unitarias e integración (Vitest)
 │   │   ├── package.json
 │   │   ├── package-lock.json
 │   │   └── tsconfig.json
@@ -188,6 +189,7 @@ tea-link/
 │   │   │   ├── App.css
 │   │   │   ├── index.css
 │   │   │   └── main.tsx
+│   │   ├── tests/                   # Pruebas unitarias (Vitest)
 │   │   ├── public/
 │   │   ├── package.json
 │   │   ├── package-lock.json
@@ -260,32 +262,35 @@ cd Producto/backend
 npx ts-node scripts/db-resumen.ts
 ```
 
+### 6️⃣ Ejecutar pruebas automatizadas
+```bash
+# Backend —  ~176 tests (unitarias + integración)
+# Frontend — 42 tests
+cd Producto/backend
+npm test
+
+# Frontend — 42 tests unitarios
+cd Producto/frontend
+npm test
+```
+
+Detalle de cobertura CP y comandos: `Documentacion/EV3-PRUEBAS-AUTOMATIZADAS.md`.
+
 ---
 
-## 🚀 Deployment
+## 🖥️ Ejecución local
 
-### Frontend (Vercel)
+El producto entregado se ejecuta en **entorno local** documentado en `Producto/backend/README.md` y `Producto/frontend/README.md`:
+
 ```bash
-# Vercel auto-detecta Vite
-npm install -g vercel
-vercel
-# Seguir prompts interactivos
+# Backend (puerto 3000)
+cd Producto/backend && npm install && npx prisma migrate deploy && npx prisma db seed && npm run dev
+
+# Frontend (puerto 5173)
+cd Producto/frontend && npm install && npm run dev
 ```
 
-### Backend (Render)
-```bash
-# Crear cuenta en render.com
-# Conectar repositorio GitHub
-# Render auto-despliega en cada push a main
-```
-
-### Database (Neon)
-```bash
-# 1. Crear proyecto en neon.tech
-# 2. Copiar DATABASE_URL
-# 3. Guardar en variables de entorno de Render
-# 4. Aplicar migraciones: npx prisma migrate deploy
-```
+Credenciales demo: `Documentacion/usuarios_prueba.md`.
 
 ---
 
@@ -295,7 +300,8 @@ vercel
 |-----------|-------------|
 | [Informe final](./Documentacion/INFORME-FINAL-TEA-LINK.md) | Entrega integral EV1–EV3 + cierre |
 | [Plan de pruebas EV3](./Documentacion/EV3-PLAN-DE-PRUEBAS.md) | 13 casos CP-01 a CP-13 y BD de pruebas |
-| [Resultados pruebas](./Documentacion/EV3-RESULTADOS-PRUEBAS.md) | Ejecución y capturas |
+| [Resultados pruebas](./Documentacion/EV3-RESULTADOS-PRUEBAS.md) | Ejecución manual y capturas |
+| [Pruebas automatizadas](./Documentacion/EV3-PRUEBAS-AUTOMATIZADAS.md) | ~218 tests Vitest/Supertest |
 | [Usuarios de prueba](./Documentacion/usuarios_prueba.md) | Credenciales demo |
 | [Reglas y permisos](./Documentacion/REGLAS_Y_PERMISOS_DE_ROLES.md) | RBAC y privacidad |
 | [Informe técnico BD](./Documentacion/INFORME-TECNICO-BASE-DATOS.md) | Diseño PostgreSQL |
@@ -320,16 +326,24 @@ vercel
 - [x] Control de acceso granular (RBAC) por rol e institución
 - [x] Cambio de contraseña inicial obligatorio
 - [x] Reset de contraseña temporal por superadmin (administradores) y por admin institucional (equipo operativo)
-- [ ] Recuperación de contraseña por correo (futuro)
 
 ### 👨‍👩‍👧 Perfiles y equipo interdisciplinario
-- [x] Perfiles estudiante por institución
+- [x] Perfiles estudiante con **RUT único** (validación chilena; sin duplicados)
+- [x] Alta solo por **colegio** o **centro médico**; familia como apoderados (sin panel admin)
+- [x] **Consentimiento** tutor/titular y hasta **3 apoderados** por perfil
+- [x] **Colaboración** interinstitucional y **cesión de custodia**
 - [x] Vínculo de equipo vía `perfil_usuario` (multi-institucional)
-- [x] Información: nombre, edad, diagnóstico, notas
+- [x] Información: nombre, edad, diagnóstico estructurado, nivel educacional, RND
+
+### 🛡️ Superadmin (command center)
+- [x] Panel ejecutivo con KPIs y auditoría
+- [x] **Registro perfiles** nacional (`/superadmin/perfiles`) con filtros en cascada
+- [x] Eliminación de perfiles solo por superadmin
 
 ### 📝 Observaciones
 - [x] CRUD completo (crear, leer, editar, eliminar propias)
 - [x] Privacidad: PUBLICA, MULTINIVEL, PRIVADA
+- [x] Auditoría de acceso a observaciones sensibles (`auditoria_observacion`)
 - [x] Categorías: CONDUCTA, COMUNICACION, SOCIAL, ACADEMICO, SENSORIAL, MOTOR, CLINICO, OTRO
 - [x] Bitácora con búsqueda, filtros por rol y vistas agrupadas
 - [x] Validación frontend y backend (Zod)
@@ -340,8 +354,7 @@ vercel
 - [x] Selección de observaciones y rango de fechas
 - [x] Historial de reportes del usuario
 
-### 🔔 Notificaciones
-- [ ] Alertas push o en tiempo real (futuro)
+### 🔔 Interfaz y feedback
 - [x] Feedback visual en formularios e interfaz
 
 ---
@@ -354,10 +367,10 @@ vercel
 | **Contraseñas** | Hash seguro | bcrypt (10 rounds) = irreversible |
 | **Validación** | Double-layer | Frontend (Zod) + Backend (Zod) |
 | **Autorización** | Control de roles | RBAC con middleware |
-| **Transporte** | Encriptación | HTTPS/TLS 1.3 |
+| **Transporte** | API local | HTTP entre frontend (5173) y backend (3000), CORS configurado |
 | **Base de datos** | Integridad | PostgreSQL ACID, Foreign Keys, CASCADE |
 | **Inyección SQL** | ORM parametrizado | Prisma previene SQL injection |
-| **Headers** | CORS configurado | Pendiente Helmet.js en producción |
+| **Headers** | CORS | Configurado para desarrollo local |
 
 ---
 
@@ -367,18 +380,21 @@ vercel
 **Diagrama ER:** `Documentacion/diagramas/modelo-er-base-datos.png`  
 **Normalización:** 3FN — detalle en `Documentacion/INFORME-TECNICO-BASE-DATOS.md`
 
-### Tablas (8)
+### Tablas (11)
 
 | Tabla | Propósito |
 |-------|-----------|
 | `instituciones` | Familia, colegio, centro médico, centro profesional, sistema |
+| `catalogo_establecimientos` | Catálogo oficial de establecimientos (alta instituciones) |
 | `usuarios` | Credenciales, rol, institución, `must_change_password` |
-| `perfiles` | Estudiantes bajo seguimiento (por institución) |
+| `perfiles` | Estudiantes: **RUT único**, consentimiento, diagnóstico, custodia |
 | `perfil_usuario` | Equipo interdisciplinario N:M (usuario ↔ perfil) |
+| `solicitudes_institucion_perfil` | Colaboración y cesión de custodia entre instituciones |
 | `observaciones` | Bitácora con categoría y privacidad |
 | `reportes` | Informes PDF/CSV generados |
 | `observaciones_en_reportes` | Puente N:N reporte ↔ observación |
 | `auditoria_admin` | Trazabilidad de acciones administrativas |
+| `auditoria_observacion` | Trazabilidad de acceso a observaciones MULTINIVEL / PRIVADA |
 
 ### Roles (`rol_enum`)
 
@@ -414,21 +430,15 @@ Este proyecto toca **10+ asignaturas** de la carrera:
 | Programación Backend | Node.js, Express, API REST |
 | Seguridad Informática | JWT, bcrypt, RBAC, HTTPS, validación |
 | Testing | Jest, Vitest, tests unitarios/integración |
-| DevOps | CI/CD, GitHub Actions, deployment |
+| DevOps | Git, GitHub, control de versiones |
 | Desarrollo de Interfaces | UI/UX, Tailwind, accesibilidad |
 | Gestión de Proyectos | Cronograma, Gantt, riesgos |
 
 ---
 
-## 🤝 Contribuciones
+## 📦 Alcance del proyecto
 
-Este es un proyecto de titulación individual. Para el futuro (v2.0):
-- [ ] Soporte multiidioma (i18n)
-- [ ] Integración con sistemas de salud
-- [ ] Aplicación móvil (React Native)
-- [ ] Videoconferencias integradas
-- [ ] IA para análisis predictivo de patrones TEA
-- [ ] Integración con calendarios y recordatorios
+Proyecto de **titulación individual** (TPY1101 — DuocUC 2026). El alcance entregado comprende aplicación full-stack local, base de datos PostgreSQL, documentación EV1–EV3, pruebas manuales y automatizadas, e informe final integrado.
 
 ---
 
@@ -444,8 +454,7 @@ Este es un proyecto de titulación individual. Para el futuro (v2.0):
 ## 🎯 Estado del proyecto
 
 **Última actualización:** Junio 2026  
-**Estado:** Producto funcional en entorno local — entrega final  
-**Avance funcional estimado:** ~90% del núcleo (auth, roles, perfiles, observaciones, reportes, UI)
+**Estado:** Entrega final — producto funcional en entorno local — **~218 tests automatizados**
 
 ### Evaluaciones
 
@@ -488,5 +497,5 @@ Contactar a: Cristian Monsalve Budrovich
 ---
 
 **Última actualización:** Junio 2026  
-**Estado:** Entrega final EV3 — producto funcional en local, documentación al día  
+**Estado:** Entrega final EV3 — producto funcional en local, documentación y tests automatizados al día  
 **Repositorio:** https://github.com/cristianmonsalve14/tea-link

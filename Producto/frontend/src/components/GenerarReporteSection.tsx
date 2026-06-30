@@ -7,12 +7,15 @@ import { Modal } from "./ui/Modal";
 import { Field } from "./ui/Field";
 import { Input } from "./ui/Input";
 import { Select } from "./ui/Select";
+import { PerfilSelector } from "./perfiles/PerfilSelector";
 import { useRoleTheme } from "../context/RoleThemeContext";
 import { cn } from "../theme/cn";
 import { CATEGORIA_INFO } from "../config/observacionUi";
 import type { CategoriaObs } from "../config/rolPanelConfig";
-
-type Perfil = { id: number; nombre: string };
+import {
+  validarRangoFechas,
+  validarTituloReporte
+} from "../utils/formValidation";
 
 type Observacion = {
   id: number;
@@ -80,7 +83,6 @@ function formatFecha(v: string) {
 
 export function GenerarReporteSection() {
   const theme = useRoleTheme();
-  const [perfiles, setPerfiles] = useState<Perfil[]>([]);
   const [perfilId, setPerfilId] = useState("");
   const [observaciones, setObservaciones] = useState<Observacion[]>([]);
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
@@ -91,6 +93,13 @@ export function GenerarReporteSection() {
   const [loadingObs, setLoadingObs] = useState(false);
   const [creating, setCreating] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<{
+    perfil?: string;
+    titulo?: string;
+    fechas?: string;
+    observaciones?: string;
+  }>({});
+  const [submitAttempted, setSubmitAttempted] = useState(false);
   const [success, setSuccess] = useState<string | null>(null);
 
   const [misReportes, setMisReportes] = useState<ReporteItem[]>([]);
@@ -103,21 +112,6 @@ export function GenerarReporteSection() {
   const [detalleError, setDetalleError] = useState<string | null>(null);
 
   const token = () => localStorage.getItem("token");
-
-  const fetchPerfiles = useCallback(async () => {
-    try {
-      const res = await fetch("http://localhost:3000/api/perfiles", {
-        headers: { Authorization: `Bearer ${token()}` }
-      });
-      if (!res.ok) return;
-      const data = await res.json();
-      const list = data.perfiles ?? [];
-      setPerfiles(list);
-      if (list.length > 0) setPerfilId(prev => prev || String(list[0].id));
-    } catch {
-      /* ignore */
-    }
-  }, []);
 
   const fetchObservaciones = useCallback(async () => {
     if (!perfilId) {
@@ -170,10 +164,6 @@ export function GenerarReporteSection() {
   }, []);
 
   useEffect(() => {
-    fetchPerfiles();
-  }, [fetchPerfiles]);
-
-  useEffect(() => {
     fetchObservaciones();
   }, [fetchObservaciones]);
 
@@ -215,23 +205,21 @@ export function GenerarReporteSection() {
 
   const handleCrear = async (e: React.FormEvent) => {
     e.preventDefault();
+    setSubmitAttempted(true);
     setError(null);
     setSuccess(null);
 
-    if (!perfilId) {
-      setError("Seleccione un perfil");
-      return;
-    }
-    if (!tituloReporte.trim()) {
-      setError("Ingrese un título para el reporte");
-      return;
-    }
-    if (!fechaDesde || !fechaHasta) {
-      setError("Indique el período del reporte (desde / hasta)");
-      return;
-    }
-    if (selectedIds.size === 0) {
-      setError("Seleccione al menos una observación");
+    const errores = {
+      perfil: !perfilId ? "Seleccione un perfil" : undefined,
+      titulo: validarTituloReporte(tituloReporte) ?? undefined,
+      fechas: validarRangoFechas(fechaDesde, fechaHasta) ?? undefined,
+      observaciones: selectedIds.size === 0 ? "Seleccione al menos una observación" : undefined
+    };
+    setFieldErrors(errores);
+    const primerError =
+      errores.perfil ?? errores.titulo ?? errores.fechas ?? errores.observaciones ?? null;
+    if (primerError) {
+      setError(primerError);
       return;
     }
 
@@ -399,34 +387,43 @@ export function GenerarReporteSection() {
         </Alert>
 
         <form onSubmit={handleCrear} className="space-y-4">
-          <div className="grid sm:grid-cols-2 gap-4">
-            <Field label="Estudiante / perfil">
-              <Select value={perfilId} onChange={e => setPerfilId(e.target.value)}>
-                <option value="">Seleccionar...</option>
-                {perfiles.map(p => (
-                  <option key={p.id} value={p.id}>
-                    {p.nombre}
-                  </option>
-                ))}
-              </Select>
-            </Field>
-            <Field label="Título del reporte" required>
-              <Input
-                value={tituloReporte}
-                onChange={e => setTituloReporte(e.target.value)}
-                placeholder="Ej. Informe trimestral"
-                required
-              />
-            </Field>
-          </div>
+          <PerfilSelector
+            label="Estudiante / perfil"
+            value={perfilId}
+            onChange={id => setPerfilId(id)}
+            searchPlaceholder="Buscar por nombre o diagnóstico..."
+            required
+          />
+          {submitAttempted && fieldErrors.perfil && (
+            <p className="text-sm text-status-error -mt-2">{fieldErrors.perfil}</p>
+          )}
+          <Field
+            label="Título del reporte"
+            required
+            error={submitAttempted ? fieldErrors.titulo : undefined}
+          >
+            <Input
+              value={tituloReporte}
+              onChange={e => setTituloReporte(e.target.value)}
+              placeholder="Ej. Informe trimestral"
+              required
+              maxLength={200}
+              error={submitAttempted && Boolean(fieldErrors.titulo)}
+            />
+          </Field>
 
           <div className="grid sm:grid-cols-3 gap-4">
-            <Field label="Período desde" required>
+            <Field
+              label="Período desde"
+              required
+              error={submitAttempted ? fieldErrors.fechas : undefined}
+            >
               <Input
                 type="date"
                 value={fechaDesde}
                 onChange={e => setFechaDesde(e.target.value)}
                 required
+                error={submitAttempted && Boolean(fieldErrors.fechas)}
               />
             </Field>
             <Field label="Período hasta" required>
@@ -435,6 +432,7 @@ export function GenerarReporteSection() {
                 value={fechaHasta}
                 onChange={e => setFechaHasta(e.target.value)}
                 required
+                error={submitAttempted && Boolean(fieldErrors.fechas)}
               />
             </Field>
             <Field label="Formato">
@@ -465,6 +463,9 @@ export function GenerarReporteSection() {
                 </button>
               )}
             </div>
+            {submitAttempted && fieldErrors.observaciones && (
+              <p className="text-sm text-status-error mb-2">{fieldErrors.observaciones}</p>
+            )}
             {loadingObs ? (
               <p className="text-neutral-gray-medium text-sm">Cargando observaciones...</p>
             ) : observacionesOrdenadas.length === 0 ? (

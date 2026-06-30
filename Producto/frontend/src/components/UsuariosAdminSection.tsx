@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { FaKey, FaUserPlus, FaUsers } from "react-icons/fa";
 import { Card } from "./ui/Card";
 import { Button } from "./ui/Button";
@@ -8,9 +8,85 @@ import { Field } from "./ui/Field";
 import { Input } from "./ui/Input";
 import { Select } from "./ui/Select";
 import { useRoleTheme } from "../context/RoleThemeContext";
+import { ScrollableTable } from "./ui/ScrollableTable";
+import { dataTable, filterFieldMinWidth } from "./ui/dataTable";
 import { cn } from "../theme/cn";
+import { validarNombreCompletoConApellido } from "../utils/nombrePersona";
+import { validarEmail } from "../utils/formValidation";
+import {
+  etiquetaTipoInstitucion,
+  institucionAdmiteAdministrador,
+  TIPOS_INSTITUCION_ADMIN_FILTRO
+} from "../utils/institucionContacto";
+import { RegionChileSelect } from "./instituciones/RegionChileSelect";
+import { ComunaChileSelect } from "./instituciones/ComunaChileSelect";
+import type { RegionChile } from "../utils/regionChile";
+import { Label } from "./ui/Label";
+import { SuperadminFilterBar, type FilterChip } from "./superadmin/SuperadminFilterBar";
+import { SuperadminBadge } from "./superadmin/SuperadminBadge";
 
-type InstitucionOption = { id: number; nombre: string; tipo?: string };
+function institucionOpcionAdmiteAdministrador(inst: InstitucionOption): boolean {
+  return institucionAdmiteAdministrador(inst.tipo);
+}
+
+function coincideBusquedaAdmin(admin: Administrador, q: string): boolean {
+  if (!q) return true;
+  const tipoLabel = admin.institucion?.tipo
+    ? etiquetaTipoInstitucion(admin.institucion.tipo).toLowerCase()
+    : "";
+  const haystack = [
+    admin.nombre_completo,
+    admin.email,
+    admin.institucion?.nombre,
+    admin.institucion?.tipo,
+    tipoLabel,
+    String(admin.id)
+  ]
+    .filter(Boolean)
+    .join(" ")
+    .toLowerCase();
+  return haystack.includes(q);
+}
+
+function filtrarInstitucionesOpciones(
+  instituciones: InstitucionOption[],
+  q: string,
+  tipo: string,
+  region: string,
+  comuna: string
+): InstitucionOption[] {
+  const texto = q.trim().toLowerCase();
+  return instituciones.filter(inst => {
+    if (tipo && inst.tipo !== tipo) return false;
+    if (region && inst.region !== region) return false;
+    if (comuna && inst.comuna !== comuna) return false;
+    if (!texto) return true;
+    const tipoLabel = inst.tipo ? etiquetaTipoInstitucion(inst.tipo).toLowerCase() : "";
+    return [inst.nombre, inst.tipo, tipoLabel, inst.comuna, inst.region_label, String(inst.id)].some(
+      v => (v ?? "").toLowerCase().includes(texto)
+    );
+  });
+}
+
+function coincideUbicacionInst(
+  inst: { region?: string | null; comuna?: string | null } | undefined,
+  region: string,
+  comuna: string
+): boolean {
+  if (!inst) return !region && !comuna;
+  if (region && inst.region !== region) return false;
+  if (comuna && inst.comuna !== comuna) return false;
+  return true;
+}
+
+type InstitucionOption = {
+  id: number;
+  nombre: string;
+  tipo?: string;
+  region?: string | null;
+  comuna?: string | null;
+  region_label?: string | null;
+};
 
 type Administrador = {
   id: number;
@@ -37,9 +113,10 @@ function parseApiError(errorData: Record<string, unknown>, fallback: string): st
 
 type Props = {
   instituciones: InstitucionOption[];
+  embedded?: boolean;
 };
 
-export function UsuariosAdminSection({ instituciones }: Props) {
+export function UsuariosAdminSection({ instituciones, embedded = false }: Props) {
   const theme = useRoleTheme();
   const [administradores, setAdministradores] = useState<Administrador[]>([]);
   const [loading, setLoading] = useState(true);
@@ -55,6 +132,15 @@ export function UsuariosAdminSection({ instituciones }: Props) {
   const [eliminandoId, setEliminandoId] = useState<number | null>(null);
   const [reseteandoId, setReseteandoId] = useState<number | null>(null);
   const [tempPasswordModal, setTempPasswordModal] = useState<string | null>(null);
+  const [busqueda, setBusqueda] = useState("");
+  const [filtroInstitucionId, setFiltroInstitucionId] = useState("");
+  const [filtroTipoInstitucion, setFiltroTipoInstitucion] = useState("");
+  const [busquedaInstModal, setBusquedaInstModal] = useState("");
+  const [filtroTipoInstModal, setFiltroTipoInstModal] = useState("");
+  const [filtroRegion, setFiltroRegion] = useState<RegionChile | "">("");
+  const [filtroComuna, setFiltroComuna] = useState("");
+  const [filtroRegionInstModal, setFiltroRegionInstModal] = useState<RegionChile | "">("");
+  const [filtroComunaInstModal, setFiltroComunaInstModal] = useState("");
 
   const authHeaders = () => ({
     Authorization: `Bearer ${localStorage.getItem("token")}`,
@@ -88,12 +174,117 @@ export function UsuariosAdminSection({ instituciones }: Props) {
     fetchAdministradores();
   }, [fetchAdministradores]);
 
+  const q = busqueda.trim().toLowerCase();
+
+  const instPorId = useMemo(
+    () => new Map(instituciones.map(inst => [inst.id, inst])),
+    [instituciones]
+  );
+
+  const institucionesAsignables = useMemo(
+    () => instituciones.filter(institucionOpcionAdmiteAdministrador),
+    [instituciones]
+  );
+
+  const administradoresFiltrados = useMemo(() => {
+    return administradores.filter(admin => {
+      if (filtroInstitucionId && String(admin.institucion_id ?? admin.institucion?.id) !== filtroInstitucionId) {
+        return false;
+      }
+      if (filtroTipoInstitucion && admin.institucion?.tipo !== filtroTipoInstitucion) {
+        return false;
+      }
+      const instId = admin.institucion_id ?? admin.institucion?.id;
+      const inst = instId != null ? instPorId.get(instId) : undefined;
+      if (!coincideUbicacionInst(inst, filtroRegion, filtroComuna)) {
+        return false;
+      }
+      return coincideBusquedaAdmin(admin, q);
+    });
+  }, [
+    administradores,
+    filtroInstitucionId,
+    filtroTipoInstitucion,
+    filtroRegion,
+    filtroComuna,
+    instPorId,
+    q
+  ]);
+
+  const institucionesModal = useMemo(
+    () =>
+      filtrarInstitucionesOpciones(
+        institucionesAsignables,
+        busquedaInstModal,
+        filtroTipoInstModal,
+        filtroRegionInstModal,
+        filtroComunaInstModal
+      ),
+    [
+      institucionesAsignables,
+      busquedaInstModal,
+      filtroTipoInstModal,
+      filtroRegionInstModal,
+      filtroComunaInstModal
+    ]
+  );
+
+  const institucionesEnFiltro = useMemo(
+    () =>
+      [...instituciones]
+        .filter(inst => coincideUbicacionInst(inst, filtroRegion, filtroComuna))
+        .sort((a, b) => a.nombre.localeCompare(b.nombre, "es")),
+    [instituciones, filtroRegion, filtroComuna]
+  );
+
+  const limpiarFiltros = () => {
+    setBusqueda("");
+    setFiltroInstitucionId("");
+    setFiltroTipoInstitucion("");
+    setFiltroRegion("");
+    setFiltroComuna("");
+  };
+
+  const hayFiltrosActivos = Boolean(
+    busqueda.trim() || filtroInstitucionId || filtroTipoInstitucion || filtroRegion || filtroComuna
+  );
+
+  const filterChips = useMemo((): FilterChip[] => {
+    const chips: FilterChip[] = [];
+    if (filtroTipoInstitucion) {
+      const t = TIPOS_INSTITUCION_ADMIN_FILTRO.find(x => x.value === filtroTipoInstitucion);
+      if (t) chips.push({ key: "tipo", label: t.label });
+    }
+    if (filtroInstitucionId) {
+      const inst = instituciones.find(i => String(i.id) === filtroInstitucionId);
+      chips.push({ key: "inst", label: inst?.nombre ?? `Inst. #${filtroInstitucionId}` });
+    }
+    if (filtroRegion) chips.push({ key: "region", label: `Región: ${filtroRegion}` });
+    if (filtroComuna) chips.push({ key: "comuna", label: `Comuna: ${filtroComuna}` });
+    return chips;
+  }, [filtroTipoInstitucion, filtroInstitucionId, filtroRegion, filtroComuna, instituciones]);
+
+  const removeFilterChip = (key: string) => {
+    if (key === "tipo") setFiltroTipoInstitucion("");
+    if (key === "inst") setFiltroInstitucionId("");
+    if (key === "region") {
+      setFiltroRegion("");
+      setFiltroComuna("");
+    }
+    if (key === "comuna") setFiltroComuna("");
+  };
+
   const abrirCrear = () => {
     setModalMode("create");
     setEditingId(null);
     setFormEmail("");
     setFormNombre("");
-    setFormInstitucionId(instituciones[0] ? String(instituciones[0].id) : "");
+    setBusquedaInstModal("");
+    setFiltroTipoInstModal("");
+    setFiltroRegionInstModal("");
+    setFiltroComunaInstModal("");
+    const primera = institucionesAsignables[0];
+    setFormInstitucionId(primera ? String(primera.id) : "");
     setFormError(null);
     setModalOpen(true);
   };
@@ -123,13 +314,32 @@ export function UsuariosAdminSection({ instituciones }: Props) {
       setFormError("El nombre es obligatorio");
       return;
     }
+    const errorNombre = validarNombreCompletoConApellido(formNombre);
+    if (errorNombre) {
+      setFormError(errorNombre);
+      return;
+    }
     if (!formInstitucionId) {
       setFormError("Selecciona una institución");
+      return;
+    }
+    const instSeleccionada = instPorId.get(Number(formInstitucionId));
+    if (instSeleccionada && !institucionOpcionAdmiteAdministrador(instSeleccionada)) {
+      setFormError(
+        "Las instituciones tipo familia no tienen administrador. Los apoderados acceden con rol Familia tras la invitación del colegio o centro médico."
+      );
       return;
     }
     if (modalMode === "create" && !formEmail.trim()) {
       setFormError("El email es obligatorio");
       return;
+    }
+    if (modalMode === "create") {
+      const errorEmail = validarEmail(formEmail);
+      if (errorEmail) {
+        setFormError(errorEmail);
+        return;
+      }
     }
 
     setFormLoading(true);
@@ -227,69 +437,151 @@ export function UsuariosAdminSection({ instituciones }: Props) {
     }
   };
 
-  return (
-    <Card
-      title={
-        <>
-          <FaUsers /> Administradores de institución
-        </>
-      }
-      description="Los administradores gestionan usuarios y perfiles solo dentro de su institución."
-      action={
-        <Button
-          onClick={abrirCrear}
-          disabled={instituciones.length === 0}
-          title={instituciones.length === 0 ? "Crea una institución primero" : undefined}
-        >
-          <FaUserPlus /> Nuevo administrador
-        </Button>
-      }
-    >
-      {error && <Alert variant="error">{error}</Alert>}
+  const inner = (
+    <>
+      {error && <Alert variant="error" className="mb-4">{error}</Alert>}
 
-      {instituciones.length === 0 && (
-        <Alert variant="warning">
-          Debes crear al menos una institución (no Sistema) antes de asignar administradores.
+      {institucionesAsignables.length === 0 && (
+        <Alert variant="warning" className="mb-4">
+          Debes crear al menos una institución con panel administrativo (colegio, centro médico o
+          centro profesional) antes de asignar administradores. Las instituciones tipo{" "}
+          <strong>familia</strong> no admiten administrador.
         </Alert>
       )}
 
-      <div className="overflow-x-auto">
-        <table className="min-w-full text-sm">
+      {(embedded || administradores.length > 0) && (
+        <SuperadminFilterBar
+          className="mb-6"
+          search={busqueda}
+          onSearchChange={setBusqueda}
+          searchPlaceholder="Buscar por nombre, email, institución o ID..."
+          chips={filterChips}
+          onRemoveChip={removeFilterChip}
+          onClearAll={limpiarFiltros}
+          filteredCount={administradoresFiltrados.length}
+          totalCount={administradores.length}
+          entityLabel="administradores"
+          actions={
+            <Button
+              onClick={abrirCrear}
+              disabled={institucionesAsignables.length === 0}
+              title={
+                institucionesAsignables.length === 0
+                  ? "Crea una institución con panel administrativo primero"
+                  : undefined
+              }
+            >
+              <FaUserPlus /> Nuevo administrador
+            </Button>
+          }
+          advanced={
+            <div className="col-span-full space-y-5">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+                <div className={cn(filterFieldMinWidth.tipo, "w-full min-w-0")}>
+                  <Label className="text-xs mb-1.5 block text-slate-600">Tipo de institución</Label>
+                  <Select
+                    value={filtroTipoInstitucion}
+                    onChange={e => setFiltroTipoInstitucion(e.target.value)}
+                  >
+                    {TIPOS_INSTITUCION_ADMIN_FILTRO.map(t => (
+                      <option key={t.value || "all"} value={t.value}>
+                        {t.label}
+                      </option>
+                    ))}
+                  </Select>
+                </div>
+                <div className="w-full min-w-0 sm:col-span-2 lg:col-span-2">
+                  <Label className="text-xs mb-1.5 block text-slate-600">Institución</Label>
+                  <Select
+                    value={filtroInstitucionId}
+                    onChange={e => setFiltroInstitucionId(e.target.value)}
+                  >
+                    <option value="">Todas las instituciones</option>
+                    {institucionesEnFiltro.map(inst => (
+                      <option key={inst.id} value={inst.id}>
+                        {inst.nombre}
+                      </option>
+                    ))}
+                  </Select>
+                </div>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 max-w-2xl">
+                <div className="w-full min-w-0">
+                  <RegionChileSelect
+                    value={filtroRegion}
+                    onChange={value => {
+                      setFiltroRegion(value);
+                      setFiltroComuna("");
+                      setFiltroInstitucionId("");
+                    }}
+                  />
+                </div>
+                <div className="w-full min-w-0">
+                  <ComunaChileSelect
+                    region={filtroRegion}
+                    value={filtroComuna}
+                    onChange={value => {
+                      setFiltroComuna(value);
+                      setFiltroInstitucionId("");
+                    }}
+                  />
+                </div>
+              </div>
+            </div>
+          }
+        />
+      )}
+
+      <div
+        className={cn(
+          embedded && "rounded-2xl border border-slate-200/80 bg-white shadow-sm overflow-hidden"
+        )}
+      >
+      <ScrollableTable>
+        <table className={dataTable.table}>
           <thead>
             <tr className={theme.tableHead}>
-              <th className="px-3 py-2 text-left font-semibold">ID</th>
-              <th className="px-3 py-2 text-left font-semibold">Nombre</th>
-              <th className="px-3 py-2 text-left font-semibold">Email</th>
-              <th className="px-3 py-2 text-left font-semibold">Institución</th>
-              <th className="px-3 py-2 text-left font-semibold">Acciones</th>
+              <th className={dataTable.th}>Administrador</th>
+              <th className={dataTable.th}>Email</th>
+              <th className={dataTable.th}>Institución</th>
+              <th className={dataTable.th}>Acciones</th>
             </tr>
           </thead>
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan={5} className="text-center py-6 text-gray-400">
+                <td colSpan={4} className="text-center py-6 text-sm text-gray-400">
                   Cargando administradores...
                 </td>
               </tr>
-            ) : administradores.length === 0 ? (
+            ) : administradoresFiltrados.length === 0 ? (
               <tr>
-                <td colSpan={5} className="text-center py-6 text-gray-400">
-                  No hay administradores registrados.
+                <td colSpan={4} className="text-center py-6 text-sm text-gray-400">
+                  {hayFiltrosActivos
+                    ? "Sin resultados con los filtros actuales."
+                    : "No hay administradores registrados."}
                 </td>
               </tr>
             ) : (
-              administradores.map(admin => (
+              administradoresFiltrados.map(admin => (
                 <tr
                   key={admin.id}
                   className={cn("border-b last:border-none", theme.tableRowHover)}
                 >
-                  <td className="px-3 py-2">{admin.id}</td>
-                  <td className="px-3 py-2">{admin.nombre_completo}</td>
-                  <td className="px-3 py-2">{admin.email}</td>
-                  <td className="px-3 py-2">
-                    {admin.institucion?.nombre ?? "—"}
+                  <td className={dataTable.td}>
+                    <div className="font-medium text-slate-900">{admin.nombre_completo}</div>
+                    <span className="text-[10px] text-slate-400 font-mono">#{admin.id}</span>
                   </td>
-                  <td className="px-3 py-2 whitespace-nowrap">
+                  <td className={dataTable.td}>{admin.email}</td>
+                  <td className={dataTable.td}>
+                    <div className="font-medium text-slate-800">{admin.institucion?.nombre ?? "—"}</div>
+                    {admin.institucion?.tipo && (
+                      <SuperadminBadge tone="neutral" className="mt-1">
+                        {etiquetaTipoInstitucion(admin.institucion.tipo)}
+                      </SuperadminBadge>
+                    )}
+                  </td>
+                  <td className={cn(dataTable.td, "whitespace-nowrap")}>
                     <button
                       type="button"
                       className={cn(theme.link, "mr-2 text-sm font-medium")}
@@ -321,7 +613,7 @@ export function UsuariosAdminSection({ instituciones }: Props) {
             )}
           </tbody>
         </table>
-      </div>
+      </ScrollableTable>
 
       <Modal
         open={modalOpen}
@@ -352,22 +644,75 @@ export function UsuariosAdminSection({ instituciones }: Props) {
             <Input
               value={formNombre}
               onChange={e => setFormNombre(e.target.value)}
+              placeholder="Ej: Juan Pérez González"
               required
             />
+            <p className="text-xs text-neutral-gray-medium mt-1">
+              Nombre, primer apellido y segundo apellido son obligatorios.
+            </p>
           </Field>
-          <Field label="Institución" required>
+          <Field label="Institución asignada" required>
+            <p className="text-xs text-neutral-gray-medium mb-3">
+              Solo colegios y centros de salud/terapia admiten administrador. Las familias acceden
+              con rol <strong>Familia</strong> cuando el colegio o clínica los invita.
+            </p>
+            <div className="rounded-lg border border-slate-200 bg-slate-50/70 p-3 sm:p-4 space-y-4 mb-4">
+              <p className="text-xs font-semibold text-slate-600">Filtrar listado de instituciones</p>
+              <Input
+                value={busquedaInstModal}
+                onChange={e => setBusquedaInstModal(e.target.value)}
+                placeholder="Filtrar por nombre o tipo..."
+              />
+              <div>
+                <Label className="text-xs mb-1.5 block text-slate-600">Tipo de institución</Label>
+                <Select
+                value={filtroTipoInstModal}
+                onChange={e => setFiltroTipoInstModal(e.target.value)}
+                aria-label="Tipo de institución"
+              >
+                {TIPOS_INSTITUCION_ADMIN_FILTRO.map(t => (
+                  <option key={`modal-${t.value || "all"}`} value={t.value}>
+                    {t.label}
+                  </option>
+                ))}
+                </Select>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <RegionChileSelect
+                  value={filtroRegionInstModal}
+                  onChange={value => {
+                    setFiltroRegionInstModal(value);
+                    setFiltroComunaInstModal("");
+                  }}
+                />
+                <ComunaChileSelect
+                  region={filtroRegionInstModal}
+                  value={filtroComunaInstModal}
+                  onChange={setFiltroComunaInstModal}
+                />
+              </div>
+            </div>
             <Select
               value={formInstitucionId}
               onChange={e => setFormInstitucionId(e.target.value)}
               required
             >
               <option value="">Seleccionar...</option>
-              {instituciones.map(inst => (
+              {institucionesModal.slice(0, 200).map(inst => (
                 <option key={inst.id} value={inst.id}>
                   {inst.nombre}
+                  {inst.tipo ? ` — ${etiquetaTipoInstitucion(inst.tipo)}` : ""}
                 </option>
               ))}
             </Select>
+            {institucionesModal.length === 0 && (
+              <p className="text-xs text-amber-700 mt-1">Ninguna institución coincide con el filtro.</p>
+            )}
+            {institucionesModal.length > 200 && (
+              <p className="text-xs text-neutral-gray-medium mt-1">
+                Mostrando las primeras 200 coincidencias. Acote la búsqueda si no encuentra la suya.
+              </p>
+            )}
           </Field>
           {formError && <Alert variant="error" className="mb-0">{formError}</Alert>}
         </form>
@@ -388,6 +733,22 @@ export function UsuariosAdminSection({ instituciones }: Props) {
           {tempPasswordModal}
         </p>
       </Modal>
+      </div>
+    </>
+  );
+
+  if (embedded) return inner;
+
+  return (
+    <Card
+      title={
+        <>
+          <FaUsers /> Administradores de institución
+        </>
+      }
+      description="Los administradores gestionan usuarios y perfiles solo dentro de su institución."
+    >
+      {inner}
     </Card>
   );
 }

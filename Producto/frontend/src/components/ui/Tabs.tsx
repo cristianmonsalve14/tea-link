@@ -49,14 +49,20 @@ export function Tabs<T extends string>({
   }
 
   return (
-    <div className={cn("flex gap-1 mb-6 border-b", theme.accentBorder, className)}>
+    <div
+      className={cn(
+        "flex flex-wrap gap-1 mb-6 border-b pb-px",
+        theme.accentBorder,
+        className
+      )}
+    >
       {items.map(item => (
         <button
           key={item.id}
           type="button"
           onClick={() => onChange(item.id)}
           className={cn(
-            "flex items-center gap-2 px-4 py-2.5 font-semibold border-b-2 -mb-px transition-colors",
+            "flex items-center gap-2 px-3 sm:px-4 py-2.5 font-semibold border-b-2 -mb-px transition-colors text-sm sm:text-base",
             active === item.id ? theme.tabActive : theme.tabInactive
           )}
         >

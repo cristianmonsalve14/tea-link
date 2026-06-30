@@ -9,9 +9,9 @@ Para la vision general del proyecto, objetivos, arquitectura y alcance proyectad
 - Login con manejo de sesion mediante token JWT.
 - Rutas protegidas para usuarios autenticados.
 - Redireccion al dashboard correspondiente segun rol.
-- Panel de SUPERADMIN para instituciones, administradores y reportes globales.
-- Panel de ADMINISTRADOR institucional para perfiles y educadores.
-- Panel de EDUCADOR para observaciones y reportes.
+- Panel de SUPERADMIN (command center): dashboard, instituciones, **registro perfiles**, administradores y auditoría.
+- Panel de ADMINISTRADOR institucional: perfiles (RUT), colaboración, cesión de custodia, equipo.
+- Panel FAMILIA: consentimiento, apoderados, bitácora (solo observaciones públicas).
 - Componentes modulares para gestion de usuarios, perfiles, observaciones y reportes.
 - Mensajes de error y validaciones basicas en formularios.
 
@@ -57,6 +57,10 @@ http://localhost:3000
 - `npm run build`: compila TypeScript y genera build de produccion.
 - `npm run lint`: ejecuta ESLint.
 - `npm run preview`: previsualiza el build generado.
+- `npm test`: ejecuta **42** pruebas unitarias (Vitest).
+- `npm run test:coverage`: reporte de cobertura de `src/utils`.
+
+Documentación de pruebas: `Documentacion/EV3-PRUEBAS-AUTOMATIZADAS.md`.
 
 ## Estructura principal
 

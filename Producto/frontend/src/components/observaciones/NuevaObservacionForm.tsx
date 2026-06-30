@@ -1,6 +1,6 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { FaCheckCircle, FaEdit, FaEye } from "react-icons/fa";
+import { FaCheckCircle, FaEdit, FaEye, FaShieldAlt } from "react-icons/fa";
 import { getRolPanelConfig, type CategoriaObs } from "../../config/rolPanelConfig";
 import {
   CATEGORIA_INFO,
@@ -8,19 +8,26 @@ import {
 } from "../../config/observacionUi";
 import { getRole } from "../../utils/auth";
 import { parseApiError } from "../../utils/parseApiError";
+import {
+  isDescripcionObservacionValida,
+  mensajeDescripcionCorta
+} from "../../utils/observacionFormRules";
+import {
+  validarFechaEvento,
+  validarTituloObservacion
+} from "../../utils/formValidation";
 import { useRoleTheme } from "../../context/RoleThemeContext";
 import { Card } from "../ui/Card";
+import { PerfilSelector } from "../perfiles/PerfilSelector";
 import { Button } from "../ui/Button";
 import { Alert } from "../ui/Alert";
 import { Field } from "../ui/Field";
 import { Input } from "../ui/Input";
 import { Textarea } from "../ui/Textarea";
-import { Select } from "../ui/Select";
+import { Modal } from "../ui/Modal";
 import { cn } from "../../theme/cn";
 
 type PrivacidadKey = keyof typeof PRIVACIDAD_INFO;
-
-type Perfil = { id: number; nombre: string };
 
 type Props = {
   perfilIdInicial?: string;
@@ -52,8 +59,8 @@ export function NuevaObservacionForm({ perfilIdInicial, observacionId }: Props) 
   const theme = useRoleTheme();
   const isEdit = observacionId != null;
 
-  const [perfiles, setPerfiles] = useState<Perfil[]>([]);
   const [perfilId, setPerfilId] = useState(perfilIdInicial ?? "");
+  const [perfilNombre, setPerfilNombre] = useState("");
   const [titulo, setTitulo] = useState("");
   const [descripcion, setDescripcion] = useState("");
   const [categoria, setCategoria] = useState<CategoriaObs>(config.defaultCategoria);
@@ -66,40 +73,17 @@ export function NuevaObservacionForm({ perfilIdInicial, observacionId }: Props) 
   const [editReady, setEditReady] = useState(!isEdit);
   const [registradaEl, setRegistradaEl] = useState<string | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<{
+    perfil?: string;
+    titulo?: string;
+    descripcion?: string;
+    fecha?: string;
+  }>({});
+  const [submitAttempted, setSubmitAttempted] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [confirmarPrivacidad, setConfirmarPrivacidad] = useState(false);
 
   const token = () => localStorage.getItem("token");
-
-  const fetchPerfiles = useCallback(async () => {
-    if (isEdit) return;
-    try {
-      const res = await fetch("http://localhost:3000/api/perfiles", {
-        headers: { Authorization: `Bearer ${token()}` }
-      });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) {
-        setFormError(parseApiError(data, "No se pudieron cargar los perfiles"));
-        setPerfiles([]);
-        return;
-      }
-      const list: Perfil[] = data.perfiles ?? [];
-      setPerfiles(list);
-      setPerfilId(prev => {
-        if (perfilIdInicial && list.some(p => String(p.id) === perfilIdInicial)) {
-          return perfilIdInicial;
-        }
-        if (prev && list.some(p => String(p.id) === prev)) return prev;
-        return list.length > 0 ? String(list[0].id) : "";
-      });
-    } catch {
-      setFormError("Error de red al cargar perfiles");
-      setPerfiles([]);
-    }
-  }, [isEdit, perfilIdInicial]);
-
-  useEffect(() => {
-    if (!isEdit) fetchPerfiles();
-  }, [fetchPerfiles, isEdit]);
 
   useEffect(() => {
     if (perfilIdInicial && !isEdit) setPerfilId(perfilIdInicial);
@@ -153,12 +137,7 @@ export function NuevaObservacionForm({ perfilIdInicial, observacionId }: Props) 
         const pid = obs.perfil_id ?? perfilObs?.id;
         if (pid) {
           setPerfilId(String(pid));
-          setPerfiles([
-            {
-              id: Number(pid),
-              nombre: perfilObs?.nombre ?? `Perfil #${pid}`
-            }
-          ]);
+          setPerfilNombre(perfilObs?.nombre ?? `Perfil #${pid}`);
         }
         setTitulo(obs.titulo ?? "");
         setDescripcion(obs.descripcion ?? "");
@@ -181,8 +160,7 @@ export function NuevaObservacionForm({ perfilIdInicial, observacionId }: Props) 
     };
   }, [observacionId, config.defaultCategoria]);
 
-  const perfilNombre =
-    perfiles.find(p => String(p.id) === perfilId)?.nombre ?? "Sin perfil";
+  const nombrePerfilVisible = perfilNombre || "Sin perfil";
 
   const progreso = useMemo(() => {
     let n = 0;
@@ -194,17 +172,7 @@ export function NuevaObservacionForm({ perfilIdInicial, observacionId }: Props) 
     return Math.round((n / 5) * 100);
   }, [perfilId, titulo, descripcion, categoria, fechaEvento]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!perfilId) {
-      setFormError("Seleccione un perfil");
-      return;
-    }
-    if (descripcion.trim().length < 10) {
-      setFormError("La descripción debe tener al menos 10 caracteres");
-      return;
-    }
-
+  const guardarObservacion = async () => {
     setFormLoading(true);
     setFormError(null);
     try {
@@ -240,6 +208,7 @@ export function NuevaObservacionForm({ perfilIdInicial, observacionId }: Props) 
         );
         return;
       }
+      setConfirmarPrivacidad(false);
       setSuccess(true);
       setTimeout(() => navigate("/dashboard"), 1200);
     } catch {
@@ -248,6 +217,36 @@ export function NuevaObservacionForm({ perfilIdInicial, observacionId }: Props) 
       setFormLoading(false);
     }
   };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSubmitAttempted(true);
+    const errores = {
+      perfil: !perfilId ? "Seleccione un perfil" : undefined,
+      titulo: validarTituloObservacion(titulo) ?? undefined,
+      descripcion: !isDescripcionObservacionValida(descripcion)
+        ? mensajeDescripcionCorta()
+        : undefined,
+      fecha: validarFechaEvento(fechaEvento) ?? undefined
+    };
+    setFieldErrors(errores);
+    const primerError =
+      errores.perfil ?? errores.titulo ?? errores.descripcion ?? errores.fecha ?? null;
+    if (primerError) {
+      setFormError(primerError);
+      return;
+    }
+    setFormError(null);
+
+    if (!isEdit && config.showPrivacidad) {
+      setConfirmarPrivacidad(true);
+      return;
+    }
+
+    await guardarObservacion();
+  };
+
+  const privacidadSeleccionada = PRIVACIDAD_INFO[privacidad];
 
   if (loadingInitial) {
     return <p className="text-neutral-gray-medium py-8 text-center">Cargando observación...</p>;
@@ -352,49 +351,46 @@ export function NuevaObservacionForm({ perfilIdInicial, observacionId }: Props) 
                 <p className="text-xs font-medium text-neutral-gray-medium uppercase tracking-wide">
                   {config.perfilLabel}
                 </p>
-                <p className="font-semibold text-neutral-gray mt-1">{perfilNombre}</p>
+                <p className="font-semibold text-neutral-gray mt-1">{nombrePerfilVisible}</p>
               </div>
             ) : (
-              <>
-                <Field label={config.perfilLabel} required>
-                  <Select
-                    value={perfilId}
-                    onChange={e => setPerfilId(e.target.value)}
-                    required
-                  >
-                    <option value="">Seleccionar...</option>
-                    {perfiles.map(p => (
-                      <option key={p.id} value={p.id}>
-                        {p.nombre}
-                      </option>
-                    ))}
-                  </Select>
-                </Field>
-                {perfiles.length === 0 && (
-                  <Alert variant="warning" className="mt-3 mb-0">
-                    No hay perfiles disponibles. Contacte al administrador de su institución.
-                  </Alert>
-                )}
-              </>
+              <PerfilSelector
+                label={config.perfilLabel}
+                value={perfilId}
+                onChange={(id, perfil) => {
+                  setPerfilId(id);
+                  if (perfil) setPerfilNombre(perfil.nombre);
+                }}
+                required
+              />
             )}
           </Card>
 
           <Card title={isEdit ? "2. Modificar detalle" : "2. Detalle de la observación"}>
             <div className="space-y-4">
-              <Field label="Título breve" required>
+              <Field
+                label="Título breve"
+                required
+                error={submitAttempted ? fieldErrors.titulo : undefined}
+              >
                 <Input
                   value={titulo}
                   onChange={e => setTitulo(e.target.value)}
                   placeholder="Ej. Buen avance en lectura en voz alta"
                   required
                   maxLength={120}
+                  error={submitAttempted && Boolean(fieldErrors.titulo)}
                 />
                 <p className="text-xs text-neutral-gray-medium mt-1 text-right">
                   {titulo.length}/120
                 </p>
               </Field>
 
-              <Field label="Descripción" required>
+              <Field
+                label="Descripción"
+                required
+                error={submitAttempted ? fieldErrors.descripcion : undefined}
+              >
                 <Textarea
                   rows={6}
                   value={descripcion}
@@ -402,6 +398,7 @@ export function NuevaObservacionForm({ perfilIdInicial, observacionId }: Props) 
                   placeholder="Describa qué ocurrió, en qué contexto y qué relevancia tiene para el seguimiento..."
                   required
                   className="min-h-[8rem]"
+                  error={submitAttempted && Boolean(fieldErrors.descripcion)}
                 />
                 <p className="text-xs text-neutral-gray-medium mt-1">
                   Mínimo 10 caracteres · {descripcion.trim().length} escritos
@@ -443,12 +440,17 @@ export function NuevaObservacionForm({ perfilIdInicial, observacionId }: Props) 
                 </div>
               </div>
 
-              <Field label="Fecha y hora del evento" required>
+              <Field
+                label="Fecha y hora del evento"
+                required
+                error={submitAttempted ? fieldErrors.fecha : undefined}
+              >
                 <Input
                   type="datetime-local"
                   value={fechaEvento}
                   onChange={e => setFechaEvento(e.target.value)}
                   required
+                  error={submitAttempted && Boolean(fieldErrors.fecha)}
                 />
               </Field>
             </div>
@@ -544,7 +546,7 @@ export function NuevaObservacionForm({ perfilIdInicial, observacionId }: Props) 
                 {descripcion.trim() || "La descripción que escriba se mostrará aquí..."}
               </p>
               <p className="text-xs text-neutral-gray-medium mt-4 pt-3 border-t border-neutral-gray-medium/20">
-                Perfil: <strong>{perfilNombre}</strong>
+                Perfil: <strong>{nombrePerfilVisible}</strong>
                 <br />
                 {formatPreviewFecha(fechaEvento)}
                 {config.showPrivacidad && (
@@ -600,6 +602,57 @@ export function NuevaObservacionForm({ perfilIdInicial, observacionId }: Props) 
           </Button>
         </div>
       </div>
+
+      <Modal
+        open={confirmarPrivacidad}
+        onClose={() => !formLoading && setConfirmarPrivacidad(false)}
+        title="Confirmar privacidad de la nota clínica"
+        size="sm"
+        footer={
+          <div className="flex flex-col-reverse sm:flex-row gap-2 sm:justify-end w-full">
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={() => setConfirmarPrivacidad(false)}
+              disabled={formLoading}
+            >
+              Revisar privacidad
+            </Button>
+            <Button type="button" onClick={guardarObservacion} disabled={formLoading}>
+              {formLoading ? "Registrando..." : "Sí, confirmar y registrar"}
+            </Button>
+          </div>
+        }
+      >
+        <div className="space-y-4">
+          <p className="text-sm text-neutral-gray-medium">
+            Antes de registrar la nota, confirme que el nivel de privacidad elegido es el
+            correcto. Esto define quién podrá ver este registro en TEA Link.
+          </p>
+          <div
+            className={cn(
+              "rounded-xl border p-4",
+              theme.accentBorder,
+              theme.accentBgSubtle
+            )}
+          >
+            <p className="text-xs font-semibold uppercase tracking-wide text-neutral-gray-medium flex items-center gap-2">
+              <FaShieldAlt />
+              Privacidad seleccionada
+            </p>
+            <p className={cn("text-lg font-bold mt-2", theme.accentTextStrong)}>
+              {privacidadSeleccionada.label}
+            </p>
+            <p className="text-sm text-neutral-gray mt-2">
+              {privacidadSeleccionada.descripcion}
+            </p>
+          </div>
+          <p className="text-xs text-neutral-gray-medium">
+            Paciente: <strong>{nombrePerfilVisible}</strong> · Nota:{" "}
+            <strong>{titulo.trim() || "Sin título"}</strong>
+          </p>
+        </div>
+      </Modal>
     </div>
   );
 }

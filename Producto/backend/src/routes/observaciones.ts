@@ -16,7 +16,7 @@ router.get('/ultimas', authenticateToken, authorizeRoles('SUPERADMIN'), getUltim
 router.get(
   '/',
   authenticateToken,
-  authorizeRoles('EDUCADOR', 'FAMILIA', 'PROFESIONAL', 'MEDICO'),
+  authorizeRoles('EDUCADOR', 'FAMILIA', 'PROFESIONAL', 'MEDICO', 'ADMINISTRADOR'),
   listObservaciones
 );
 router.post(
@@ -28,7 +28,7 @@ router.post(
 router.get(
   '/:id',
   authenticateToken,
-  authorizeRoles('EDUCADOR', 'FAMILIA', 'PROFESIONAL', 'MEDICO'),
+  authorizeRoles('EDUCADOR', 'FAMILIA', 'PROFESIONAL', 'MEDICO', 'ADMINISTRADOR'),
   getObservacionById
 );
 router.put(

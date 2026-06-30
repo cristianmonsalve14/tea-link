@@ -1,53 +1,39 @@
 import { Response } from 'express';
 import { AuthRequest } from '../middleware/authMiddleware';
-import { PrismaClient, privacidad_observacion_enum } from '@prisma/client';
+import { PrismaClient } from '@prisma/client';
 import { z } from 'zod';
 import {
   getPerfilIdsAccesibles,
   usuarioTieneAccesoPerfil
 } from '../utils/perfilAccess';
+import { privacidadVisibleParaRol } from '../utils/privacidadObservacion';
+import {
+  isRolBloqueadoBitacora,
+  isRolLecturaObservacion,
+  isRolOperativoObservacion,
+  isPerfilIdQueryInvalid,
+  observacionCreateSchema,
+  observacionUpdateSchema,
+  resolverPrivacidadAlCrear
+} from '../utils/observacionRules';
+import { verificarPerfilOperativo } from '../utils/perfilConsentimiento';
+import {
+  ACCION_AUDITORIA_OBS,
+  esPrivacidadAuditable,
+  filtrarObservacionesAuditables,
+  ipDesdeRequest,
+  registrarAuditoriaObservacion
+} from '../utils/auditoriaObservacion';
 
 const prisma = new PrismaClient();
-
-const observacionSchema = z.object({
-  titulo: z.string().min(1),
-  descripcion: z.string().min(1),
-  categoria: z.enum([
-    'CONDUCTA',
-    'COMUNICACION',
-    'SOCIAL',
-    'ACADEMICO',
-    'SENSORIAL',
-    'MOTOR',
-    'CLINICO',
-    'OTRO'
-  ]),
-  fecha_evento: z.string().min(1),
-  perfil_id: z.coerce.number().int().positive(),
-  privacidad: z.enum(['PUBLICA', 'PRIVADA', 'MULTINIVEL']).optional()
-});
-
-const observacionUpdateSchema = observacionSchema.partial().omit({ perfil_id: true });
-
-function privacidadVisibleParaRol(rol: string): privacidad_observacion_enum[] {
-  switch (rol) {
-    case 'MEDICO':
-      return ['PUBLICA', 'PRIVADA', 'MULTINIVEL'];
-    case 'PROFESIONAL':
-      return ['PUBLICA', 'MULTINIVEL'];
-    default:
-      return ['PUBLICA'];
-  }
-}
-
-const ROLES_OBSERVACION = ['EDUCADOR', 'FAMILIA', 'PROFESIONAL', 'MEDICO'] as const;
 
 async function assertAccesoPerfil(
   userId: number,
   perfilId: number,
-  institucionId?: number | null
+  institucionId?: number | null,
+  rol?: string | null
 ) {
-  const ok = await usuarioTieneAccesoPerfil(userId, perfilId, institucionId);
+  const ok = await usuarioTieneAccesoPerfil(userId, perfilId, institucionId, rol);
   return ok;
 }
 
@@ -70,12 +56,7 @@ export const getUltimasObservaciones = async (_req: AuthRequest, res: Response) 
 export const listObservaciones = async (req: AuthRequest, res: Response) => {
   try {
     const user = req.user;
-    if (!user?.rol || user.rol === 'ADMINISTRADOR' || user.rol === 'SUPERADMIN') {
-      return res.status(403).json({
-        error: 'Los administradores no pueden consultar observaciones.'
-      });
-    }
-    if (!ROLES_OBSERVACION.includes(user.rol as (typeof ROLES_OBSERVACION)[number])) {
+    if (!user?.rol || !isRolLecturaObservacion(user.rol)) {
       return res.status(403).json({ error: 'Rol no autorizado' });
     }
 
@@ -84,11 +65,13 @@ export const listObservaciones = async (req: AuthRequest, res: Response) => {
     }
 
     const perfilId = req.query.perfil_id ? Number(req.query.perfil_id) : undefined;
-    if (perfilId !== undefined && isNaN(perfilId)) {
+    if (isPerfilIdQueryInvalid(req.query.perfil_id)) {
       return res.status(400).json({ error: 'perfil_id inválido' });
     }
 
-    const perfilIdsAccesibles = await getPerfilIdsAccesibles(user.userId, user.institucion_id);
+    const perfilIdsAccesibles = await getPerfilIdsAccesibles(user.userId, user.institucion_id, {
+      rol: user.rol
+    });
     if (perfilIdsAccesibles.length === 0) {
       return res.json({ observaciones: [] });
     }
@@ -96,6 +79,10 @@ export const listObservaciones = async (req: AuthRequest, res: Response) => {
     if (perfilId) {
       if (!perfilIdsAccesibles.includes(perfilId)) {
         return res.status(404).json({ error: 'Perfil no encontrado o sin acceso' });
+      }
+      const consent = await verificarPerfilOperativo(perfilId);
+      if (!consent.ok) {
+        return res.status(consent.status).json({ error: consent.error });
       }
     }
 
@@ -113,6 +100,20 @@ export const listObservaciones = async (req: AuthRequest, res: Response) => {
       }
     });
 
+    const sensibles = filtrarObservacionesAuditables(observaciones);
+    if (sensibles.length > 0 && user.userId) {
+      const perfilAudit = perfilId ?? sensibles[0]?.perfil_id;
+      const multinivel = sensibles.filter(o => o.privacidad === 'MULTINIVEL').length;
+      const privada = sensibles.filter(o => o.privacidad === 'PRIVADA').length;
+      await registrarAuditoriaObservacion(prisma, {
+        usuarioId: user.userId,
+        accion: ACCION_AUDITORIA_OBS.CONSULTAR_LISTA,
+        perfilId: perfilAudit,
+        detalles: `Listó bitácora: ${sensibles.length} sensible(s) — MULTINIVEL: ${multinivel}, PRIVADA: ${privada}`,
+        ipAddress: ipDesdeRequest(req)
+      });
+    }
+
     return res.json({ observaciones });
   } catch (error) {
     console.error('[OBSERVACIONES][LIST]', error);
@@ -123,11 +124,8 @@ export const listObservaciones = async (req: AuthRequest, res: Response) => {
 export const getObservacionById = async (req: AuthRequest, res: Response) => {
   try {
     const user = req.user;
-    if (!user?.rol || user.rol === 'ADMINISTRADOR' || user.rol === 'SUPERADMIN') {
+    if (!user?.rol || !isRolLecturaObservacion(user.rol)) {
       return res.status(403).json({ error: 'No autorizado' });
-    }
-    if (!ROLES_OBSERVACION.includes(user.rol as (typeof ROLES_OBSERVACION)[number])) {
-      return res.status(403).json({ error: 'Rol no autorizado' });
     }
 
     const id = Number(req.params.id);
@@ -137,7 +135,9 @@ export const getObservacionById = async (req: AuthRequest, res: Response) => {
     const observacion = await prisma.observacion.findFirst({
       where: {
         id,
-        OR: [{ privacidad: { in: visibles } }, { autor_id: user.userId }]
+        ...(isRolOperativoObservacion(user.rol)
+          ? { OR: [{ privacidad: { in: visibles } }, { autor_id: user.userId }] }
+          : { privacidad: { in: visibles } })
       },
       include: {
         autor: { select: { id: true, nombre_completo: true, rol: true } },
@@ -152,10 +152,28 @@ export const getObservacionById = async (req: AuthRequest, res: Response) => {
     const tieneAcceso = await assertAccesoPerfil(
       user.userId,
       observacion.perfil_id,
-      user.institucion_id
+      user.institucion_id,
+      user.rol
     );
     if (!tieneAcceso) {
       return res.status(404).json({ error: 'Observación no encontrada' });
+    }
+
+    const consent = await verificarPerfilOperativo(observacion.perfil_id);
+    if (!consent.ok) {
+      return res.status(consent.status).json({ error: consent.error });
+    }
+
+    if (esPrivacidadAuditable(observacion.privacidad) && user.userId) {
+      await registrarAuditoriaObservacion(prisma, {
+        usuarioId: user.userId,
+        accion: ACCION_AUDITORIA_OBS.CONSULTAR,
+        observacionId: observacion.id,
+        perfilId: observacion.perfil_id,
+        privacidad: observacion.privacidad,
+        detalles: `Consultó observación sensible: ${observacion.titulo}`,
+        ipAddress: ipDesdeRequest(req)
+      });
     }
 
     return res.json({ observacion });
@@ -171,29 +189,32 @@ export const crearObservacion = async (req: AuthRequest, res: Response) => {
     if (!user?.userId || !user.rol) {
       return res.status(401).json({ error: 'No autenticado' });
     }
-    if (user.rol === 'ADMINISTRADOR' || user.rol === 'SUPERADMIN') {
+    if (isRolBloqueadoBitacora(user.rol)) {
       return res.status(403).json({
         error: 'Los administradores no pueden crear observaciones.'
       });
     }
-    if (!ROLES_OBSERVACION.includes(user.rol as (typeof ROLES_OBSERVACION)[number])) {
+    if (!isRolOperativoObservacion(user.rol)) {
       return res.status(403).json({ error: 'Rol no autorizado' });
     }
 
-    const data = observacionSchema.parse(req.body);
+    const data = observacionCreateSchema.parse(req.body);
     const tieneAcceso = await assertAccesoPerfil(
       user.userId,
       data.perfil_id,
-      user.institucion_id
+      user.institucion_id,
+      user.rol
     );
     if (!tieneAcceso) {
       return res.status(404).json({ error: 'Perfil no encontrado o sin acceso' });
     }
 
-    let privacidad: privacidad_observacion_enum = 'PUBLICA';
-    if (user.rol === 'MEDICO' && data.privacidad) {
-      privacidad = data.privacidad;
+    const consent = await verificarPerfilOperativo(data.perfil_id);
+    if (!consent.ok) {
+      return res.status(consent.status).json({ error: consent.error });
     }
+
+    const privacidad = resolverPrivacidadAlCrear(user.rol, data.privacidad);
 
     const observacion = await prisma.observacion.create({
       data: {
@@ -211,6 +232,18 @@ export const crearObservacion = async (req: AuthRequest, res: Response) => {
       }
     });
 
+    if (esPrivacidadAuditable(privacidad)) {
+      await registrarAuditoriaObservacion(prisma, {
+        usuarioId: user.userId,
+        accion: ACCION_AUDITORIA_OBS.CREAR,
+        observacionId: observacion.id,
+        perfilId: observacion.perfil_id,
+        privacidad,
+        detalles: `Creó observación ${privacidad}: ${observacion.titulo}`,
+        ipAddress: ipDesdeRequest(req)
+      });
+    }
+
     return res.status(201).json({ message: 'Observación creada', observacion });
   } catch (error) {
     if (error instanceof z.ZodError) {
@@ -226,7 +259,7 @@ export const actualizarObservacion = async (req: AuthRequest, res: Response) => 
     const user = req.user;
     const id = Number(req.params.id);
     if (isNaN(id)) return res.status(400).json({ error: 'ID inválido' });
-    if (!user?.userId || user.rol === 'ADMINISTRADOR' || user.rol === 'SUPERADMIN') {
+    if (!user?.userId || isRolBloqueadoBitacora(user.rol)) {
       return res.status(403).json({ error: 'No autorizado' });
     }
 
@@ -237,7 +270,8 @@ export const actualizarObservacion = async (req: AuthRequest, res: Response) => 
     const tieneAcceso = await assertAccesoPerfil(
       user.userId,
       existente.perfil_id,
-      user.institucion_id
+      user.institucion_id,
+      user.rol
     );
     if (!tieneAcceso) {
       return res.status(404).json({ error: 'Observación no encontrada' });
@@ -247,6 +281,9 @@ export const actualizarObservacion = async (req: AuthRequest, res: Response) => 
     }
 
     const data = observacionUpdateSchema.parse(req.body);
+    const privacidadResultante =
+      user.rol === 'MEDICO' && data.privacidad ? data.privacidad : existente.privacidad;
+
     const observacion = await prisma.observacion.update({
       where: { id },
       data: {
@@ -262,6 +299,24 @@ export const actualizarObservacion = async (req: AuthRequest, res: Response) => 
       }
     });
 
+    if (
+      esPrivacidadAuditable(existente.privacidad) ||
+      esPrivacidadAuditable(privacidadResultante)
+    ) {
+      await registrarAuditoriaObservacion(prisma, {
+        usuarioId: user.userId,
+        accion: ACCION_AUDITORIA_OBS.EDITAR,
+        observacionId: observacion.id,
+        perfilId: observacion.perfil_id,
+        privacidad: privacidadResultante,
+        detalles:
+          existente.privacidad !== privacidadResultante
+            ? `Editó observación sensible (${existente.privacidad} → ${privacidadResultante}): ${observacion.titulo}`
+            : `Editó observación sensible (${privacidadResultante}): ${observacion.titulo}`,
+        ipAddress: ipDesdeRequest(req)
+      });
+    }
+
     return res.json({ message: 'Observación actualizada', observacion });
   } catch (error) {
     if (error instanceof z.ZodError) {
@@ -276,7 +331,7 @@ export const eliminarObservacion = async (req: AuthRequest, res: Response) => {
     const user = req.user;
     const id = Number(req.params.id);
     if (isNaN(id)) return res.status(400).json({ error: 'ID inválido' });
-    if (!user?.userId || user.rol === 'ADMINISTRADOR' || user.rol === 'SUPERADMIN') {
+    if (!user?.userId || isRolBloqueadoBitacora(user.rol)) {
       return res.status(403).json({ error: 'No autorizado' });
     }
 
@@ -287,13 +342,26 @@ export const eliminarObservacion = async (req: AuthRequest, res: Response) => {
     const tieneAcceso = await assertAccesoPerfil(
       user.userId,
       existente.perfil_id,
-      user.institucion_id
+      user.institucion_id,
+      user.rol
     );
     if (!tieneAcceso) {
       return res.status(404).json({ error: 'Observación no encontrada' });
     }
     if (existente.autor_id !== user.userId) {
       return res.status(403).json({ error: 'Solo puede eliminar sus propias observaciones' });
+    }
+
+    if (esPrivacidadAuditable(existente.privacidad)) {
+      await registrarAuditoriaObservacion(prisma, {
+        usuarioId: user.userId,
+        accion: ACCION_AUDITORIA_OBS.ELIMINAR,
+        observacionId: existente.id,
+        perfilId: existente.perfil_id,
+        privacidad: existente.privacidad,
+        detalles: `Eliminó observación ${existente.privacidad} id=${existente.id}`,
+        ipAddress: ipDesdeRequest(req)
+      });
     }
 
     await prisma.observacion.delete({ where: { id } });

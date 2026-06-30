@@ -1,7 +1,7 @@
 {
   "watch": ["src"],
   "ext": "ts,json",
-  "ignore": ["src/**/*.spec.ts"],
-  "delay": 2000,
+  "ignore": ["src/**/*.spec.ts", "src/data/**"],
+  "delay": 2500,
   "signal": "SIGTERM"
 }

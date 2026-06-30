@@ -52,7 +52,7 @@ export function AppShell({
               <p className="text-sm opacity-90">{displaySubtitle}</p>
             </div>
           </div>
-          <div className="flex flex-wrap items-center gap-3 sm:gap-4">
+          <div className="flex flex-wrap items-center gap-3 sm:gap-4 w-full sm:w-auto">
             {institucionNombre && (
               <span className="text-sm opacity-95 hidden md:inline">
                 Institución:{" "}
@@ -61,7 +61,7 @@ export function AppShell({
             )}
             <div
               className={cn(
-                "flex flex-col items-end text-right px-3 py-2 rounded-xl border border-white/25 bg-white/10 min-w-[140px]"
+                "flex flex-col items-end text-right px-3 py-2 rounded-xl border border-white/25 bg-white/10 w-full sm:w-auto sm:min-w-[140px]"
               )}
             >
               <span className={cn("text-xs font-semibold px-2 py-0.5 rounded-full mb-1", theme.badge)}>
@@ -81,7 +81,7 @@ export function AppShell({
             <button
               type="button"
               onClick={handleLogout}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-white/15 hover:bg-white/25 border border-white/25 text-sm font-semibold transition-colors"
+              className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-white/15 hover:bg-white/25 border border-white/25 text-sm font-semibold transition-colors w-full sm:w-auto"
             >
               <FaSignOutAlt />
               Cerrar sesión

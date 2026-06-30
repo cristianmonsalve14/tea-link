@@ -65,3 +65,6 @@ backups/
 
 # Generated test artifacts
 test-out.pdf
+
+# PlantUML local jar (regenerar PNG: ver Documentacion/diagramas/README.md)
+Documentacion/diagramas/plantuml.jar

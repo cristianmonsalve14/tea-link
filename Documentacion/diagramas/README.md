@@ -5,7 +5,7 @@ Diagramas de arquitectura y base de datos. Fuente: **PlantUML** (`.puml`); expor
 | Archivo | Descripción |
 |---------|-------------|
 | `flujo-datos-arquitectura.puml` / `.png` | Flujo 3 capas al **crear una observación** (React → Express → PostgreSQL) |
-| `modelo-er-base-datos.puml` / `.png` | **Modelo entidad-relación** (8 tablas, 3FN) — alineado a `schema.prisma` |
+| `modelo-er-base-datos.puml` / `.png` | **Modelo entidad-relación** (11 tablas, 3FN) — alineado a `schema.prisma` |
 
 ## Regenerar PNG
 
@@ -18,6 +18,8 @@ java -jar plantuml.jar -tpng flujo-datos-arquitectura.puml modelo-er-base-datos.
 ```
 
 Opción B — extensión **PlantUML** en VS Code/Cursor (vista previa y export).
+
+> **Nota (Jun 2026):** el `.puml` incluye **11 tablas** (RUT, consentimiento, colaboración, `auditoria_observacion`). El PNG se regenera con `plantuml.jar` en esta carpeta.
 
 ## Referencias
 

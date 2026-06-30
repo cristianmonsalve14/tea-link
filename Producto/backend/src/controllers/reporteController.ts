@@ -1,24 +1,23 @@
 import { Response } from 'express';
 import { AuthRequest } from '../middleware/authMiddleware';
-import { PrismaClient, privacidad_observacion_enum } from '@prisma/client';
+import { PrismaClient } from '@prisma/client';
 import { z } from 'zod';
 import { enviarReportePdf } from '../utils/reportePdf';
 import { usuarioTieneAccesoPerfil } from '../utils/perfilAccess';
+import { privacidadVisibleParaRol } from '../utils/privacidadObservacion';
+import { buildReportesListWhere } from '../utils/reporteListQuery';
+import { canViewReporte, isValidNumericId } from '../utils/reporteAccess';
+import { verificarPerfilOperativo } from '../utils/perfilConsentimiento';
+import {
+  ACCION_AUDITORIA_OBS,
+  filtrarObservacionesAuditables,
+  ipDesdeRequest,
+  registrarAuditoriaObservacion
+} from '../utils/auditoriaObservacion';
 
 const prisma = new PrismaClient();
 
 const ROLES_REPORTE = ['EDUCADOR', 'FAMILIA', 'PROFESIONAL', 'MEDICO'] as const;
-
-function privacidadVisibleParaRol(rol: string): privacidad_observacion_enum[] {
-  switch (rol) {
-    case 'MEDICO':
-      return ['PUBLICA', 'PRIVADA', 'MULTINIVEL'];
-    case 'PROFESIONAL':
-      return ['PUBLICA', 'MULTINIVEL'];
-    default:
-      return ['PUBLICA'];
-  }
-}
 
 const createReporteSchema = z.object({
   titulo: z.string().min(2),
@@ -92,10 +91,16 @@ export const createReporte = async (req: AuthRequest, res: Response) => {
     const tieneAcceso = await usuarioTieneAccesoPerfil(
       user.userId,
       data.perfil_id,
-      user.institucion_id
+      user.institucion_id,
+      user.rol
     );
     if (!tieneAcceso) {
       return res.status(404).json({ error: 'Perfil no encontrado o sin acceso' });
+    }
+
+    const consent = await verificarPerfilOperativo(data.perfil_id);
+    if (!consent.ok) {
+      return res.status(consent.status).json({ error: consent.error });
     }
 
     const visibles = privacidadVisibleParaRol(user.rol);
@@ -146,6 +151,18 @@ export const createReporte = async (req: AuthRequest, res: Response) => {
       }
     });
 
+    const sensibles = filtrarObservacionesAuditables(observaciones);
+    if (sensibles.length > 0) {
+      await registrarAuditoriaObservacion(prisma, {
+        usuarioId: user.userId,
+        accion: ACCION_AUDITORIA_OBS.CREAR_REPORTE,
+        reporteId: reporte.id,
+        perfilId: data.perfil_id,
+        detalles: `Reporte "${reporte.titulo}" incluye ${sensibles.length} observación(es) sensible(s)`,
+        ipAddress: ipDesdeRequest(req)
+      });
+    }
+
     return res.status(201).json({ message: 'Reporte creado', reporte });
   } catch (error) {
     if (error instanceof z.ZodError) {
@@ -189,10 +206,21 @@ export const exportReporte = async (req: AuthRequest, res: Response) => {
 
     if (!reporte) return res.status(404).json({ error: 'Reporte no encontrado' });
 
-    const esSuperadmin = user?.rol === 'SUPERADMIN';
-    const esCreador = user?.userId === reporte.creador_id;
-    if (!esSuperadmin && !esCreador) {
+    if (!canViewReporte(user?.rol, user?.userId, reporte.creador_id)) {
       return res.status(403).json({ error: 'No autorizado' });
+    }
+
+    const obsEnReporte = reporte.observaciones.map(o => o.observacion);
+    const sensibles = filtrarObservacionesAuditables(obsEnReporte);
+    if (sensibles.length > 0 && user?.userId) {
+      await registrarAuditoriaObservacion(prisma, {
+        usuarioId: user.userId,
+        accion: ACCION_AUDITORIA_OBS.EXPORTAR_REPORTE,
+        reporteId: reporte.id,
+        perfilId: sensibles[0]?.perfil_id ?? null,
+        detalles: `Exportó reporte #${reporte.id} (${reporte.formato}) con ${sensibles.length} observación(es) sensible(s)`,
+        ipAddress: ipDesdeRequest(req)
+      });
     }
 
     const perfilNombre =
@@ -246,22 +274,7 @@ export const exportReporte = async (req: AuthRequest, res: Response) => {
 
 export const listReportes = async (req: AuthRequest, res: Response) => {
   try {
-    const { formato, desde, hasta } = req.query;
-    const where: {
-      formato?: 'PDF' | 'EXCEL';
-      AND?: Array<{ fecha_inicio?: { gte?: Date }; fecha_fin?: { lte?: Date } }>;
-    } = {};
-
-    if (formato === 'PDF' || formato === 'EXCEL') {
-      where.formato = formato;
-    }
-
-    if (desde || hasta) {
-      const rango: { fecha_inicio?: { gte?: Date }; fecha_fin?: { lte?: Date } } = {};
-      if (desde) rango.fecha_inicio = { gte: new Date(String(desde)) };
-      if (hasta) rango.fecha_fin = { lte: new Date(String(hasta)) };
-      where.AND = [rango];
-    }
+    const where = buildReportesListWhere(req.query);
 
     const reportes = await prisma.reporte.findMany({
       where,
@@ -327,10 +340,7 @@ export const getReporteById = async (req: AuthRequest, res: Response) => {
     }
 
     const user = req.user;
-    if (
-      user?.rol !== 'SUPERADMIN' &&
-      user?.userId !== reporte.creador_id
-    ) {
+    if (!canViewReporte(user?.rol, user?.userId, reporte.creador_id)) {
       return res.status(403).json({ error: 'No autorizado' });
     }
 
@@ -415,9 +425,7 @@ export const deleteReporte = async (req: AuthRequest, res: Response) => {
     }
 
     const user = req.user;
-    const esSuperadmin = user?.rol === 'SUPERADMIN';
-    const esCreador = user?.userId === reporte.creador_id;
-    if (!esSuperadmin && !esCreador) {
+    if (!canViewReporte(user?.rol, user?.userId, reporte.creador_id)) {
       return res.status(403).json({ error: 'No autorizado' });
     }
 

@@ -13,7 +13,7 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
       <select
         ref={ref}
         className={cn(
-          "w-full min-h-touch px-4 py-2.5 rounded-lg border text-neutral-gray",
+          "w-full min-h-touch px-3 py-2 rounded-lg border text-sm text-neutral-gray",
           "border-neutral-gray-medium bg-neutral-white",
           theme.inputFocus,
           error && "border-status-error",

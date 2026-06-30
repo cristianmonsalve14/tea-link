@@ -15,6 +15,7 @@
 | Ejecutados OK | 12 |
 | No aplica / saltado | 1 (CP-03) |
 | Capturas | 13 (Captura-01 a Captura-13) |
+| Tests automatizados | **~218** (~176 backend + 42 frontend) — ver sección final |
 | Estado del plan | **Completo** |
 
 ---
@@ -26,7 +27,7 @@
 | Captura-01 | CP-01 | Login exitoso familia → Panel de Familia en `/dashboard` |
 | Captura-02 | CP-02 | Mensaje de error con credenciales inválidas |
 | Captura-03 | CP-04 | Panel familia sin funciones de administrador |
-| Captura-04 | CP-05 | Panel admin familia sin bitácora de observaciones |
+| Captura-04 | CP-05 | Panel admin colegio sin bitácora de observaciones |
 | Captura-05 | CP-06 | Selector de perfil con Matías Pérez |
 | Captura-06 | CP-07 | Perfil estudiante creado por admin en listado |
 | Captura-07 | CP-08 | Observación pública creada en bitácora |
@@ -51,9 +52,9 @@
 | CP-02 | Auth | Login credenciales inválidas | Mensaje de error; no se accede al sistema | OK | Captura-02 |
 | CP-03 | Auth | Cambio contraseña inicial | No ejecutado: usuario de prueba sin cambio obligatorio de contraseña | N/A | — |
 | CP-04 | RBAC | Familia sin funciones admin | Panel limitado a perfiles, bitácora e informes; sin gestión de usuarios ni instituciones | OK | Captura-03 |
-| CP-05 | RBAC | Admin sin bitácora | Panel admin con gestión de perfiles/equipo; sin listado de observaciones | OK | Captura-04 |
+| CP-05 | RBAC | Admin sin bitácora | Panel admin con gestión de perfiles/equipo/colaboración; sin listado de observaciones | OK | Captura-04 |
 | CP-06 | Perfiles | Familia ve perfil vinculado | Selector muestra Matías Pérez (#5) | OK | Captura-05 |
-| CP-07 | Perfiles | Admin crea perfil | Perfil estudiante de prueba creado y visible en listado de Familia Pérez Demo | OK | Captura-06 |
+| CP-07 | Perfiles | Admin colegio crea perfil | Perfil con RUT creado y visible en listado del colegio | OK | Captura-06 |
 | CP-08 | Observaciones | Familia crea obs. pública | Observación guardada y visible en bitácora como PUBLICA | OK | Captura-07 |
 | CP-09 | Observaciones | Validación descripción corta | El sistema rechaza descripción &lt; 10 caracteres; no se guarda | OK | Captura-08 |
 | CP-10 | Equipo | Educador ve obs. familia | educador1 ve observaciones PUBLICA de familia en Matías Pérez con autor visible | OK | Captura-10 |
@@ -73,9 +74,9 @@ Copiar al Word del informe si se requiere columnas completas de pasos y resultad
 | CP-02 | — | Login con clave incorrecta | Error; sin acceso | Cumple | OK | Captura-02 |
 | CP-03 | Usuario con cambio obligatorio | — | Cambio de clave y acceso | No aplica en BD actual | N/A | — |
 | CP-04 | Sesión familia | Revisión del panel | Solo funciones de rol familia | Cumple | OK | Captura-03 |
-| CP-05 | Sesión `admin.familia@tealink.com` | Revisión del panel admin | Sin bitácora de observaciones | Cumple | OK | Captura-04 |
+| CP-05 | Sesión `directoraaltavida@email.com` | Revisión del panel admin | Sin bitácora de observaciones | Cumple | OK | Captura-04 |
 | CP-06 | Login familia | Abrir selector de perfil | Aparece Matías Pérez | Cumple | OK | Captura-05 |
-| CP-07 | Login admin familia | Crear perfil estudiante | Perfil en listado institución | Cumple | OK | Captura-06 |
+| CP-07 | Login admin colegio | Crear perfil con RUT y tutor | Perfil en listado institución | Cumple | OK | Captura-06 |
 | CP-08 | Perfil Matías Pérez seleccionado | Nueva observación completa | Obs. PUBLICA en bitácora | Cumple | OK | Captura-07 |
 | CP-09 | Formulario nueva obs. | Descripción &lt; 10 caracteres | Error de validación | Cumple | OK | Captura-08 |
 | CP-10 | Obs. familia en perfil #5 | Login educador1 + bitácora | Ve obs. PUBLICA de familia | Cumple | OK | Captura-10 |
@@ -86,3 +87,24 @@ Copiar al Word del informe si se requiere columnas completas de pasos y resultad
 ---
 
 *Plan de 13 casos completado. Evidencias en `Documentacion/evidencias-ev3/` (Captura-01 a Captura-13).*
+
+---
+
+## Pruebas automatizadas (complemento)
+
+Ejecutadas con **Vitest** (backend y frontend) y **Supertest** (integración API). Documentación completa: `EV3-PRUEBAS-AUTOMATIZADAS.md`.
+
+| Métrica | Valor |
+|---------|-------|
+| Total | **~218 tests** |
+| Backend | **~176** (~41 archivos unit + integración) |
+| Frontend | **42** (11 archivos) |
+| Estado última corrida | **~218 passed** (backend + frontend) |
+| CP cubiertos vía API | **10 / 12** aplicables ≈ **83 %** (CP-03 N/A) |
+
+```bash
+cd Producto/backend && npm test   # ~176 passed
+cd Producto/frontend && npm test  # 42 passed
+```
+
+Los tests de integración usan usuarios `@test-auto.tealink.cl` (seed: `npm run test:seed` en backend); no modifican la BD demo de `usuarios_prueba.md`.
