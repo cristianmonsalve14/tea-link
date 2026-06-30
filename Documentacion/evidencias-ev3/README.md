@@ -17,7 +17,13 @@ Colocar en esta carpeta las **13 capturas** del plan de pruebas (CP-01 a CP-13).
 | `Captura-11.png` | CP-11 | Médico ve equipo |
 | `Captura-12.png` | CP-12 | Familia no ve privada |
 | `Captura-13.png` | CP-13 | Profesional MULTINIVEL |
+| `Captura-14.png` | Tests auto. | `npm test` backend — **~176 passed** |
+| `Captura-15.png` | Tests auto. | `npm test` frontend — **42 passed** |
 
 Formato aceptado: `.png`, `.jpg` o `.webp`. Mantener el nombre base (`Captura-01`, etc.).
 
-**Referencias:** `Documentacion/EV3-PLAN-DE-PRUEBAS.md` · `Documentacion/EV3-RESULTADOS-PRUEBAS.md` · `Documentacion/usuarios_prueba.md`
+**Regenerar Captura-14/15:** ejecutar tests y luego `python generar-capturas-tests.py` en esta carpeta.
+
+**Referencias:** `Documentacion/EV3-PLAN-DE-PRUEBAS.md` · `Documentacion/EV3-RESULTADOS-PRUEBAS.md` · `Documentacion/EV3-PRUEBAS-AUTOMATIZADAS.md` · `Documentacion/usuarios_prueba.md`
+
+> Las capturas cubren la validación **manual** de UI. La regresión de API y reglas de negocio se respalda con **~218 tests automatizados** (ver `EV3-PRUEBAS-AUTOMATIZADAS.md`).

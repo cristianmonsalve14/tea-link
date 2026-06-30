@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { isAuthenticated, clearSession, saveSession, syncSessionFromToken, mustChangePassword } from "../utils/auth";
+import { isAuthenticated, clearSession, saveSession, syncSessionFromToken, getPostAuthPath } from "../utils/auth";
 import { RoleThemeProvider } from "../context/RoleThemeContext";
 import { TeaLogo } from "../components/ui/TeaLogo";
 import { Input } from "../components/ui/Input";
@@ -94,11 +94,10 @@ const Login: React.FC = () => {
         !!data.user?.must_change_password,
         data.user?.nombre_completo
       );
+      const destino = getPostAuthPath();
       setTimeout(() => {
-        navigate(
-          data.user?.must_change_password ? "/cambiar-contrasena" : "/dashboard"
-        );
-      }, data.user?.must_change_password ? 400 : 1000);
+        navigate(destino);
+      }, data.user?.must_change_password ? 400 : 600);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Error desconocido");
     } finally {
@@ -115,20 +114,9 @@ const Login: React.FC = () => {
     }
   }, []);
 
-  useEffect(() => {
-    const prevHtml = document.documentElement.style.overflow;
-    const prevBody = document.body.style.overflow;
-    document.documentElement.style.overflow = "hidden";
-    document.body.style.overflow = "hidden";
-    return () => {
-      document.documentElement.style.overflow = prevHtml;
-      document.body.style.overflow = prevBody;
-    };
-  }, []);
-
   const handleContinueSession = () => {
     syncSessionFromToken();
-    navigate(mustChangePassword() ? "/cambiar-contrasena" : "/dashboard", { replace: true });
+    navigate(getPostAuthPath(), { replace: true });
   };
 
   const handleLogout = () => {
@@ -139,7 +127,7 @@ const Login: React.FC = () => {
   };
 
   return (
-    <div className="h-screen max-h-screen overflow-hidden flex flex-col lg:flex-row">
+    <div className="min-h-dvh flex flex-col lg:h-dvh lg:overflow-hidden lg:flex-row">
       {/* Panel descriptivo — solo desktop, compacto */}
       <aside className="hidden lg:flex lg:w-[48%] xl:w-[50%] h-full bg-linear-to-br from-primary-dark via-primary to-primary-light text-white px-8 py-6 flex-col justify-center relative overflow-hidden shrink-0">
         <div className="absolute -right-16 -top-16 w-48 h-48 rounded-full bg-white/10" />
@@ -181,7 +169,7 @@ const Login: React.FC = () => {
       </aside>
 
       {/* Formulario */}
-      <main className="flex-1 h-full min-h-0 flex flex-col items-center justify-center bg-linear-to-br from-blue-400 via-red-200 to-green-300 relative overflow-hidden px-4 py-4">
+      <main className="flex-1 min-h-0 flex flex-col items-center justify-center bg-linear-to-br from-blue-400 via-red-200 to-green-300 relative overflow-y-auto px-4 py-6 sm:py-8">
         <div className="absolute top-0 right-0 m-6 opacity-25 pointer-events-none">
           <svg width="72" height="72" viewBox="0 0 80 80" fill="none" aria-hidden>
             <rect x="10" y="10" width="60" height="60" rx="18" fill="#3B82F6" />

@@ -14,7 +14,7 @@ export function Card({ children, className, title, action, description }: CardPr
   return (
     <section
       className={cn(
-        "bg-neutral-white rounded-2xl shadow-md p-6 border",
+        "bg-neutral-white rounded-2xl shadow-md p-4 sm:p-6 border",
         theme.accentBorder,
         className
       )}

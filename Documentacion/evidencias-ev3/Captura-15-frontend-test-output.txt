@@ -1,0 +1,13 @@
+﻿
+> frontend@0.0.0 test
+> vitest run
+
+
+ RUN  v4.1.9 D:/Duoc/2026/Taller de Programacion/proyecto/Producto/frontend
+
+
+ Test Files  3 passed (3)
+      Tests  14 passed (14)
+   Start at  14:48:23
+   Duration  7.01s (transform 232ms, setup 0ms, import 381ms, tests 29ms, environment 18.36s)
+

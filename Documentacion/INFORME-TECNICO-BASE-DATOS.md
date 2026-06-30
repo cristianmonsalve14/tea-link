@@ -4,7 +4,7 @@
 **Autor:** Cristian Monsalve Budrovich  
 **Institución:** DuocUC  
 **Fecha:** Junio 2026  
-**Versión:** 2.0 — alineado a `schema.prisma` y diagrama ER
+**Versión:** 2.2 — 11 tablas (`auditoria_observacion`), 27 migraciones
 
 ---
 
@@ -30,7 +30,7 @@
 Este informe documenta la configuración completa de la base de datos PostgreSQL para el proyecto **TEA Link**, un sistema web de seguimiento de observaciones para personas con Trastorno del Espectro Autista (TEA).
 
 ### Alcance del Trabajo Realizado:
-- ✅ Esquema relacional **8 tablas**, normalizado **3FN**
+- ✅ Esquema relacional **11 tablas**, normalizado **3FN**
 - ✅ Modelo multi-institucional y equipo interdisciplinario (`perfil_usuario`)
 - ✅ Enumerados (ENUM) y migraciones con Prisma
 - ✅ Diagrama ER en `Documentacion/diagramas/`
@@ -61,7 +61,7 @@ Las familias, educadores y profesionales que trabajan con personas con TEA neces
 
 ### 3.1 Modelo Relacional
 
-Diagrama ER actualizado (8 tablas, multi-institucional, equipo interdisciplinario):
+Diagrama ER actualizado (11 tablas, multi-institucional, colaboración, RUT y auditoría clínica):
 
 - **Fuente:** `Documentacion/diagramas/modelo-er-base-datos.puml`
 - **Imagen:** `Documentacion/diagramas/modelo-er-base-datos.png`
@@ -87,8 +87,10 @@ Diagrama ER actualizado (8 tablas, multi-institucional, equipo interdisciplinari
 |---------|-----------|--------------|
 | **Instituciones** | Familia, colegio, centro médico, etc. | Raíz multi-tenant |
 | **Usuarios** | 6 roles (FAMILIA … SUPERADMIN) | N por institución |
-| **Perfiles** | Estudiantes bajo seguimiento | N por institución |
+| **Perfiles** | Estudiantes bajo seguimiento; RUT único; consentimiento | N por institución custodia |
 | **PerfilUsuario** | Equipo interdisciplinario por perfil | N:M usuario ↔ perfil |
+| **SolicitudInstitucionPerfil** | Colaboración / cesión de custodia | N por perfil |
+| **CatalogoEstablecimiento** | Referencia Mineduc / establecimientos | Catálogo nacional |
 | **Observaciones** | Bitácora con privacidad | N por perfil |
 | **Reportes** | PDF / Excel | N por creador |
 | **ObservacionesEnReportes** | Tabla intermedia N:N | — |
@@ -103,10 +105,12 @@ Diagrama ER actualizado (8 tablas, multi-institucional, equipo interdisciplinari
 
 | Criterio | Cumplimiento |
 |----------|--------------|
-| Valores atómicos (sin listas en un campo) | ✅ Todos los atributos son escalares |
+| Valores atómicos (sin listas en un campo) | ✅ Casi todos los atributos son escalares; ver nota sobre `usuarios.niveles_educacionales[]` |
 | Sin grupos repetitivos | ✅ Relaciones N:M resueltas con tablas puente (`perfil_usuario`, `observaciones_en_reportes`) |
 | Identificador único por fila | ✅ PK en cada tabla (`id` o clave compuesta en tablas puente) |
-| Dominios tipados | ✅ ENUMs PostgreSQL (`rol_enum`, `privacidad_observacion_enum`, etc.) |
+| Dominios tipados | ✅ ENUMs PostgreSQL (`rol_enum`, `diagnostico_clinico_enum`, `consentimiento_estado_enum`, etc.) |
+
+**Excepción documentada (1FN estricta):** `usuarios.niveles_educacionales` es un **array** de `nivel_educacional_enum` (PostgreSQL). Permite asignar varios niveles a un educador sin tabla puente. Para el alcance del proyecto se acepta como **redundancia controlada**; la forma purista sería `usuario_nivel_educacional (usuario_id, nivel)`.
 
 #### Segunda forma normal (2FN)
 
@@ -114,7 +118,7 @@ Aplica a tablas con **clave primaria compuesta**:
 
 | Tabla | PK | Atributos no clave | ¿Dependen de la PK completa? |
 |-------|-----|-------------------|------------------------------|
-| `perfil_usuario` | `(perfil_id, usuario_id)` | `rol_en_perfil`, `puede_editar`, `created_at` | ✅ Sí — el rol en un perfil depende del par usuario+perfil |
+| `perfil_usuario` | `(perfil_id, usuario_id)` | `rol_en_perfil`, `puede_editar`, `consentimiento_aceptado_at`, `created_at` | ✅ Sí — rol y consentimiento del apoderado dependen del par usuario+perfil |
 | `observaciones_en_reportes` | `(reporte_id, observacion_id)` | *(ninguno)* | ✅ Tabla puente pura |
 
 El resto de tablas tienen PK simple (`id`); 2FN se cumple automáticamente si se cumple 1FN.
@@ -125,18 +129,27 @@ No debe haber dependencias transitivas **entre atributos no clave** (A → B →
 
 | Tabla | Verificación 3FN |
 |-------|------------------|
-| `instituciones` | ✅ `nombre`, `tipo`, `direccion` dependen solo de `id` |
-| `usuarios` | ✅ `institucion_id` es FK; no se duplica `nombre` ni `tipo` de la institución |
-| `perfiles` | ✅ `institucion_id` es FK; datos del estudiante dependen de `id` del perfil |
-| `observaciones` | ✅ `autor_id` y `perfil_id` son FK; no se guarda nombre del autor en la observación |
+| `instituciones` | ✅ `nombre`, `tipo`, `region`, `comuna` dependen solo de `id`; enlace opcional a catálogo vía `catalogo_establecimiento_id` (FK) |
+| `catalogo_establecimientos` | ✅ Datos de referencia MINEDUC/DEIS; atributos dependen solo de `id` del registro de catálogo |
+| `usuarios` | ✅ `institucion_id` es FK; no se duplica `nombre` ni `tipo` de la institución; consentimiento de cuenta (`consentimiento_aceptado_at`) depende de `usuarios.id` |
+| `perfiles` | ✅ `institucion_id`, `consentimiento_por_usuario_id` son FK; **`rut` UNIQUE** depende solo de `id` del perfil (identificador nacional del estudiante); enums de diagnóstico/RND y consentimiento del menor no introducen transitividad |
+| `perfil_usuario` | ✅ Vínculo N:M; atributos del vínculo (rol, consentimiento apoderado) dependen del par `(perfil_id, usuario_id)` |
+| `solicitudes_institucion_perfil` | ✅ Colaboración entre instituciones: solo FK a `perfil_id`, `institucion_solicitante_id`, `institucion_invitada_id` y usuarios que envían/responden; no se copian nombres de colegios en la fila |
+| `observaciones` | ✅ `autor_id` y `perfil_id` son FK; no se guarda nombre del autor ni del estudiante en la observación |
 | `reportes` | ✅ `creador_id` es FK; metadatos del informe dependen de `id` del reporte |
-| `auditoria_admin` | ✅ Registro de evento; `entidad` + `entidad_id` referencian de forma genérica (patrón auditoría) |
+| `observaciones_en_reportes` | ✅ Tabla puente sin atributos propios |
+| `auditoria_admin` | ✅ Registro de evento; `entidad` + `entidad_id` referencian de forma genérica (patrón auditoría administrativa) |
+| `auditoria_observacion` | ✅ Trazabilidad de acceso a observaciones MULTINIVEL/PRIVADA; `usuario_id` FK; metadatos (`observacion_id`, `perfil_id`, `accion`, `privacidad`) sin duplicar texto clínico |
+
+**Mejora respecto al diseño inicial:** el campo `perfiles.diagnostico` (texto libre) fue reemplazado por enums (`diagnostico_clinico_enum`, `causa_discapacidad_enum`, `grado_discapacidad_enum`), eliminando ambigüedad y alineando el dominio con catálogos tipados — coherente con 3FN.
 
 **Relaciones N:M correctamente descompuestas:**
 
 ```
-usuarios ←→ perfil_usuario ←→ perfiles     (equipo interdisciplinario)
+usuarios ←→ perfil_usuario ←→ perfiles          (equipo interdisciplinario + apoderados)
 reportes ←→ observaciones_en_reportes ←→ observaciones
+perfiles ←→ solicitudes_institucion_perfil ←→ instituciones   (colaboración / custodia)
+instituciones ←→ catalogo_establecimientos   (opcional 1:1, alta desde catálogo)
 ```
 
 #### Integridad referencial (complemento a la normalización)
@@ -144,20 +157,23 @@ reportes ←→ observaciones_en_reportes ←→ observaciones
 | Regla | Implementación |
 |-------|----------------|
 | FK declaradas | Prisma `@relation` → constraints en PostgreSQL |
-| Unicidad | `usuarios.email` UNIQUE |
-| Eliminación controlada | CASCADE en perfiles/observaciones hijas; RESTRICT implícito en autor de observaciones |
-| Índices en FK | `idx_perfil_institucion_id`, `idx_observaciones_perfil_id`, etc. |
+| Unicidad | `usuarios.email` UNIQUE; **`perfiles.rut` UNIQUE** (migración `20260701120000_perfil_rut_nacional`) |
+| Eliminación controlada | CASCADE en perfiles/observaciones hijas y solicitudes; SET NULL en consentimiento tutor |
+| Índices en FK | `idx_perfil_institucion_id`, `idx_perfil_rut`, `idx_observaciones_perfil_id`, `idx_solicitud_inst_invitada_estado`, etc. |
 
 #### Nota de diseño (redundancia controlada)
 
 | Campo | Observación |
 |-------|-------------|
 | `perfiles.edad` + `perfiles.fecha_nacimiento` | Pueden derivarse mutuamente; se mantienen ambos por **usabilidad en formularios**. No genera anomalía de actualización crítica en el dominio del proyecto. |
-| `usuarios.rol` vs `perfil_usuario.rol_en_perfil` | **No es redundancia indebida:** `rol` = rol del sistema; `rol_en_perfil` = rol en un perfil concreto (equipo interdisciplinario). |
+| `usuarios.rol` vs `perfil_usuario.rol_en_perfil` | **No es redundancia indebida:** `rol` = rol del sistema; `rol_en_perfil` = rol en un perfil concreto (tutor, titular, educador, etc.). |
+| `usuarios.consentimiento_*` vs `perfiles.consentimiento_*` vs `perfil_usuario.consentimiento_aceptado_at` | **Tres niveles semánticos:** consentimiento de la cuenta familia, del perfil del menor y de cada apoderado vinculado. No es duplicación del mismo hecho. |
+| `usuarios.niveles_educacionales[]` | Array PostgreSQL; ver excepción 1FN arriba. |
+| `instituciones` + `catalogo_establecimientos` | Institución operativa puede enlazarse al catálogo nacional; datos de contacto/dirección en `instituciones` son **snapshot operativo** (registro manual o post-alta), no dependencia transitiva dentro de una sola tabla. |
 
 #### Conclusión para evaluación
 
-> El esquema actual de **8 tablas** cumple **1FN, 2FN y 3FN**. El diagrama ER refleja las mismas entidades, cardinalidades y tablas puente que `schema.prisma`. Las dependencias transitivas de datos de negocio se resuelven mediante **claves foráneas**, no duplicando atributos de otras entidades.
+> El esquema actual de **11 tablas** y **27 migraciones** cumple **1FN, 2FN y 3FN** para el dominio del proyecto. El diagrama ER (`.puml`) refleja las mismas entidades, cardinalidades y tablas puente que `schema.prisma`. Las dependencias transitivas de datos de negocio se resuelven mediante **claves foráneas** (institución, autor, custodia, catálogo), no duplicando atributos de otras entidades. Las únicas excepciones documentadas son `edad`/`fecha_nacimiento`, el array de niveles del educador y el snapshot institución/catálogo — todas justificadas y sin impacto crítico en integridad.
 
 ---
 
@@ -199,32 +215,43 @@ No se duplica aquí el SQL manual: el esquema se genera y versiona con **Prisma 
 | Tabla | PK | Relaciones principales |
 |-------|-----|------------------------|
 | `instituciones` | `id` | 1:N → `usuarios`, `perfiles` |
-| `usuarios` | `id` | FK `institucion_id`; 1:N → `observaciones`, `reportes`, `auditoria_admin` |
-| `perfiles` | `id` | FK `institucion_id`; 1:N → `observaciones`; N:M → `usuarios` vía `perfil_usuario` |
+| `usuarios` | `id` | FK `institucion_id`; 1:N → `observaciones`, `reportes`, `auditoria_admin`, `auditoria_observacion` |
+| `perfiles` | `id` | FK `institucion_id`; **RUT UK**; consentimiento; 1:N → `observaciones`; N:M → `usuarios`; colaboración |
 | `perfil_usuario` | `(perfil_id, usuario_id)` | Tabla puente equipo interdisciplinario |
+| `solicitudes_institucion_perfil` | `id` | FK perfil + instituciones solicitante/invitada |
+| `catalogo_establecimientos` | `id` | Catálogo para alta de instituciones |
 | `observaciones` | `id` | FK `perfil_id`, `autor_id`; campo `privacidad` |
 | `reportes` | `id` | FK `creador_id`; N:M → `observaciones` |
 | `observaciones_en_reportes` | `(reporte_id, observacion_id)` | Tabla puente N:N |
-| `auditoria_admin` | `id` | FK `admin_id` |
+| `auditoria_admin` | `id` | FK `admin_id` — gobierno del sistema |
+| `auditoria_observacion` | `id` | FK `usuario_id`; trazabilidad MULTINIVEL / PRIVADA |
 
 ### 5.2 Enumerados (PostgreSQL)
 
 | ENUM | Valores (resumen) |
 |------|-------------------|
 | `rol_enum` | FAMILIA, EDUCADOR, PROFESIONAL, MEDICO, ADMINISTRADOR, SUPERADMIN |
-| `rol_perfil_enum` | TUTOR, EDUCADOR, PROFESIONAL, MEDICO |
+| `rol_perfil_enum` | TUTOR, TITULAR, EDUCADOR, PROFESIONAL, MEDICO |
 | `tipo_institucion_enum` | FAMILIA, CENTRO_EDUCACIONAL, CENTRO_MEDICO, CENTRO_PROFESIONAL, SISTEMA |
 | `privacidad_observacion_enum` | PUBLICA, MULTINIVEL, PRIVADA |
 | `categoria_observacion_enum` | CONDUCTA, COMUNICACION, SOCIAL, ACADEMICO, SENSORIAL, MOTOR, CLINICO, OTRO |
 | `formato_reporte_enum` | PDF, EXCEL |
+| `diagnostico_clinico_enum` | TEA, TDAH, TEL, DISCAPACIDAD_INTELECTUAL, … (15 valores) |
+| `consentimiento_estado_enum` | PENDIENTE, ACEPTADO, RECHAZADO |
+| `consentimiento_sujeto_enum` | TUTOR_LEGAL, TITULAR |
+| `solicitud_institucion_estado_enum` | PENDIENTE, ACEPTADA, RECHAZADA |
+| `nivel_educacional_enum` | PARVULARIA_NT1 … UNIVERSITARIO |
+| `region_chile_enum` | 16 regiones |
 
 ### 5.3 Índices relevantes
 
 Definidos en `schema.prisma`, entre otros:
 
 - `idx_usuarios_email`
-- `idx_perfil_institucion_id`
+- `idx_perfil_institucion_id`, `idx_perfil_rut` (RUT único nacional)
+- `idx_perfil_consentimiento_estado`, `idx_perfil_diagnostico_clinico`
 - `idx_observaciones_perfil_fecha` (compuesto: bitácora por perfil)
+- `idx_solicitud_inst_invitada_estado` (bandeja de invitaciones)
 - Índices en FK de tablas puente y auditoría
 
 ### 5.4 Timestamps
@@ -247,7 +274,7 @@ Prisma `@updatedAt` mantiene `updated_at` en modelos principales; no se document
 
 ### 6.2 Schema Prisma
 
-Archivo vigente: `Producto/backend/prisma/schema.prisma` (8 modelos, ENUMs y relaciones N:M).
+Archivo vigente: `Producto/backend/prisma/schema.prisma` (**11 modelos**, ENUMs y relaciones N:M).
 
 No se incluye un volcado completo aquí para evitar duplicar y desactualizar el documento; consultar el archivo y el diagrama ER en `Documentacion/diagramas/`.
 
@@ -488,7 +515,7 @@ prisma.usuario.findMany({ where: { email: input } })
 
 | Objetivo | Estado | Observación |
 |----------|--------|-------------|
-| Diseño de esquema relacional | ✅ | 8 tablas, relaciones 1:N y N:N, 3FN |
+| Diseño de esquema relacional | ✅ | 11 tablas, relaciones 1:N y N:N, 3FN |
 | Configuración de PostgreSQL | ✅ | BD `tea_link` funcional |
 | Integración con Prisma ORM | ✅ | Cliente generado y probado |
 | Validación de integridad | ✅ | Constraints, ENUM, CHECK |
@@ -525,8 +552,6 @@ Lo planificado inicialmente como “próximos pasos” ya está implementado:
 - API REST (observaciones, reportes, admin, reset de clave)
 - Validaciones Zod en backend
 - Frontend React/Vite con pruebas EV3 documentadas
-
-Evolución futura posible: despliegue en nube, backups automatizados y métricas de observabilidad.
 
 ### 12.4 Lecciones Aprendidas
 

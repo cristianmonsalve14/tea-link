@@ -10,10 +10,15 @@ import { Alert } from "../components/ui/Alert";
 import {
   clearMustChangePassword,
   clearSession,
+  getPostAuthPath,
   getRole,
   getToken,
   saveSession
 } from "../utils/auth";
+import {
+  validarConfirmacionPassword,
+  validarPasswordNueva
+} from "../utils/formValidation";
 
 function parseApiError(errorData: Record<string, unknown>, fallback: string): string {
   if (Array.isArray(errorData?.error)) {
@@ -37,17 +42,27 @@ export default function CambiarPasswordInicialPage() {
   const [confirmar, setConfirmar] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [submitAttempted, setSubmitAttempted] = useState(false);
+  const [fieldErrors, setFieldErrors] = useState<{
+    actual?: string;
+    nueva?: string;
+    confirmar?: string;
+  }>({});
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setSubmitAttempted(true);
     setError(null);
 
-    if (nueva.length < 8) {
-      setError("La nueva contraseña debe tener al menos 8 caracteres");
-      return;
-    }
-    if (nueva !== confirmar) {
-      setError("La confirmación no coincide con la nueva contraseña");
+    const errores = {
+      actual: !actual ? "La contraseña temporal actual es obligatoria" : undefined,
+      nueva: validarPasswordNueva(nueva) ?? undefined,
+      confirmar: validarConfirmacionPassword(nueva, confirmar) ?? undefined
+    };
+    setFieldErrors(errores);
+    const primerError = errores.actual ?? errores.nueva ?? errores.confirmar ?? null;
+    if (primerError) {
+      setError(primerError);
       return;
     }
 
@@ -81,7 +96,7 @@ export default function CambiarPasswordInicialPage() {
         data.user?.nombre_completo
       );
       clearMustChangePassword();
-      navigate("/dashboard", { replace: true });
+      navigate(getPostAuthPath(), { replace: true });
     } catch {
       setError("Error de red. Verifique que el backend esté en marcha.");
     } finally {
@@ -112,16 +127,25 @@ export default function CambiarPasswordInicialPage() {
           </p>
 
           <form onSubmit={handleSubmit} className="space-y-4">
-            <Field label="Contraseña temporal actual" required>
+            <Field
+              label="Contraseña temporal actual"
+              required
+              error={submitAttempted ? fieldErrors.actual : undefined}
+            >
               <Input
                 type="password"
                 value={actual}
                 onChange={e => setActual(e.target.value)}
                 autoComplete="current-password"
                 required
+                error={submitAttempted && Boolean(fieldErrors.actual)}
               />
             </Field>
-            <Field label="Nueva contraseña" required>
+            <Field
+              label="Nueva contraseña"
+              required
+              error={submitAttempted ? fieldErrors.nueva : undefined}
+            >
               <Input
                 type="password"
                 value={nueva}
@@ -129,9 +153,14 @@ export default function CambiarPasswordInicialPage() {
                 autoComplete="new-password"
                 required
                 minLength={8}
+                error={submitAttempted && Boolean(fieldErrors.nueva)}
               />
             </Field>
-            <Field label="Confirmar nueva contraseña" required>
+            <Field
+              label="Confirmar nueva contraseña"
+              required
+              error={submitAttempted ? fieldErrors.confirmar : undefined}
+            >
               <Input
                 type="password"
                 value={confirmar}
@@ -139,6 +168,7 @@ export default function CambiarPasswordInicialPage() {
                 autoComplete="new-password"
                 required
                 minLength={8}
+                error={submitAttempted && Boolean(fieldErrors.confirmar)}
               />
             </Field>
 

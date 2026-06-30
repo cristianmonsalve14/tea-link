@@ -92,9 +92,10 @@ type CardProps = {
   obs: ObservacionBitacora;
   rolViewer: string;
   userId: number | null;
-  onEdit: (id: number) => void;
-  onEliminar: (obs: ObservacionBitacora) => void;
+  onEdit?: (id: number) => void;
+  onEliminar?: (obs: ObservacionBitacora) => void;
   esPropia?: boolean;
+  soloLectura?: boolean;
 };
 
 function ObservacionCard({
@@ -103,10 +104,11 @@ function ObservacionCard({
   userId,
   onEdit,
   onEliminar,
-  esPropia
+  esPropia,
+  soloLectura = false
 }: CardProps) {
   const theme = useRoleTheme();
-  const puedeEditar = obs.autor_id === userId;
+  const puedeEditar = !soloLectura && obs.autor_id === userId;
   const privKey = obs.privacidad as keyof typeof PRIVACIDAD_INFO;
   const privInfo = PRIVACIDAD_INFO[privKey];
 
@@ -132,7 +134,10 @@ function ObservacionCard({
             >
               {categoriaLabel(obs.categoria)}
             </span>
-            {(rolViewer === "MEDICO" || rolViewer === "PROFESIONAL") && privInfo && (
+            {(rolViewer === "MEDICO" ||
+              rolViewer === "PROFESIONAL" ||
+              rolViewer === "ADMINISTRADOR") &&
+              privInfo && (
               <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-neutral-gray-light text-neutral-gray-medium">
                 {privInfo.label}
               </span>
@@ -151,7 +156,7 @@ function ObservacionCard({
             {obs.autor?.nombre_completo ?? "Autor desconocido"}
           </p>
         </div>
-        {puedeEditar && (
+        {puedeEditar && onEdit && onEliminar && (
           <div className="flex flex-col sm:flex-row gap-2 shrink-0">
             <button
               type="button"
@@ -184,11 +189,12 @@ type Props = {
   emptyMessage: string;
   rolViewer: string;
   userId: number | null;
-  perfilId: string;
-  nuevaLabel: string;
-  onEdit: (id: number) => void;
-  onEliminar: (obs: ObservacionBitacora) => void;
-  onNueva: () => void;
+  perfilId?: string;
+  nuevaLabel?: string;
+  onEdit?: (id: number) => void;
+  onEliminar?: (obs: ObservacionBitacora) => void;
+  onNueva?: () => void;
+  soloLectura?: boolean;
 };
 
 export function ObservacionesBitacoraView({
@@ -197,11 +203,12 @@ export function ObservacionesBitacoraView({
   emptyMessage,
   rolViewer,
   userId,
-  perfilId,
-  nuevaLabel,
+  perfilId = "",
+  nuevaLabel = "Nueva observación",
   onEdit,
   onEliminar,
-  onNueva
+  onNueva,
+  soloLectura = false
 }: Props) {
   const theme = useRoleTheme();
   const [busqueda, setBusqueda] = useState("");
@@ -284,9 +291,11 @@ export function ObservacionesBitacoraView({
     return (
       <div className="text-center py-10">
         <p className="text-neutral-gray-medium mb-4">{emptyMessage}</p>
-        <Button disabled={!perfilId} onClick={onNueva}>
-          <FaPlus /> {nuevaLabel}
-        </Button>
+        {!soloLectura && onNueva && (
+          <Button disabled={!perfilId} onClick={onNueva}>
+            <FaPlus /> {nuevaLabel}
+          </Button>
+        )}
       </div>
     );
   }
@@ -415,6 +424,7 @@ export function ObservacionesBitacoraView({
               onEdit={onEdit}
               onEliminar={onEliminar}
               esPropia={obs.autor_id === userId}
+              soloLectura={soloLectura}
             />
           ))}
         </ul>
@@ -465,6 +475,7 @@ export function ObservacionesBitacoraView({
                       onEdit={onEdit}
                       onEliminar={onEliminar}
                       esPropia={obs.autor_id === userId}
+                      soloLectura={soloLectura}
                     />
                   ))}
                 </ul>

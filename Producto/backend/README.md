@@ -9,7 +9,9 @@ Para la vision general del proyecto, objetivos, arquitectura y alcance proyectad
 - Autenticacion con JWT y contrasenas cifradas con bcrypt.
 - Control de acceso basado en roles: SUPERADMIN, ADMINISTRADOR, EDUCADOR, FAMILIA, PROFESIONAL y MEDICO.
 - Gestion de instituciones, administradores institucionales, perfiles, educadores, observaciones y reportes.
-- Separacion de datos por institucion.
+- **RUT unico** por estudiante, consentimiento, apoderados (hasta 3), colaboracion interinstitucional y cesion de custodia.
+- **Registro perfiles** para superadmin (`GET /api/auth/superadmin/perfiles`).
+- Separacion de datos por institucion y por privacidad de observaciones.
 - Auditoria de acciones administrativas relevantes.
 - Generacion inicial de reportes en PDF/CSV.
 
@@ -97,6 +99,18 @@ http://localhost:3000
 - `npm run build`: compila TypeScript.
 - `npm run start`: ejecuta la version compilada.
 - `npm run db:seed`: carga usuarios y datos base de prueba.
+
+## Pruebas automatizadas
+
+```powershell
+npm test                 # ~176 tests (unitarias + integración)
+npm run test:unit        # solo unitarias
+npm run test:integration # solo integración API
+npm run test:coverage    # reporte de cobertura
+npm run test:seed        # datos @test-auto.tealink.cl para integración
+```
+
+Documentación: `Documentacion/EV3-PRUEBAS-AUTOMATIZADAS.md`.
 
 ## Seguridad JWT
 

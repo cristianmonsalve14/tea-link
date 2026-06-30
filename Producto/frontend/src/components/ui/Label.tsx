@@ -10,7 +10,7 @@ export function Label({ className, children, required, ...props }: LabelProps) {
   return (
     <label
       className={cn(
-        "block text-sm font-semibold mb-1.5",
+        "block text-sm font-semibold mb-1",
         theme.accentText,
         className
       )}

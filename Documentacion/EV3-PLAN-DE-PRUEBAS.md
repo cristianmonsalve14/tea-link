@@ -54,7 +54,7 @@ npx ts-node scripts/db-resumen.ts
 | ID | Correo | Rol | Institución | Contraseña |
 |----|--------|-----|-------------|------------|
 | 1 | cr.monsalveb@duocuc.cl | SUPERADMIN | Sistema TEA-LINK (#2) | `SuperAdmin123!` |
-| 14 | admin.familia@tealink.com | ADMINISTRADOR | Familia Pérez Demo (#11) | `AdminFamilia123!` |
+| 14 | ~~admin.familia@tealink.com~~ | — | — | **Retirada** — FAMILIA sin panel admin |
 | 15 | familia@tealink.com | FAMILIA | Familia Pérez Demo (#11) | `Familia123!` |
 | 16 | admin.medico@tealink.com | ADMINISTRADOR | Centro Médico (#12) | `AdminMedico123!` |
 | 17 | medico@tealink.com | MEDICO | Centro Médico (#12) | `Medico123!` |
@@ -72,11 +72,11 @@ npx ts-node scripts/db-resumen.ts
 
 ### 2.3 Perfiles / estudiantes (3)
 
-| ID | Nombre | Institución | Escenario de prueba |
-|----|--------|-------------|---------------------|
-| **5** | Matías Pérez | Familia Pérez Demo (#11) | **Principal** — equipo interdisciplinario |
-| 6 | Matías Pérez Clínico | Centro Médico (#12) | Médico + profesional del mismo centro |
-| 8 | Joaquin Sanchez | Colegio AltaVida (#14) | Educadores Eduardo y Karla |
+| ID | Nombre | RUT | Institución custodia | Escenario de prueba |
+|----|--------|-----|----------------------|---------------------|
+| **5** | Matías Pérez | 11.111.111-1 | Colegio AltaVida (#14) | **Principal** — equipo interdisciplinario; familia como apoderada |
+| 6 | Matías Pérez Clínico | 33.333.333-3 | Centro Médico (#12) | Médico + profesional del mismo centro |
+| 8 | Joaquin Sanchez | — | Colegio AltaVida (#14) | Educadores Eduardo y Karla |
 
 > En la demo usar **Matías Pérez (#5)** como escenario interdisciplinario principal.
 
@@ -159,9 +159,9 @@ Si se resetea la BD, crear una observación PRIVADA del médico en Matías Pére
 | CP-02 | Auth | Login con credenciales inválidas | — | 1. Ingresar correo válido y clave incorrecta 2. Intentar entrar | Mensaje de error; no accede al sistema | Error mostrado | OK | Captura-02 |
 | CP-03 | Auth | Cambio de contraseña inicial | Usuario con `must_change_password = true` (si aplica) | 1. Login 2. Completar formulario en `/cambiar-contrasena` | Acceso al panel tras cambiar clave | No aplica en BD actual | N/A | — |
 | CP-04 | RBAC | Familia no accede a funciones de admin | Sesión `familia@tealink.com` | 1. Revisar panel disponible | Solo funciones de familia; sin gestión de usuarios | Panel limitado a rol familia | OK | Captura-03 |
-| CP-05 | RBAC | Admin no consulta bitácora | Sesión `admin.familia@tealink.com` | 1. Revisar panel administrador | Gestión de perfiles/equipo; sin listado de observaciones | Sin bitácora en panel admin | OK | Captura-04 |
+| CP-05 | RBAC | Admin no consulta bitácora | Sesión `directoraaltavida@email.com` (admin colegio) | 1. Revisar panel administrador | Gestión de perfiles/equipo/colaboración; sin listado de observaciones | Sin bitácora en panel admin | OK | Captura-04 |
 | CP-06 | Perfiles | Familia ve perfil vinculado | Login familia | 1. Abrir selector de perfil | Aparece **Matías Pérez** (#5) | Matías Pérez visible | OK | Captura-05 |
-| CP-07 | Perfiles | Admin crea perfil en su institución | Login `admin.familia@tealink.com` | 1. Crear nuevo perfil estudiante 2. Guardar | Perfil visible en listado de Familia Pérez Demo | Perfil creado | OK | Captura-06 |
+| CP-07 | Perfiles | Admin colegio crea perfil con RUT | Login `directoraaltavida@email.com` | 1. Crear perfil con RUT válido, diagnóstico y tutor 2. Guardar | Perfil visible en listado del colegio | Perfil creado | OK | Captura-06 |
 | CP-08 | Observaciones | Familia crea observación pública | Perfil Matías Pérez (#5) seleccionado | 1. Nueva observación 2. Completar campos 3. Guardar | Aparece en bitácora como PUBLICA | Obs. PUBLICA guardada | OK | Captura-07 |
 | CP-09 | Observaciones | Validación descripción corta | Formulario nueva observación | 1. Descripción &lt; 10 caracteres 2. Guardar | Error de validación; no se guarda | Validación rechazada | OK | Captura-08 |
 | CP-10 | Equipo | Educador ve obs. pública de familia | Obs. en perfil #5; login `educador1@email.com` | 1. Seleccionar Matías Pérez 2. Abrir bitácora | Ve obs. PUBLICA de familia con autor visible | Educador ve obs. familia | OK | Captura-10 |
@@ -184,14 +184,27 @@ Subir **Captura-01 … Captura-13** en `Documentacion/evidencias-ev3/`.
 
 ## 6. Resumen para el informe (párrafo listo)
 
-> El plan de pruebas de la Evaluación 3 contempla **13 casos** (CP-01 a CP-13) con **13 capturas de evidencia**, cubriendo autenticación, RBAC, perfiles, observaciones, equipo interdisciplinario y privacidad (PUBLICA, MULTINIVEL, PRIVADA). La ejecución registró **12 casos OK** y **1 N/A** (CP-03). La base de datos de pruebas utiliza cinco instituciones, once usuarios y tres perfiles estudiante, con **Matías Pérez (#5)** como escenario principal. La ejecución se realiza en entorno local con PostgreSQL, backend Node.js/Express y frontend React.
+> El plan de pruebas de la Evaluación 3 contempla **13 casos** (CP-01 a CP-13) con **13 capturas de evidencia**, cubriendo autenticación, RBAC, perfiles, observaciones, equipo interdisciplinario y privacidad (PUBLICA, MULTINIVEL, PRIVADA). La ejecución registró **12 casos OK** y **1 N/A** (CP-03). La base de datos de pruebas utiliza cinco instituciones, once usuarios y tres perfiles estudiante, con **Matías Pérez (#5)** como escenario principal. **Complemento:** **~218 tests automatizados** (Vitest + Supertest) — **~176 backend** + **42 frontend** — documentados en `EV3-PRUEBAS-AUTOMATIZADAS.md`.
 
 ---
 
-## 7. Control de versiones del documento
+## 7. Pruebas automatizadas (complemento al plan manual)
+
+| Aspecto | Detalle |
+|---------|---------|
+| Documento | `EV3-PRUEBAS-AUTOMATIZADAS.md` |
+| Herramientas | Vitest, Supertest, jsdom (frontend) |
+| Total tests | **~218** (~176 backend + 42 frontend) |
+| Cobertura CP vía API | 10/12 aplicables ≈ 83 % |
+| BD integración | Datos `@test-auto.tealink.cl` (aislados de demo) |
+
+---
+
+## 8. Control de versiones del documento
 
 | Versión | Fecha | Cambio |
 |---------|-------|--------|
 | 1.0 | 28-05-2026 | Creación alineada a BD actual |
 | 1.1 | Junio 2026 | Depuración: 11 usuarios, 3 perfiles, 11 observaciones |
 | 1.2 | Junio 2026 | Plan reducido a 13 casos y 13 capturas (CP-01 a CP-13) |
+| 1.3 | Junio 2026 | Suite automatizada ampliada (~218 tests); RUT, custodia, registro perfiles |

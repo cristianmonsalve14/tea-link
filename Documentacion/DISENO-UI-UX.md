@@ -396,8 +396,12 @@ El diseño definido en este documento fue implementado en el frontend con las si
 | Login | `/login` — `Login.tsx` |
 | Cambio contraseña inicial | `/cambiar-contrasena` |
 | Dashboard por rol | `/dashboard` — `DashboardByRole.tsx` |
-| Superadmin | `DashboardSuperadmin.tsx` |
-| Admin institución | `AdminInstitucionDashboard.tsx` — gestión de equipo con botón **Clave** (reset contraseña) |
+| Superadmin (command center) | `/superadmin` — `SuperadminLayout` + páginas en `pages/superadmin/` |
+| Dashboard ejecutivo | `/superadmin` — KPIs, gráfico por rol, actividad reciente |
+| Registro perfiles | `/superadmin/perfiles` — listado nacional, filtros (región, tipo custodia, RUT), detalle |
+| Instituciones / admins / auditoría | `/superadmin/instituciones`, `/usuarios`, `/auditoria` |
+| Admin institución | `AdminInstitucionDashboard.tsx` — perfiles (RUT obligatorio), colaboración, **ceder custodia**, equipo |
+| Familia — consentimiento | `/familia/consentimiento/:id`, selector de perfil, apoderados |
 | Paneles operativos | `FamiliaDashboard`, `EducadorDashboard`, `ProfesionalDashboard`, `MedicoDashboard` |
 | Nueva observación | `/observaciones/nueva` |
 | Editar observación | `/observaciones/:id/editar` |
@@ -415,12 +419,12 @@ Los **wireframes ASCII** de las secciones anteriores corresponden al diseño EV1
 
 ---
 
-## 📋 TRABAJO FUTURO (post-entrega)
+## ✅ Alcance de diseño entregado
 
-- [ ] Mockups de alta fidelidad en Figma (opcional)
-- [ ] Auditoría formal WCAG con WebAIM
-- [ ] Testing de accesibilidad con usuarios reales
-- [ ] Refinamiento responsive mobile (menú hamburguesa completo)
+- Paleta calmada, componentes UI reutilizables (Card, Tabs, ScrollableTable, modales)
+- Paneles diferenciados por rol (familia, operativos, admin institucional, superadmin)
+- Flujos implementados: login, consentimiento, bitácora, reportes, registro perfiles, auditoría
+- Principios de accesibilidad aplicados: contraste, espaciado, feedback en formularios
 
 ---
 
