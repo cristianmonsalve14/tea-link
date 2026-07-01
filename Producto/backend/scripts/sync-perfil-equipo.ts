@@ -45,7 +45,7 @@ async function main() {
       'familia@tealink.com',
       'medico@tealink.com',
       'profesional@tealink.com',
-      'educador1@email.com'
+      'eduardoaltavida@email.com'
     ];
     for (const email of emails) {
       const u = await prisma.usuario.findFirst({

@@ -1,7 +1,7 @@
 import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
-const email = process.argv[2] ?? 'educador1@email.com';
+const email = process.argv[2] ?? 'eduardoaltavida@email.com';
 
 async function main() {
   const normalized = email.trim().toLowerCase();
