@@ -31,7 +31,7 @@ En ambos casos se genera una **contraseña temporal** mostrada en un modal; el u
 
 > La cuenta `admin.familia@tealink.com` quedó **obsoleta** en el seed demo: no debe usarse. Si aún existe en una BD antigua, el login mostrará un aviso de que no hay panel admin para instituciones familia.
 
-**Demo con seed (`npm run db:seed`):** el perfil **Matías Pérez** pertenece al **Colegio Aurora Demo**; `familia@tealink.com` es apoderada principal vinculada desde el colegio.
+**Demo con seed (`npm run db:seed`):** el perfil **Matías Pérez** pertenece al **Colegio AltaVida**; `familia@tealink.com` es apoderada principal vinculada desde el colegio.
 
 ---
 
@@ -83,9 +83,9 @@ Cada perfil tiene un **RUT único** en TEA Link (registro de perfiles). Al crear
 
 | ID | Nombre | RUT (demo seed) | Institución | Equipo vinculado | Observaciones |
 |----|--------|-----------------|-------------|------------------|---------------|
-| **5** | Matías Pérez | 11.111.111-1 | Colegio AltaVida / Aurora (dueño del perfil) | familia (principal), medico, profesional, educador1 | 7 |
+| **5** | Matías Pérez | 11.111.111-1 | Colegio AltaVida (custodia) | familia (principal), medico, profesional, educador1 | 7 |
 | 6 | Matías Pérez Clínico | 33.333.333-3 | Centro Médico | medico, profesional | 2 |
-| 8 | Joaquin Sanchez | — | Colegio AltaVida | eduardoaltavida, karlataiss | 2 |
+| 8 | Joaquin Sanchez | 22.222.222-2 | Colegio AltaVida | eduardoaltavida, karlataiss | 2 |
 
 **Demo principal:** perfil **#5 Matías Pérez**.
 
@@ -107,7 +107,7 @@ Cada perfil tiene un **RUT único** en TEA Link (registro de perfiles). Al crear
 - Administradores **no** consultan bitácora.
 - **Reset de clave:** superadmin → admins; admin institucional → equipo operativo (ver *Gestión de contraseñas*).
 - Verificar BD: `cd Producto/backend` → `npx ts-node scripts/db-resumen.ts`
-- **No ejecutar `npm run db:seed`** si deseas conservar esta configuración.
+- **Re-ejecutar `npm run db:seed`** borra datos de demo y vuelve a cargar la cohorte de este documento (no afecta catálogo MINEDUC/DEIS).
 - **Tests automatizados de integración** usan otra cohorte (`@test-auto.tealink.cl`); ver `EV3-PRUEBAS-AUTOMATIZADAS.md` y `npm run test:seed` en backend.
 
 ---
