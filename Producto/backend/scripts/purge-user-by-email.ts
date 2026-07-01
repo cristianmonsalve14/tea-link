@@ -1,6 +1,6 @@
 /**
  * Elimina un usuario por email (y observaciones/reportes asociados).
- * Uso: npx ts-node scripts/purge-user-by-email.ts educador1@email.com
+ * Uso: npx ts-node scripts/purge-user-by-email.ts usuario@ejemplo.com
  */
 import { PrismaClient } from '@prisma/client';
 

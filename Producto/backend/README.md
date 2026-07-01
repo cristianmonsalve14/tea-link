@@ -98,7 +98,7 @@ http://localhost:3000
 - `npm run dev:force`: fuerza liberacion del puerto y levanta el backend.
 - `npm run build`: compila TypeScript.
 - `npm run start`: ejecuta la version compilada.
-- `npm run db:seed`: carga usuarios y datos base de prueba.
+- `npm run db:seed`: borra datos demo y recarga la cohorte de `Documentacion/usuarios_prueba.md` (no afecta catálogo MINEDUC/DEIS).
 
 ## Pruebas automatizadas
 

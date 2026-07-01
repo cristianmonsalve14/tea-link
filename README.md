@@ -233,7 +233,7 @@ npm install
 # Aplicar migraciones Prisma
 npx prisma migrate deploy
 
-# (Opcional) datos demo: npm run db:seed — solo si necesita resetear la BD
+# (Opcional) datos demo: npm run db:seed — recarga cohorte de Documentacion/usuarios_prueba.md
 
 # Iniciar servidor backend (puerto 3000)
 npm run dev

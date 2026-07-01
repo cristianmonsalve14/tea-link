@@ -13,7 +13,7 @@ Colocar en esta carpeta las **13 capturas** del plan de pruebas (CP-01 a CP-13).
 | `Captura-07.png` | CP-08 | Observación pública |
 | `Captura-08.png` | CP-09 | Validación descripción |
 | `Captura-09.png` | Preparación 3.2 | Obs. PRIVADA médico (perfil #5) |
-| `Captura-10.png` | CP-10 | Educador ve familia (`educador1@email.com`) |
+| `Captura-10.png` | CP-10 | Educador ve familia (`eduardoaltavida@email.com`) |
 | `Captura-11.png` | CP-11 | Médico ve equipo |
 | `Captura-12.png` | CP-12 | Familia no ve privada |
 | `Captura-13.png` | CP-13 | Profesional MULTINIVEL |

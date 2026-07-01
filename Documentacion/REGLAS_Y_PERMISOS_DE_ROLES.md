@@ -65,7 +65,7 @@ Cada acceso o cambio sobre observaciones **MULTINIVEL** o **PRIVADA** queda regi
 |-------|---------|
 | **RUT único** | Cada estudiante tiene un RUT único en TEA Link. Alta con validación chilena; duplicado → HTTP 409. |
 | **Quién crea** | Solo administradores de **CENTRO_EDUCACIONAL** o **CENTRO_MEDICO**. |
-| **Institución FAMILIA** | Contenedor del tutor; **sin panel admin** ni alta de perfiles. |
+| **Apoderado (rol FAMILIA)** | Accede por vínculo en `perfil_usuario` tras invitación del colegio o centro médico; **no** pertenece a una institución ni tiene panel admin. |
 | **Consentimiento** | Obligatorio antes de operar plenamente; tutor (menor) o titular (mayor de edad). |
 | **Apoderados** | Hasta **3** por perfil (1 principal + 2 adicionales); cada uno confirma consentimiento. |
 | **Custodia** | Un perfil tiene una institución **dueña** (`institucion_id`). |
@@ -95,9 +95,9 @@ Cada acceso o cambio sobre observaciones **MULTINIVEL** o **PRIVADA** queda regi
 **API — reset admin:** `POST /api/auth/superadmin/administrador/:id/reset-password`
 
 ### ADMINISTRADOR (institucional)
-- Crear usuarios operativos de **su institución** (según tipo).
-- **Resetear contraseña** del equipo operativo (`POST /api/auth/usuario/:id/reset-password`).
-- **Crear y editar** perfiles (solo si la institución es colegio o centro médico); **no eliminar**.
+- Crear en **Equipo** usuarios de su institución según tipo: **EDUCADOR** (colegio), **MEDICO** / **PROFESIONAL** (centro médico), **PROFESIONAL** (centro terapéutico).
+- **Resetear contraseña** solo de ese equipo (`POST /api/auth/usuario/:id/reset-password`).
+- **Crear y editar** perfiles (colegio o centro médico); al alta, invitar al **apoderado principal** (rol FAMILIA) con contraseña temporal — no se da de alta desde Equipo.
 - Invitar otras instituciones y **ceder custodia** cuando corresponde.
 - Asignar equipo a perfiles propios o en colaboración aceptada.
 - **No** puede listar, crear ni editar observaciones.

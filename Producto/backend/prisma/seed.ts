@@ -43,7 +43,7 @@ async function createUsuario(
   password: string,
   nombre_completo: string,
   rol: rol_enum,
-  institucion_id: number,
+  institucion_id: number | null,
   extra?: { consentimiento_aceptado_at?: Date; consentimiento_version?: string }
 ) {
   return prisma.usuario.create({
@@ -111,11 +111,6 @@ async function main() {
   await clearDemoDatabase(prisma);
 
   const sistema = await createInstitucion('Sistema TEA-LINK', 'SISTEMA');
-  const famInst = await createInstitucion('Familia Pérez Demo', 'FAMILIA', {
-    region: 'METROPOLITANA',
-    comuna: 'Santiago',
-    localidad: 'Santiago Centro'
-  });
   const centroMedico = await createInstitucion('Centro Médico Integral Demo', 'CENTRO_MEDICO', {
     region: 'METROPOLITANA',
     comuna: 'Providencia',
@@ -176,7 +171,7 @@ async function main() {
     'Familia123!',
     'María Pérez (madre)',
     'FAMILIA',
-    famInst.id,
+    null,
     { consentimiento_aceptado_at: consentAt, consentimiento_version: CONSENT_VERSION }
   );
   const medicoUser = await createUsuario(
@@ -260,12 +255,12 @@ async function main() {
 
   await createObs(perfilJoaquin.id, eduardoUser.id, 'Observación aula Joaquín', 'ACADEMICO');
 
-  console.log('\n--- Demo depurada cargada (usuarios_prueba.md) ---');
+  console.log('\n--- Cohorte demo cargada (usuarios_prueba.md) ---');
   console.log(`Superadmin:     cr.monsalveb@duocuc.cl / SuperAdmin123!`);
   console.log(`Familia:        familia@tealink.com / Familia123!`);
   console.log(`Educador:       eduardoaltavida@email.com / Eduardo123!`);
   console.log(`Perfil principal: #${perfilMatias.id} Matías Pérez (Colegio AltaVida)`);
-  console.log(`Instituciones: Sistema, Familia Pérez, Centro Médico, Colegio AltaVida, Centro terapeutico`);
+  console.log(`Instituciones: Sistema, Centro Médico, Colegio AltaVida, Centro terapeutico`);
   void superadmin;
 }
 
