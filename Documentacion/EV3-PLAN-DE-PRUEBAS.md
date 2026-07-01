@@ -2,7 +2,7 @@
 
 **Proyecto:** TEA Link  
 **Fecha de actualización:** Junio 2026  
-**Estado:** Alineado a BD depurada (11 usuarios, 3 perfiles, 11 observaciones)
+**Estado:** Cohorte demo (9 usuarios, 3 perfiles, 10 observaciones)
 
 ---
 
@@ -33,42 +33,37 @@ cd Producto/backend
 npx ts-node scripts/db-resumen.ts
 ```
 
-> **Nota:** `npm run db:seed` recrea datos demo del seed original (incluye instituciones y usuarios que ya no existen en tu BD actual). **No ejecutar seed** si quieres conservar la configuración actual. Usar solo para reset completo si el docente lo autoriza.
+> **Nota:** `npm run db:seed` borra datos de demo y recarga la cohorte de `usuarios_prueba.md` (no afecta catálogo MINEDUC/DEIS). Tras un seed, los IDs numéricos pueden diferir de las tablas de esta sección; usar correos y nombres como referencia.
 
 ---
 
 ## 2. Base de datos de pruebas (estado actual)
 
-### 2.1 Instituciones (5)
+### 2.1 Instituciones (4)
 
 | ID | Nombre | Tipo | Uso en pruebas |
 |----|--------|------|----------------|
 | 2 | Sistema TEA-LINK | SISTEMA | Superadmin del sistema |
-| 11 | Familia Pérez Demo | FAMILIA | Escenario principal interdisciplinario |
 | 12 | Centro Médico Integral Demo | CENTRO_MEDICO | Médico, profesional y perfil clínico |
-| 14 | Colegio AltaVida | CENTRO_EDUCACIONAL | Caso educativo (Joaquín Sánchez) |
+| 14 | Colegio AltaVida | CENTRO_EDUCACIONAL | Matías Pérez, Joaquín Sánchez, educador |
 | 15 | Centro terapeutico | CENTRO_PROFESIONAL | Administración de centro profesional |
 
-### 2.2 Usuarios (11)
+### 2.2 Usuarios (9)
 
 | ID | Correo | Rol | Institución | Contraseña |
 |----|--------|-----|-------------|------------|
 | 1 | cr.monsalveb@duocuc.cl | SUPERADMIN | Sistema TEA-LINK (#2) | `SuperAdmin123!` |
-| 14 | ~~admin.familia@tealink.com~~ | — | — | **Retirada** — FAMILIA sin panel admin |
-| 15 | familia@tealink.com | FAMILIA | Familia Pérez Demo (#11) | `Familia123!` |
+| 15 | familia@tealink.com | FAMILIA | — (apoderada por vínculo) | `Familia123!` |
 | 16 | admin.medico@tealink.com | ADMINISTRADOR | Centro Médico (#12) | `AdminMedico123!` |
 | 17 | medico@tealink.com | MEDICO | Centro Médico (#12) | `Medico123!` |
 | 18 | profesional@tealink.com | PROFESIONAL | Centro Médico (#12) | `Profesional123!` |
-| 23 | educador1@email.com | EDUCADOR | Colegio AltaVida (#14), vinculado #5 | `Educador123!` |
 | 24 | directoraaltavida@email.com | ADMINISTRADOR | Colegio AltaVida (#14) | `Directora123!` |
-| 25 | eduardoaltavida@email.com | EDUCADOR | Colegio AltaVida (#14) | `Eduardo123!` |
+| 25 | eduardoaltavida@email.com | EDUCADOR | Colegio AltaVida (#14), vinculado Matías y Joaquín | `Eduardo123!` |
 | 26 | centroterapeutico@email.com | ADMINISTRADOR | Centro terapeutico (#15) | `Adminterapeutico123!` |
-| 27 | karlataiss@email.com | EDUCADOR | Colegio AltaVida (#14) | `Karla123!` |
 
 **Notas técnicas:**
-- `educador1@email.com` pertenece a Colegio AltaVida (#14) y accede a Matías Pérez (#5) vía `perfil_usuario` (consulta bitácora; CP-10).
+- `eduardoaltavida@email.com` pertenece a Colegio AltaVida (#14) y accede a **Matías Pérez** y **Joaquín Sánchez** vía `perfil_usuario` (consulta bitácora; **CP-10** con Matías).
 - Admin del centro terapéutico (#15): `centroterapeutico@email.com`.
-- Eliminados de la BD de prueba: `profesional.ct@tealink.com`, perfil #9 vacío.
 
 ### 2.3 Perfiles / estudiantes (3)
 
@@ -76,7 +71,7 @@ npx ts-node scripts/db-resumen.ts
 |----|--------|-----|----------------------|---------------------|
 | **5** | Matías Pérez | 11.111.111-1 | Colegio AltaVida (#14) | **Principal** — equipo interdisciplinario; familia como apoderada |
 | 6 | Matías Pérez Clínico | 33.333.333-3 | Centro Médico (#12) | Médico + profesional del mismo centro |
-| 8 | Joaquin Sanchez | — | Colegio AltaVida (#14) | Educadores Eduardo y Karla |
+| 8 | Joaquin Sanchez | 22.222.222-2 | Colegio AltaVida (#14) | Educador Eduardo |
 
 > En la demo usar **Matías Pérez (#5)** como escenario interdisciplinario principal.
 
@@ -86,7 +81,7 @@ npx ts-node scripts/db-resumen.ts
 - FAMILIA: `familia@tealink.com`
 - MEDICO: `medico@tealink.com`
 - PROFESIONAL: `profesional@tealink.com`
-- EDUCADOR: `educador1@email.com`
+- EDUCADOR: `eduardoaltavida@email.com`
 
 **Perfil #6 — Matías Pérez Clínico**
 - MEDICO: `medico@tealink.com`
@@ -94,9 +89,8 @@ npx ts-node scripts/db-resumen.ts
 
 **Perfil #8 — Joaquin Sanchez**
 - EDUCADOR: `eduardoaltavida@email.com`
-- EDUCADOR: `karlataiss@email.com`
 
-### 2.5 Observaciones existentes (11)
+### 2.5 Observaciones existentes (10)
 
 | ID | Perfil | Privacidad | Título (resumen) | Autor |
 |----|--------|------------|------------------|-------|
@@ -109,8 +103,7 @@ npx ts-node scripts/db-resumen.ts
 | 14 | #5 | PUBLICA | observacion de prueba nro 2 | medico@tealink.com |
 | 6 | #6 Matías Pérez Clínico | PUBLICA | Buen avance en la lectura de voz | profesional@tealink.com |
 | 7 | #6 | MULTINIVEL | observacion medica | medico@tealink.com |
-| 11 | #8 Joaquin Sanchez | PUBLICA | Avance motrices | eduardoaltavida@email.com |
-| 16 | #8 | PUBLICA | Avance en lectura | karlataiss@email.com |
+| 11 | #8 Joaquin Sanchez | PUBLICA | Avance motrices / aula | eduardoaltavida@email.com |
 
 ### 2.6 Niveles de privacidad (implementación vigente)
 
@@ -164,7 +157,7 @@ Si se resetea la BD, crear una observación PRIVADA del médico en Matías Pére
 | CP-07 | Perfiles | Admin colegio crea perfil con RUT | Login `directoraaltavida@email.com` | 1. Crear perfil con RUT válido, diagnóstico y tutor 2. Guardar | Perfil visible en listado del colegio | Perfil creado | OK | Captura-06 |
 | CP-08 | Observaciones | Familia crea observación pública | Perfil Matías Pérez (#5) seleccionado | 1. Nueva observación 2. Completar campos 3. Guardar | Aparece en bitácora como PUBLICA | Obs. PUBLICA guardada | OK | Captura-07 |
 | CP-09 | Observaciones | Validación descripción corta | Formulario nueva observación | 1. Descripción &lt; 10 caracteres 2. Guardar | Error de validación; no se guarda | Validación rechazada | OK | Captura-08 |
-| CP-10 | Equipo | Educador ve obs. pública de familia | Obs. en perfil #5; login `educador1@email.com` | 1. Seleccionar Matías Pérez 2. Abrir bitácora | Ve obs. PUBLICA de familia con autor visible | Educador ve obs. familia | OK | Captura-10 |
+| CP-10 | Equipo | Educador ve obs. pública de familia | Obs. en perfil Matías Pérez; login `eduardoaltavida@email.com` | 1. Seleccionar Matías Pérez 2. Abrir bitácora | Ve obs. PUBLICA de familia con autor visible | Educador ve obs. familia | OK | Captura-10 |
 | CP-11 | Equipo | Médico ve obs. públicas del equipo | Equipo vinculado en perfil #5 | 1. Login `medico@tealink.com` 2. Matías Pérez 3. Bitácora | Ve obs. PUBLICA del equipo | Médico ve obs. del equipo | OK | Captura-11 |
 | CP-12 | Privacidad | Familia NO ve nota PRIVADA del médico | Obs. PRIVADA en perfil #5 (sección 3.2) | 1. Login familia 2. Matías Pérez 3. Bitácora | La nota privada **no** aparece | Familia no ve PRIVADA | OK | Captura-12 |
 | CP-13 | Privacidad | Profesional ve obs. MULTINIVEL | Obs. MULTINIVEL en perfil #6 o #5 | 1. Login `profesional@tealink.com` 2. Perfil con MULTINIVEL 3. Bitácora | Ve MULTINIVEL; no ve PRIVADAS | Profesional ve MULTINIVEL | OK | Captura-13 |
@@ -184,7 +177,7 @@ Subir **Captura-01 … Captura-13** en `Documentacion/evidencias-ev3/`.
 
 ## 6. Resumen para el informe (párrafo listo)
 
-> El plan de pruebas de la Evaluación 3 contempla **13 casos** (CP-01 a CP-13) con **13 capturas de evidencia**, cubriendo autenticación, RBAC, perfiles, observaciones, equipo interdisciplinario y privacidad (PUBLICA, MULTINIVEL, PRIVADA). La ejecución registró **12 casos OK** y **1 N/A** (CP-03). La base de datos de pruebas utiliza cinco instituciones, once usuarios y tres perfiles estudiante, con **Matías Pérez (#5)** como escenario principal. **Complemento:** **~218 tests automatizados** (Vitest + Supertest) — **~176 backend** + **42 frontend** — documentados en `EV3-PRUEBAS-AUTOMATIZADAS.md`.
+> El plan de pruebas de la Evaluación 3 contempla **13 casos** (CP-01 a CP-13) con **13 capturas de evidencia**, cubriendo autenticación, RBAC, perfiles, observaciones, equipo interdisciplinario y privacidad (PUBLICA, MULTINIVEL, PRIVADA). La ejecución registró **12 casos OK** y **1 N/A** (CP-03). La base de datos de pruebas utiliza cuatro instituciones, **nueve usuarios**, **diez observaciones** y tres perfiles estudiante, con **Matías Pérez** como escenario principal (educador demo: `eduardoaltavida@email.com`). **Complemento:** **~218 tests automatizados** (Vitest + Supertest) — **~176 backend** + **42 frontend** — documentados en `EV3-PRUEBAS-AUTOMATIZADAS.md`.
 
 ---
 
@@ -205,6 +198,7 @@ Subir **Captura-01 … Captura-13** en `Documentacion/evidencias-ev3/`.
 | Versión | Fecha | Cambio |
 |---------|-------|--------|
 | 1.0 | 28-05-2026 | Creación alineada a BD actual |
-| 1.1 | Junio 2026 | Depuración: 11 usuarios, 3 perfiles, 11 observaciones |
+| 1.1 | Junio 2026 | Cohorte demo definida (usuarios, perfiles, observaciones) |
 | 1.2 | Junio 2026 | Plan reducido a 13 casos y 13 capturas (CP-01 a CP-13) |
 | 1.3 | Junio 2026 | Suite automatizada ampliada (~218 tests); RUT, custodia, registro perfiles |
+| 1.4 | Junio 2026 | Cohorte 9 usuarios / 10 observaciones; CP-10 con `eduardoaltavida@email.com`; seed alineado a `usuarios_prueba.md` |

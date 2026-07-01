@@ -294,7 +294,7 @@ Estas brechas motivaron el trabajo de EV3:
 
 ### 5.2 Escenario de demostración
 
-Perfil **Matías Pérez (ID 5)** — Familia Pérez Demo — con equipo: familia, médico, profesional y educador (`educador1@`) vinculados vía `perfil_usuario`. Caso secundario: **Joaquín Sánchez (#8)** en Colegio AltaVida.
+Perfil **Matías Pérez** (custodia Colegio AltaVida) — con equipo: familia, médico, profesional y educador (`eduardoaltavida@email.com`) vinculados vía `perfil_usuario`. Caso secundario: **Joaquín Sánchez** en Colegio AltaVida (mismo educador).
 
 ---
 
@@ -302,7 +302,7 @@ Perfil **Matías Pérez (ID 5)** — Familia Pérez Demo — con equipo: familia
 
 Plan de **13 casos (CP-01 a CP-13)** documentado en `Documentacion/EV3-PLAN-DE-PRUEBAS.md`.
 
-**Base de datos de pruebas:** 5 instituciones, 11 usuarios, 3 perfiles, 11 observaciones. Credenciales en `Documentacion/usuarios_prueba.md`.
+**Base de datos de pruebas:** 4 instituciones, 9 usuarios, 3 perfiles, 10 observaciones. Credenciales en `Documentacion/usuarios_prueba.md`.
 
 **Matriz de privacidad:**
 
@@ -506,7 +506,7 @@ tea-link/
 
 - Historial público de commits: https://github.com/cristianmonsalve14/tea-link/commits/develop  
 - Listado de integrantes: `Gestion/Integrantes.txt` y `Grupo_12.txt`  
-- Repositorio sincronizado con documentación EV3, evidencias (13 capturas), diagrama ER y depuración de artefactos obsoletos.
+- Repositorio sincronizado con documentación EV3, evidencias (13 capturas) y diagrama ER.
 
 #### Comandos Git de referencia
 
@@ -543,7 +543,7 @@ git push origin develop       # Publicar avances en GitHub
 
 - **Documentar mientras se desarrolla** (no al final) facilitó armar EV3 con plan de pruebas, usuarios demo y capturas alineadas.
 - **Un escenario de demo único** (Matías Pérez #5 con equipo interdisciplinario) hizo más clara la defensa que dispersar pruebas en muchos datos inconsistentes.
-- **Depurar la BD de pruebas** antes de congelar el plan evitó casos fallidos por usuarios obsoletos o credenciales desactualizadas.
+- **Alinear la BD de pruebas con el plan** antes de congelar los casos evitó fallos por credenciales o datos inconsistentes.
 - **Commits frecuentes en Git** permitieron recuperar avances y demostrar control de versiones ante evaluación.
 - Trabajar **individualmente asumiendo frontend, backend y BD** exige priorizar el MVP y cerrar brechas de forma iterativa dentro del semestre (EV2 → EV3).
 

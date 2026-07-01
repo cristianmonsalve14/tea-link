@@ -345,10 +345,13 @@ Documentado en `Documentacion/usuarios_prueba.md`:
 
 | Métrica | Valor |
 |---------|-------|
-| Instituciones | 5 |
-| Usuarios | 11 |
+| Instituciones | 4 |
+| Usuarios | 9 |
 | Perfiles (estudiantes) | 3 |
+| Observaciones demo | 10 |
 | Roles de sistema | FAMILIA, EDUCADOR, PROFESIONAL, MEDICO, ADMINISTRADOR, SUPERADMIN |
+
+**Educador demo:** `eduardoaltavida@email.com` (Colegio AltaVida), vinculado a Matías Pérez y Joaquín Sánchez.
 
 La verificación incluye relaciones N:M, `privacidad` en observaciones, auditoría admin y `must_change_password` tras reset por administrador.
 
@@ -433,9 +436,9 @@ El diseño antiguo con `perfiles.usuario_id` y `fk_perfiles_usuario` fue reempla
 
 | Funcionalidad | Estado | Evidencia |
 |---------------|--------|-----------|
-| Multi-institucional | ✅ | 5 instituciones en seed |
-| Usuarios y roles | ✅ | 11 usuarios, 6 roles |
-| Perfiles y equipo N:M | ✅ | 3 perfiles, tabla `perfil_usuario` |
+| Multi-institucional | ✅ | 4 instituciones en seed |
+| Usuarios y roles | ✅ | 9 usuarios, 6 roles |
+| Perfiles y equipo N:M | ✅ | 3 perfiles, 10 observaciones demo, tabla `perfil_usuario` |
 | Bitácora y privacidad | ✅ | ENUM `privacidad_observacion_enum` |
 | Reportes PDF/Excel | ✅ | Tabla `reportes` + puente N:N |
 | Auditoría admin | ✅ | Tabla `auditoria_admin` |

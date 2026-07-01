@@ -128,7 +128,7 @@ Activar en GitHub → Settings → Branches → proteger `main` → require chec
 
 - [ ] Login superadmin en URL de Vercel
 - [ ] `GET https://...onrender.com/health` → OK
-- [ ] Escenario demo (`usuarios_prueba.md` #5)
+- [ ] Escenario demo Matías Pérez (`Documentacion/usuarios_prueba.md`; CP-10 con `eduardoaltavida@email.com`)
 - [ ] 2–3 min antes de presentar: abrir app o `/health` (despertar API en plan Free)
 - [ ] Captura del workflow CI en verde
 
