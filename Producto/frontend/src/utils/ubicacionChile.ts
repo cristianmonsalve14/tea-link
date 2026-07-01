@@ -12,6 +12,21 @@ export async function fetchComunasPorRegion(region: RegionChile): Promise<string
   return Array.isArray(data.comunas) ? data.comunas : [];
 }
 
+export async function fetchLocalidadesPorComuna(
+  region: RegionChile,
+  comuna: string
+): Promise<string[]> {
+  const params = new URLSearchParams({ region, comuna });
+  const res = await fetch(apiUrl(`/api/auth/ubicacion/localidades?${params}`));
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    throw new Error(
+      typeof data?.error === "string" ? data.error : "No se pudieron cargar las localidades"
+    );
+  }
+  return Array.isArray(data.localidades) ? data.localidades : [];
+}
+
 export type UbicacionInstitucion = {
   region: RegionChile | "";
   comuna: string;
@@ -19,7 +34,7 @@ export type UbicacionInstitucion = {
 };
 
 export function ubicacionInstitucionCompleta(ubicacion: UbicacionInstitucion): boolean {
-  return Boolean(ubicacion.region && ubicacion.comuna.trim() && ubicacion.localidad.trim());
+  return Boolean(ubicacion.region && ubicacion.comuna.trim());
 }
 
 export type ErroresUbicacionInstitucion = Partial<
@@ -48,12 +63,12 @@ export function validarUbicacionInstitucion(
     errors.comuna = "La comuna no corresponde a la región seleccionada";
   }
   const localidad = ubicacion.localidad.trim();
-  if (!localidad) {
-    errors.localidad = "La localidad es obligatoria";
-  } else if (localidad.length < 2) {
-    errors.localidad = "La localidad debe tener al menos 2 caracteres";
-  } else if (localidad.length > 120) {
-    errors.localidad = "La localidad no puede superar 120 caracteres";
+  if (localidad) {
+    if (localidad.length < 2) {
+      errors.localidad = "La localidad debe tener al menos 2 caracteres";
+    } else if (localidad.length > 120) {
+      errors.localidad = "La localidad no puede superar 120 caracteres";
+    }
   }
   return errors;
 }

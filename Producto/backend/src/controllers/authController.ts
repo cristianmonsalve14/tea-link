@@ -12,7 +12,11 @@ import {
   mapInstitucionContacto
 } from '../utils/institucionContacto';
 import { regionChileSchema } from '../utils/regionChile';
-import { comunaNombreSchema, localidadSchema, parseUbicacionInstitucion } from '../utils/ubicacionChile';
+import {
+  comunaNombreSchema,
+  localidadOpcionalSchema,
+  parseUbicacionInstitucion
+} from '../utils/ubicacionChile';
 import { vincularUsuarioAPerfilesInstitucion } from '../utils/perfilAccess';
 import {
   rolesRegistroPorTipoInstitucion,
@@ -29,6 +33,11 @@ import {
   formatEntidadAuditoriaLabel
 } from '../utils/auditoriaEntidadLabel';
 import { normalizeEmail } from '../utils/email';
+import {
+  resolveAuditAdminId,
+  sanitizeAuditIp,
+  truncateAuditDetalles
+} from '../utils/auditAdminHelpers';
 import { nombreCompletoConApellidoSchema } from '../utils/nombrePersona';
 import { loginSchema } from '../utils/authValidation';
 import {
@@ -76,7 +85,7 @@ export const deleteAdministradorBySuperadmin = async (req: AuthRequest, res: Res
         entidad: 'usuario',
         entidad_id: adminId,
         detalles: `Administrador eliminado: ${admin.email}`,
-        ip_address: req.ip || null
+        ip_address: sanitizeAuditIp(req.ip)
       }
     });
     return res.json({ message: 'Administrador eliminado correctamente.' });
@@ -111,7 +120,7 @@ export const resetAdminPasswordBySuperadmin = async (req: AuthRequest, res: Resp
         entidad: 'usuario',
         entidad_id: admin.id,
         detalles: `Password reseteado para admin ${admin.email}`,
-        ip_address: req.ip || null
+        ip_address: sanitizeAuditIp(req.ip)
       }
     });
     return res.json({ message: 'Contraseña reseteada', tempPassword });
@@ -163,7 +172,7 @@ export const updateAdministradorBySuperadmin = async (req: AuthRequest, res: Res
         entidad: 'usuario',
         entidad_id: admin.id,
         detalles: `Admin editado: ${nombre_completo ? 'nombre' : ''} ${institucion_id ? 'institución' : ''}`.trim(),
-        ip_address: req.ip || null
+        ip_address: sanitizeAuditIp(req.ip)
       }
     });
     return res.json({ message: 'Administrador actualizado', admin: updated });
@@ -253,7 +262,7 @@ export const createAdministradorBySuperadmin = async (req: AuthRequest, res: Res
         entidad: 'usuario',
         entidad_id: admin.id,
         detalles: `Admin creado para institución ${institucion.nombre} (${institucion.id}), email: ${email}`,
-        ip_address: req.ip || null
+        ip_address: sanitizeAuditIp(req.ip)
       }
     });
     return res.status(201).json({ message: 'Administrador creado', admin: { id: admin.id, email: admin.email, nombre_completo: admin.nombre_completo, institucion_id: admin.institucion_id }, tempPassword });
@@ -272,7 +281,7 @@ const institucionSchema = z
     tipo: z.enum(['FAMILIA', 'CENTRO_EDUCACIONAL', 'CENTRO_MEDICO', 'CENTRO_PROFESIONAL', 'SISTEMA']),
     region: regionChileSchema.optional().nullable(),
     comuna: comunaNombreSchema.optional().nullable(),
-    localidad: localidadSchema.optional().nullable(),
+    localidad: localidadOpcionalSchema.optional().nullable(),
     direccion: institucionContactoBodySchema.shape.direccion,
     email_contacto: institucionContactoBodySchema.shape.email_contacto,
     telefono_contacto: institucionContactoBodySchema.shape.telefono_contacto,
@@ -289,10 +298,10 @@ const institucionSchema = z
       });
     }
     if (data.tipo === 'SISTEMA') return;
-    if (!data.region || !data.comuna?.trim() || !data.localidad?.trim()) {
+    if (!data.region || !data.comuna?.trim()) {
       ctx.addIssue({
         code: 'custom',
-        message: 'Región, comuna y localidad son obligatorias para instituciones en Chile',
+        message: 'Región y comuna son obligatorias para instituciones en Chile',
         path: ['region']
       });
       return;
@@ -325,12 +334,16 @@ function prepararUbicacionInstitucion(
   if (data.tipo === 'SISTEMA') {
     return { region: null, comuna: null, localidad: null };
   }
-  if (data.region && data.comuna?.trim() && data.localidad?.trim()) {
-    return parseUbicacionInstitucion({
-      region: data.region as Parameters<typeof parseUbicacionInstitucion>[0]['region'],
-      comuna: data.comuna,
-      localidad: data.localidad
-    });
+  if (data.region && data.comuna?.trim()) {
+    try {
+      return parseUbicacionInstitucion({
+        region: data.region as Parameters<typeof parseUbicacionInstitucion>[0]['region'],
+        comuna: data.comuna,
+        localidad: data.localidad ?? null
+      });
+    } catch {
+      throw new Error('UBICACION_INVALIDA');
+    }
   }
   return {};
 }
@@ -385,7 +398,7 @@ export const createInstitucion = async (req: AuthRequest, res: Response) => {
         tipo: data.tipo,
         region: catalogo.region,
         comuna: catalogo.comuna,
-        localidad: data.localidad?.trim() || catalogo.localidad || catalogo.comuna,
+        localidad: data.localidad?.trim() || catalogo.localidad || null,
         direccion: data.direccion ?? catalogo.direccion,
         email_contacto: data.email_contacto,
         telefono_contacto: data.telefono_contacto,
@@ -448,7 +461,7 @@ export const createInstitucion = async (req: AuthRequest, res: Response) => {
         entidad: 'institucion',
         entidad_id: institucion.id,
         detalles: `Nombre: ${institucion.nombre}, Tipo: ${institucion.tipo}`,
-        ip_address: req.ip || null
+        ip_address: sanitizeAuditIp(req.ip)
       }
     });
     return res.status(201).json({ message: 'Institución creada', institucion });
@@ -466,10 +479,22 @@ export const updateInstitucion = async (req: AuthRequest, res: Response) => {
     if (!user || user.rol !== 'SUPERADMIN') {
       return res.status(403).json({ error: 'Solo SUPERADMIN puede editar instituciones.' });
     }
+    const adminId = resolveAuditAdminId(user);
+    if (!adminId) {
+      return res.status(401).json({ error: 'Sesión inválida: no se pudo identificar al usuario.' });
+    }
     const id = Number(req.params.id);
     if (isNaN(id)) return res.status(400).json({ error: 'ID inválido' });
     const data = institucionUpdateSchema.parse(req.body);
-    const ubicacion = prepararUbicacionInstitucion(data);
+    let ubicacion: ReturnType<typeof prepararUbicacionInstitucion>;
+    try {
+      ubicacion = prepararUbicacionInstitucion(data);
+    } catch (e) {
+      if (e instanceof Error && e.message === 'UBICACION_INVALIDA') {
+        return res.status(400).json({ error: 'La comuna no corresponde a la región seleccionada' });
+      }
+      throw e;
+    }
     const institucion = await prisma.institucion.update({
       where: { id },
       data: {
@@ -478,15 +503,14 @@ export const updateInstitucion = async (req: AuthRequest, res: Response) => {
         ...(data.tipo ? { tipo: data.tipo as any } : {})
       }
     });
-    // Auditoría
     await prisma.auditoriaAdmin.create({
       data: {
-        admin_id: user.userId,
+        admin_id: adminId,
         accion: 'EDITAR_INSTITUCION',
         entidad: 'institucion',
         entidad_id: institucion.id,
-        detalles: `Actualización: ${JSON.stringify(data)}`,
-        ip_address: req.ip || null
+        detalles: truncateAuditDetalles(`Actualización: ${JSON.stringify(data)}`),
+        ip_address: sanitizeAuditIp(req.ip)
       }
     });
     return res.json({ message: 'Institución actualizada', institucion });
@@ -494,6 +518,10 @@ export const updateInstitucion = async (req: AuthRequest, res: Response) => {
     if (error instanceof z.ZodError) {
       return res.status(400).json({ error: error.issues });
     }
+    if (error?.code === 'P2025') {
+      return res.status(404).json({ error: 'Institución no encontrada' });
+    }
+    console.error('[INSTITUCION][UPDATE]', error);
     return res.status(500).json({ error: 'Error interno del servidor' });
   }
 };
@@ -515,7 +543,7 @@ export const deleteInstitucion = async (req: AuthRequest, res: Response) => {
         entidad: 'institucion',
         entidad_id: institucion.id,
         detalles: `Nombre: ${institucion.nombre}, Tipo: ${institucion.tipo}`,
-        ip_address: req.ip || null
+        ip_address: sanitizeAuditIp(req.ip)
       }
     });
     return res.json({ message: 'Institución eliminada', institucion });
@@ -918,7 +946,7 @@ export const register = async (req: AuthRequest, res: Response) => {
             entidad: 'usuario',
             entidad_id: user.id,
             detalles: `Usuario ${user.rol} reasignado: ${user.email}`,
-            ip_address: req.ip || null
+            ip_address: sanitizeAuditIp(req.ip)
           }
         });
       } catch (auditErr) {
@@ -959,7 +987,7 @@ export const register = async (req: AuthRequest, res: Response) => {
           entidad: 'usuario',
           entidad_id: user.id,
           detalles: `Usuario ${user.rol} creado: ${user.email}`,
-          ip_address: req.ip || null
+          ip_address: sanitizeAuditIp(req.ip)
         }
       });
     } catch (auditErr) {
@@ -1457,7 +1485,7 @@ export const resetUserPasswordByAdmin = async (req: Request, res: Response) => {
           entidad: 'usuario',
           entidad_id: user.id,
           detalles: `Password reseteado para ${user.rol} ${user.email}`,
-          ip_address: req.ip || null
+          ip_address: sanitizeAuditIp(req.ip)
         }
       });
     } catch (auditErr) {

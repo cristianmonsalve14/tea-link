@@ -22,13 +22,23 @@ describe('ubicacionChile', () => {
     expect(normalizarComuna('BIOBIO', 'Concepción')).toBe('Concepción');
   });
 
-  it('exige región, comuna y localidad juntas', () => {
+  it('exige región y comuna; localidad es opcional', () => {
     const ok = ubicacionInstitucionSchema.safeParse({
       region: 'METROPOLITANA',
       comuna: 'Providencia',
       localidad: 'Centro'
     });
     expect(ok.success).toBe(true);
+
+    const sinLocalidad = ubicacionInstitucionSchema.safeParse({
+      region: 'METROPOLITANA',
+      comuna: 'Providencia',
+      localidad: ''
+    });
+    expect(sinLocalidad.success).toBe(true);
+    if (sinLocalidad.success) {
+      expect(sinLocalidad.data.localidad).toBeNull();
+    }
 
     const bad = ubicacionInstitucionSchema.safeParse({
       region: 'METROPOLITANA',
