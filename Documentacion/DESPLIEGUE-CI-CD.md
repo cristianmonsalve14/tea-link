@@ -19,7 +19,7 @@ Navegador → Vercel → fetch(VITE_API_URL)
 ## 1. Requisitos previos en código (ya en el repo)
 
 - `Producto/frontend/src/config/api.ts` — `VITE_API_URL`
-- `Producto/backend/Dockerfile` + `scripts/docker-entrypoint.sh` (`prisma migrate deploy`)
+- `Producto/backend/Dockerfile` + arranque con `prisma migrate deploy`
 - `CORS_ORIGIN` en el backend
 - `.github/workflows/ci.yml`
 
