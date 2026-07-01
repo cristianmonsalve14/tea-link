@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { apiUrl } from '../../config/api';
 import { useNavigate } from "react-router-dom";
 import { FaCheckCircle, FaEdit, FaEye, FaShieldAlt } from "react-icons/fa";
 import { getRolPanelConfig, type CategoriaObs } from "../../config/rolPanelConfig";
@@ -108,7 +109,7 @@ export function NuevaObservacionForm({ perfilIdInicial, observacionId }: Props) 
           }
         }
 
-        const res = await fetch(`http://localhost:3000/api/observaciones/${observacionId}`, {
+        const res = await fetch(apiUrl(`/api/observaciones/${observacionId}`), {
           headers: { Authorization: `Bearer ${t}` }
         });
         const data = await res.json().catch(() => ({}));
@@ -185,8 +186,8 @@ export function NuevaObservacionForm({ perfilIdInicial, observacionId }: Props) 
       if (config.showPrivacidad) body.privacidad = privacidad;
 
       const url = isEdit
-        ? `http://localhost:3000/api/observaciones/${observacionId}`
-        : "http://localhost:3000/api/observaciones";
+        ? apiUrl(`/api/observaciones/${observacionId}`)
+        : apiUrl("/api/observaciones");
       const method = isEdit ? "PUT" : "POST";
 
       if (!isEdit) {

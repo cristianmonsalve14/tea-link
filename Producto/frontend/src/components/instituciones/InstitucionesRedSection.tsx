@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { apiUrl } from '../../config/api';
 import { FaHandshake, FaSearch } from "react-icons/fa";
 import { Card } from "../ui/Card";
 import { Alert } from "../ui/Alert";
@@ -71,7 +72,7 @@ export function InstitucionesRedSection() {
       if (filtroComuna) params.set("comuna", filtroComuna);
 
       const res = await fetch(
-        `http://localhost:3000/api/perfiles/instituciones-red?${params.toString()}`,
+        apiUrl(`/api/perfiles/instituciones-red?${params.toString()}`),
         { headers: { Authorization: `Bearer ${localStorage.getItem("token")}` } }
       );
       const data = await res.json().catch(() => ({}));

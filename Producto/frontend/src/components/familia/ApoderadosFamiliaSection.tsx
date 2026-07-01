@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { apiUrl } from '../../config/api';
 import { FaUserFriends } from "react-icons/fa";
 import { Card } from "../ui/Card";
 import { Field } from "../ui/Field";
@@ -48,7 +49,7 @@ export function ApoderadosFamiliaSection({ perfilId, perfilNombre }: Props) {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch(`http://localhost:3000/api/perfiles/${perfilId}/apoderados`, {
+      const res = await fetch(apiUrl(`/api/perfiles/${perfilId}/apoderados`), {
         headers: { Authorization: `Bearer ${token()}` }
       });
       const data = await res.json().catch(() => ({}));
@@ -86,7 +87,7 @@ export function ApoderadosFamiliaSection({ perfilId, perfilNombre }: Props) {
     }
     setEnviando(true);
     try {
-      const res = await fetch(`http://localhost:3000/api/perfiles/${perfilId}/apoderados`, {
+      const res = await fetch(apiUrl(`/api/perfiles/${perfilId}/apoderados`), {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

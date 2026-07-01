@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { apiUrl } from '../../config/api';
 import { FaEye, FaSyncAlt, FaTrash } from "react-icons/fa";
 import { Alert } from "../ui/Alert";
 import { Button } from "../ui/Button";
@@ -242,7 +243,7 @@ export function SuperadminRegistroPerfilesSection() {
       if (filtros.hasta) params.set("hasta", filtros.hasta);
 
       const res = await fetch(
-        `http://localhost:3000/api/auth/superadmin/perfiles?${params.toString()}`,
+        apiUrl(`/api/auth/superadmin/perfiles?${params.toString()}`),
         { headers: authHeaders() }
       );
       if (!res.ok) {
@@ -282,7 +283,7 @@ export function SuperadminRegistroPerfilesSection() {
     setDetalleLoading(true);
     setDetalle(null);
     try {
-      const res = await fetch(`http://localhost:3000/api/auth/superadmin/perfiles/${id}`, {
+      const res = await fetch(apiUrl(`/api/auth/superadmin/perfiles/${id}`), {
         headers: authHeaders()
       });
       if (!res.ok) {
@@ -310,7 +311,7 @@ export function SuperadminRegistroPerfilesSection() {
     setEliminandoId(p.id);
     setError(null);
     try {
-      const res = await fetch(`http://localhost:3000/api/perfiles/${p.id}`, {
+      const res = await fetch(apiUrl(`/api/perfiles/${p.id}`), {
         method: "DELETE",
         headers: authHeaders()
       });

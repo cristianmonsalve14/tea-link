@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { apiUrl } from '../../config/api';
 import { FaSearch } from "react-icons/fa";
 import { Field } from "../ui/Field";
 import { Input } from "../ui/Input";
@@ -45,7 +46,7 @@ export function PerfilSelector({
     setError(null);
     try {
       const res = await fetch(
-        "http://localhost:3000/api/perfiles?all=true&sort=nombre&order=asc",
+        apiUrl("/api/perfiles?all=true&sort=nombre&order=asc"),
         { headers: { Authorization: `Bearer ${token()}` } }
       );
       const data = await res.json().catch(() => ({}));

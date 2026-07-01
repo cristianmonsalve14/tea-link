@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { apiUrl } from '../config/api';
 import { useNavigate, useParams } from "react-router-dom";
 import { RoleThemeProvider } from "../context/RoleThemeContext";
 import { TeaLogo } from "../components/ui/TeaLogo";
@@ -47,7 +48,7 @@ export default function ConsentimientoPerfilPage() {
       setError(null);
       try {
         const res = await fetch(
-          `http://localhost:3000/api/perfiles/${perfilId}/consentimiento`,
+          apiUrl(`/api/perfiles/${perfilId}/consentimiento`),
           { headers: { Authorization: `Bearer ${getToken()}` } }
         );
         const json = await res.json().catch(() => ({}));
@@ -80,7 +81,7 @@ export default function ConsentimientoPerfilPage() {
     setError(null);
     try {
       const res = await fetch(
-        `http://localhost:3000/api/perfiles/${perfilId}/consentimiento`,
+        apiUrl(`/api/perfiles/${perfilId}/consentimiento`),
         {
           method: "POST",
           headers: {

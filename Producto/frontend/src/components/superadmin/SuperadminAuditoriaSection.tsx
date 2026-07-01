@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { apiUrl } from '../../config/api';
 import { FaEye, FaSyncAlt } from "react-icons/fa";
 import {
   Bar,
@@ -134,8 +135,8 @@ export function SuperadminAuditoriaSection() {
       const token = localStorage.getItem("token");
       const url =
         vista === "admin"
-          ? "http://localhost:3000/api/auth/superadmin/auditoria"
-          : "http://localhost:3000/api/auth/superadmin/auditoria-observaciones";
+          ? apiUrl("/api/auth/superadmin/auditoria")
+          : apiUrl("/api/auth/superadmin/auditoria-observaciones");
       const res = await fetch(url, {
         headers: { Authorization: `Bearer ${token}` }
       });

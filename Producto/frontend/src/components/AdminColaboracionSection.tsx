@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { apiUrl } from '../config/api';
 import { useNavigate } from "react-router-dom";
 import { FaHandshake, FaList, FaSearch, FaUserMd, FaUserPlus } from "react-icons/fa";
 import { Card } from "./ui/Card";
@@ -152,7 +153,7 @@ export function AdminColaboracionSection({ modo }: { modo: "receptor" | "emisor"
   const token = () => localStorage.getItem("token");
 
   const api = (path: string, options?: RequestInit) =>
-    fetch(`http://localhost:3000/api/perfiles${path}`, {
+    fetch(apiUrl(`/api/perfiles${path}`), {
       ...options,
       headers: {
         "Content-Type": "application/json",

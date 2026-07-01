@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { apiUrl } from '../config/api';
 import { useNavigate, useParams } from "react-router-dom";
 import { Alert } from "../components/ui/Alert";
 import { Button } from "../components/ui/Button";
@@ -77,7 +78,7 @@ export default function SuperadminInstitucionFormPage() {
     if (!isEdit || !editingId || !Number.isFinite(editingId)) return;
     const token = localStorage.getItem("token");
     setLoadingData(true);
-    fetch("http://localhost:3000/api/auth/instituciones", {
+    fetch(apiUrl("/api/auth/instituciones"), {
       headers: { Authorization: `Bearer ${token}` }
     })
       .then(async res => {
@@ -188,8 +189,8 @@ export default function SuperadminInstitucionFormPage() {
       }
 
       const url = isEdit
-        ? `http://localhost:3000/api/auth/institucion/${editingId}`
-        : "http://localhost:3000/api/auth/institucion";
+        ? apiUrl(`/api/auth/institucion/${editingId}`)
+        : apiUrl("/api/auth/institucion");
       const res = await fetch(url, {
         method: isEdit ? "PUT" : "POST",
         headers: {

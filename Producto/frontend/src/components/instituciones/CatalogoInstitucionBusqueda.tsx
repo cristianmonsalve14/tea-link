@@ -8,8 +8,8 @@ import { UbicacionInstitucionFields } from "./UbicacionInstitucionFields";
 import type { RegionChile } from "../../utils/regionChile";
 import { parseApiError } from "../../utils/parseApiError";
 import { cn } from "../../theme/cn";
+import { apiUrl } from "../../config/api";
 
-const API_BASE = "http://localhost:3000/api/catalogos";
 export type CatalogoEstablecimientoItem = {
   id: number;
   fuente: string;
@@ -104,7 +104,7 @@ export function CatalogoInstitucionBusqueda({
 
   useEffect(() => {
     const token = localStorage.getItem("token");
-    fetch(`${API_BASE}/meta`, {
+    fetch(apiUrl("/api/catalogos/meta"), {
       headers: { Authorization: `Bearer ${token}` }
     })
       .then(async res => {
@@ -125,7 +125,7 @@ export function CatalogoInstitucionBusqueda({
       })
       .catch(() => {
         setMetaError(
-          "No se pudo conectar con el backend en localhost:3000. Verifique que npm run dev esté activo."
+          "No se pudo conectar con el API. Verifique que el backend esté activo y VITE_API_URL."
         );
       });
   }, []);
@@ -149,7 +149,7 @@ export function CatalogoInstitucionBusqueda({
         if (ubicacion.comuna.trim()) params.set("comuna", ubicacion.comuna.trim());
         if (ubicacion.localidad.trim()) params.set("localidad", ubicacion.localidad.trim());
 
-        const res = await fetch(`${API_BASE}/establecimientos?${params.toString()}`, {
+        const res = await fetch(apiUrl(`/api/catalogos/establecimientos?${params.toString()}`), {
           headers: { Authorization: `Bearer ${token}` }
         });
         const data = await res.json().catch(() => ({}));

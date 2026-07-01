@@ -1,9 +1,8 @@
 import type { RegionChile } from "./regionChile";
-
-const API_BASE = "http://localhost:3000/api/auth";
+import { apiUrl } from "../config/api";
 
 export async function fetchComunasPorRegion(region: RegionChile): Promise<string[]> {
-  const res = await fetch(`${API_BASE}/ubicacion/comunas?region=${region}`);
+  const res = await fetch(apiUrl(`/api/auth/ubicacion/comunas?region=${region}`));
   const data = await res.json().catch(() => ({}));
   if (!res.ok) {
     throw new Error(

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { apiUrl } from '../../config/api';
 import { useNavigate } from "react-router-dom";
 import {
   FaFileAlt,
@@ -91,7 +92,7 @@ export default function SuperadminDashboardPage() {
       if (institucion) params.set("institucion", institucion);
       const token = localStorage.getItem("token");
       const res = await fetch(
-        `http://localhost:3000/api/auth/superadmin/overview?${params.toString()}`,
+        apiUrl(`/api/auth/superadmin/overview?${params.toString()}`),
         { headers: { Authorization: `Bearer ${token}` } }
       );
       if (!res.ok) throw new Error("No se pudo cargar el resumen");

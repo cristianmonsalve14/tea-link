@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { apiUrl } from '../config/api';
 import { useNavigate } from "react-router-dom";
 import { Modal } from "./ui/Modal";
 import { Button } from "./ui/Button";
@@ -86,7 +87,7 @@ export function EducadorDetalleModal({
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch(`http://localhost:3000/api/auth/usuario/${usuarioId}`, {
+      const res = await fetch(apiUrl(`/api/auth/usuario/${usuarioId}`), {
         headers: { Authorization: `Bearer ${localStorage.getItem("token")}` }
       });
       const data = await res.json().catch(() => ({}));

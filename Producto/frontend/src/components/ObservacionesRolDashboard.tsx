@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { apiUrl } from '../config/api';
 import { useNavigate } from "react-router-dom";
 import { FaClipboardList, FaFileAlt, FaPlus, FaUser } from "react-icons/fa";
 import { GenerarReporteSection } from "./GenerarReporteSection";
@@ -65,7 +66,7 @@ export function ObservacionesRolDashboard({ rol }: Props) {
     setError(null);
     try {
       const res = await fetch(
-        `http://localhost:3000/api/observaciones?perfil_id=${perfilId}`,
+        apiUrl(`/api/observaciones?perfil_id=${perfilId}`),
         { headers: { Authorization: `Bearer ${token()}` } }
       );
       if (!res.ok) {
@@ -118,7 +119,7 @@ export function ObservacionesRolDashboard({ rol }: Props) {
     if (obs.autor_id !== userId) return;
     if (!window.confirm(`¿Eliminar observación "${obs.titulo}"?`)) return;
     try {
-      const res = await fetch(`http://localhost:3000/api/observaciones/${obs.id}`, {
+      const res = await fetch(apiUrl(`/api/observaciones/${obs.id}`), {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token()}` }
       });

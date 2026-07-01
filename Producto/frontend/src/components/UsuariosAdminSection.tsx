@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { apiUrl } from '../config/api';
 import { FaKey, FaUserPlus, FaUsers } from "react-icons/fa";
 import { Card } from "./ui/Card";
 import { Button } from "./ui/Button";
@@ -151,7 +152,7 @@ export function UsuariosAdminSection({ instituciones, embedded = false }: Props)
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch("http://localhost:3000/api/auth/superadmin/administradores", {
+      const res = await fetch(apiUrl("/api/auth/superadmin/administradores"), {
         headers: { Authorization: `Bearer ${localStorage.getItem("token")}` }
       });
       if (!res.ok) {
@@ -346,8 +347,8 @@ export function UsuariosAdminSection({ instituciones, embedded = false }: Props)
     try {
       const isEdit = modalMode === "edit" && editingId != null;
       const url = isEdit
-        ? `http://localhost:3000/api/auth/superadmin/administrador/${editingId}`
-        : "http://localhost:3000/api/auth/superadmin/administrador";
+        ? apiUrl(`/api/auth/superadmin/administrador/${editingId}`)
+        : apiUrl("/api/auth/superadmin/administrador");
       const body = isEdit
         ? { nombre_completo: formNombre.trim(), institucion_id: Number(formInstitucionId) }
         : {
@@ -395,7 +396,7 @@ export function UsuariosAdminSection({ instituciones, embedded = false }: Props)
     setError(null);
     try {
       const res = await fetch(
-        `http://localhost:3000/api/auth/superadmin/administrador/${admin.id}`,
+        apiUrl(`/api/auth/superadmin/administrador/${admin.id}`),
         { method: "DELETE", headers: { Authorization: `Bearer ${localStorage.getItem("token")}` } }
       );
       if (!res.ok) {
@@ -419,7 +420,7 @@ export function UsuariosAdminSection({ instituciones, embedded = false }: Props)
     setError(null);
     try {
       const res = await fetch(
-        `http://localhost:3000/api/auth/superadmin/administrador/${admin.id}/reset-password`,
+        apiUrl(`/api/auth/superadmin/administrador/${admin.id}/reset-password`),
         { method: "POST", headers: { Authorization: `Bearer ${localStorage.getItem("token")}` } }
       );
       const data = await res.json().catch(() => ({}));

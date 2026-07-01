@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { apiUrl } from '../config/api';
 import { useNavigate } from "react-router-dom";
 import { RoleThemeProvider } from "../context/RoleThemeContext";
 import { TeaLogo } from "../components/ui/TeaLogo";
@@ -68,7 +69,7 @@ export default function CambiarPasswordInicialPage() {
 
     setLoading(true);
     try {
-      const res = await fetch("http://localhost:3000/api/auth/cambiar-password-inicial", {
+      const res = await fetch(apiUrl("/api/auth/cambiar-password-inicial"), {
         method: "POST",
         headers: {
           Authorization: `Bearer ${getToken()}`,
