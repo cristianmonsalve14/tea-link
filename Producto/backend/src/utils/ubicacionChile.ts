@@ -12,6 +12,19 @@ export const localidadSchema = z
   .min(2, 'La localidad debe tener al menos 2 caracteres')
   .max(120, 'La localidad no puede superar 120 caracteres');
 
+/** Vacío o null → null; si se indica, aplica longitud mínima/máxima. */
+export const localidadOpcionalSchema = z.preprocess(
+  val => {
+    if (val == null) return null;
+    if (typeof val === 'string') {
+      const t = val.trim();
+      return t.length === 0 ? null : t;
+    }
+    return val;
+  },
+  z.union([localidadSchema, z.null()])
+);
+
 export const comunaNombreSchema = z
   .string()
   .trim()
@@ -46,7 +59,7 @@ export const ubicacionInstitucionSchema = z
   .object({
     region: regionChileSchema,
     comuna: comunaNombreSchema,
-    localidad: localidadSchema
+    localidad: localidadOpcionalSchema
   })
   .superRefine((data, ctx) => {
     if (!comunaValidaEnRegion(data.region, data.comuna)) {
@@ -62,19 +75,21 @@ export const ubicacionInstitucionOpcionalSchema = z
   .object({
     region: regionChileSchema.optional().nullable(),
     comuna: comunaNombreSchema.optional().nullable(),
-    localidad: localidadSchema.optional().nullable()
+    localidad: localidadOpcionalSchema.optional().nullable()
   })
   .superRefine((data, ctx) => {
-    const tieneAlguno = Boolean(data.region || data.comuna?.trim() || data.localidad?.trim());
-    const tieneTodos = Boolean(data.region && data.comuna?.trim() && data.localidad?.trim());
-    if (tieneAlguno && !tieneTodos) {
+    const tieneRegion = Boolean(data.region);
+    const tieneComuna = Boolean(data.comuna?.trim());
+    const tieneLocalidad = data.localidad != null;
+    const tieneAlguno = tieneRegion || tieneComuna || tieneLocalidad;
+    if (tieneAlguno && !(tieneRegion && tieneComuna)) {
       ctx.addIssue({
         code: 'custom',
-        message: 'Región, comuna y localidad deben indicarse juntas',
+        message: 'Región y comuna deben indicarse juntas',
         path: ['region']
       });
     }
-    if (tieneTodos && !comunaValidaEnRegion(data.region, data.comuna)) {
+    if (tieneRegion && tieneComuna && !comunaValidaEnRegion(data.region, data.comuna)) {
       ctx.addIssue({
         code: 'custom',
         message: 'La comuna no corresponde a la región seleccionada',
@@ -95,15 +110,16 @@ export function formatearUbicacionInstitucion(
 export function parseUbicacionInstitucion(data: {
   region: region_chile_enum;
   comuna: string;
-  localidad: string;
+  localidad?: string | null;
 }) {
   const comuna = normalizarComuna(data.region, data.comuna);
   if (!comuna) {
     throw new Error('Comuna inválida');
   }
+  const loc = data.localidad?.trim();
   return {
     region: data.region,
     comuna,
-    localidad: data.localidad.trim()
+    localidad: loc && loc.length >= 2 ? loc : null
   };
 }

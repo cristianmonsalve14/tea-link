@@ -9,7 +9,7 @@ import { etiquetaRegionChile, regionChileSchema } from './regionChile';
 import {
   comunaNombreSchema,
   formatearUbicacionInstitucion,
-  localidadSchema,
+  localidadOpcionalSchema,
   ubicacionInstitucionOpcionalSchema,
   ubicacionInstitucionSchema
 } from './ubicacionChile';
@@ -111,7 +111,7 @@ export const institucionAdminBodySchema = z
       .optional(),
     region: regionChileSchema.optional().nullable(),
     comuna: comunaNombreSchema.optional().nullable(),
-    localidad: localidadSchema.optional().nullable(),
+    localidad: localidadOpcionalSchema.optional().nullable(),
     direccion: z.string().trim().optional().nullable(),
     email_contacto: z.string().trim().optional().nullable(),
     telefono_contacto: z.string().trim().optional().nullable()

@@ -3,7 +3,7 @@
 import { Router } from 'express';
 import { PrismaClient } from '@prisma/client';
 import { authenticateToken, AuthRequest, authorizeRoles } from '../middleware/authMiddleware';
-import { getComunasPorRegion } from '../controllers/ubicacionController';
+import { getComunasPorRegion, getLocalidadesPorComuna } from '../controllers/ubicacionController';
 import {
   register,
   login,
@@ -41,6 +41,7 @@ const prisma = new PrismaClient();
 const router = Router();
 
 router.get('/ubicacion/comunas', getComunasPorRegion);
+router.get('/ubicacion/localidades', getLocalidadesPorComuna);
 
 // Eliminar administrador por superadmin
 router.delete('/superadmin/administrador/:id', authenticateToken, authorizeRoles('SUPERADMIN'), deleteAdministradorBySuperadmin);

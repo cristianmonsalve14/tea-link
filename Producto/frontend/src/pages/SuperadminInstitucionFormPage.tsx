@@ -117,7 +117,7 @@ export default function SuperadminInstitucionFormPage() {
     setUbicacion({
       region: (item.region as RegionChile) ?? "",
       comuna: item.comuna ?? "",
-      localidad: item.localidad ?? item.comuna ?? ""
+      localidad: item.localidad ?? ""
     });
   };
 
@@ -173,7 +173,7 @@ export default function SuperadminInstitucionFormPage() {
         tipo,
         region: tipo === "SISTEMA" ? null : ubicacion.region,
         comuna: tipo === "SISTEMA" ? null : ubicacion.comuna.trim(),
-        localidad: tipo === "SISTEMA" ? null : ubicacion.localidad.trim()
+        localidad: tipo === "SISTEMA" ? null : ubicacion.localidad.trim() || null,
       };
       if (tipo !== "SISTEMA") {
         body.direccion = direccion.trim();
