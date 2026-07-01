@@ -41,7 +41,7 @@ describeIntegration('Superadmin API', () => {
     const fixture = getTestFixture();
     const token = await loginAs(TEST_EMAILS.superadmin, TEST_PASSWORDS.superadmin);
     const res = await request(getTestApp())
-      .get(`/api/auth/superadmin/stats?institucion=${fixture.institucionFamiliaId}`)
+      .get(`/api/auth/superadmin/stats?institucion=${fixture.institucionColegioId}`)
       .set(authHeader(token));
 
     expect(res.status).toBe(200);

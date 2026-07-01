@@ -42,10 +42,11 @@ export const authenticateToken = async (
         where: { id: decoded.userId },
         select: { institucion_id: true, rol: true }
       });
-      if (fresh) {
-        decoded.institucion_id = fresh.institucion_id;
-        decoded.rol = fresh.rol;
+      if (!fresh) {
+        return res.status(401).json({ error: 'Usuario no encontrado o sesión inválida' });
       }
+      decoded.institucion_id = fresh.institucion_id;
+      decoded.rol = fresh.rol;
     }
 
     req.user = decoded;

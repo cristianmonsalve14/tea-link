@@ -30,8 +30,8 @@ export const TEST_EMAILS = {
 
 export type TestFixture = {
   institucionSistemaId: number;
-  institucionFamiliaId: number;
   institucionColegioId: number;
+  institucionCentroMedicoId: number;
   perfilId: number;
   obsPublicaId: number;
   obsPrivadaId: number;
@@ -40,29 +40,30 @@ export type TestFixture = {
 
 let cachedFixture: TestFixture | null = null;
 
-async function deleteTestData() {
-  const testUsers = await prisma.usuario.findMany({
+export async function deleteTestData(client?: PrismaClient) {
+  const db = client ?? prisma;
+  const testUsers = await db.usuario.findMany({
     where: { email: { endsWith: TEST_EMAIL_DOMAIN } },
     select: { id: true }
   });
   const testUserIds = testUsers.map(u => u.id);
 
   if (testUserIds.length > 0) {
-    await prisma.observacion.deleteMany({ where: { autor_id: { in: testUserIds } } });
-    await prisma.auditoriaObservacion.deleteMany({ where: { usuario_id: { in: testUserIds } } });
-    await prisma.auditoriaAdmin.deleteMany({ where: { admin_id: { in: testUserIds } } });
-    await prisma.perfilUsuario.deleteMany({ where: { usuario_id: { in: testUserIds } } });
-    await prisma.usuario.deleteMany({ where: { id: { in: testUserIds } } });
+    await db.observacion.deleteMany({ where: { autor_id: { in: testUserIds } } });
+    await db.auditoriaObservacion.deleteMany({ where: { usuario_id: { in: testUserIds } } });
+    await db.auditoriaAdmin.deleteMany({ where: { admin_id: { in: testUserIds } } });
+    await db.perfilUsuario.deleteMany({ where: { usuario_id: { in: testUserIds } } });
+    await db.usuario.deleteMany({ where: { id: { in: testUserIds } } });
   }
 
-  await prisma.observacion.deleteMany({
+  await db.observacion.deleteMany({
     where: { perfil: { nombre: { startsWith: '[TEST]' } } }
   });
-  await prisma.perfilUsuario.deleteMany({
+  await db.perfilUsuario.deleteMany({
     where: { perfil: { nombre: { startsWith: '[TEST]' } } }
   });
-  await prisma.perfil.deleteMany({ where: { nombre: { startsWith: '[TEST]' } } });
-  await prisma.institucion.deleteMany({ where: { nombre: { startsWith: '[TEST]' } } });
+  await db.perfil.deleteMany({ where: { nombre: { startsWith: '[TEST]' } } });
+  await db.institucion.deleteMany({ where: { nombre: { startsWith: '[TEST]' } } });
 }
 
 async function hash(password: string) {
@@ -96,16 +97,6 @@ export async function seedTestDatabase(): Promise<TestFixture> {
     }
   });
 
-  const instFamilia = await prisma.institucion.create({
-    data: {
-      nombre: '[TEST] Familia Pérez',
-      tipo: 'FAMILIA',
-      region: 'METROPOLITANA',
-      comuna: 'Providencia',
-      localidad: 'Santiago'
-    }
-  });
-
   const superadmin = await prisma.usuario.create({
     data: {
       email: TEST_EMAILS.superadmin,
@@ -131,7 +122,7 @@ export async function seedTestDatabase(): Promise<TestFixture> {
       email: TEST_EMAILS.familia,
       nombre_completo: 'Familia Test',
       rol: 'FAMILIA',
-      institucion_id: instFamilia.id,
+      institucion_id: null,
       password_hash: await hash(TEST_PASSWORDS.familia)
     }
   });
@@ -234,8 +225,8 @@ export async function seedTestDatabase(): Promise<TestFixture> {
 
   cachedFixture = {
     institucionSistemaId: sistema.id,
-    institucionFamiliaId: instFamilia.id,
     institucionColegioId: instColegio.id,
+    institucionCentroMedicoId: instCentroMedico.id,
     perfilId: perfil.id,
     obsPublicaId: obsPublica.id,
     obsPrivadaId: obsPrivada.id,
