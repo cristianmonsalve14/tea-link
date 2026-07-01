@@ -278,7 +278,7 @@ export default function SuperadminDashboardPage() {
                 tick={{ fontSize: 11, fill: "#334155" }}
               />
               <Tooltip
-                formatter={(v: number) => [v.toLocaleString("es-CL"), "Usuarios"]}
+                formatter={(v) => [Number(v ?? 0).toLocaleString("es-CL"), "Usuarios"]}
                 contentStyle={{ borderRadius: 12, border: "1px solid #e2e8f0", fontSize: 12 }}
               />
               <Bar dataKey="cantidad" radius={[0, 6, 6, 0]} barSize={22}>
