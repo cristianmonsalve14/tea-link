@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { apiUrl } from '../../config/api';
 import { FaBuilding, FaGraduationCap, FaUserFriends, FaUserMd } from "react-icons/fa";
 import { Button } from "../ui/Button";
 import { Alert } from "../ui/Alert";
@@ -121,7 +122,7 @@ export function PerfilDetalleContent({ perfilId, tipoInstitucion: tipoProp }: Pr
     setLoading(true);
     setError(null);
     const token = localStorage.getItem("token");
-    fetch(`http://localhost:3000/api/perfiles/${perfilId}/detalle`, {
+    fetch(apiUrl(`/api/perfiles/${perfilId}/detalle`), {
       headers: { Authorization: `Bearer ${token}` }
     })
       .then(async res => {

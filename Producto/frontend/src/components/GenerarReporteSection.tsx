@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { apiUrl } from '../config/api';
 import { FaDownload, FaEye, FaFileAlt, FaSyncAlt, FaTrash } from "react-icons/fa";
 import { Card } from "./ui/Card";
 import { Button } from "./ui/Button";
@@ -123,7 +124,7 @@ export function GenerarReporteSection() {
     setError(null);
     try {
       const res = await fetch(
-        `http://localhost:3000/api/observaciones?perfil_id=${perfilId}`,
+        apiUrl(`/api/observaciones?perfil_id=${perfilId}`),
         { headers: { Authorization: `Bearer ${token()}` } }
       );
       if (!res.ok) {
@@ -145,7 +146,7 @@ export function GenerarReporteSection() {
   const fetchMisReportes = useCallback(async () => {
     setLoadingList(true);
     try {
-      const res = await fetch("http://localhost:3000/api/reportes/mis", {
+      const res = await fetch(apiUrl("/api/reportes/mis"), {
         headers: { Authorization: `Bearer ${token()}` }
       });
       if (!res.ok) {
@@ -225,7 +226,7 @@ export function GenerarReporteSection() {
 
     setCreating(true);
     try {
-      const res = await fetch("http://localhost:3000/api/reportes", {
+      const res = await fetch(apiUrl("/api/reportes"), {
         method: "POST",
         headers: {
           Authorization: `Bearer ${token()}`,
@@ -260,7 +261,7 @@ export function GenerarReporteSection() {
     setDetalleError(null);
     setCargandoDetalleId(id);
     try {
-      const res = await fetch(`http://localhost:3000/api/reportes/${id}`, {
+      const res = await fetch(apiUrl(`/api/reportes/${id}`), {
         headers: { Authorization: `Bearer ${token()}` }
       });
       const data = await res.json().catch(() => ({}));
@@ -292,7 +293,7 @@ export function GenerarReporteSection() {
         return;
       }
 
-      const res = await fetch(`http://localhost:3000/api/reportes/${id}/export`, {
+      const res = await fetch(apiUrl(`/api/reportes/${id}/export`), {
         headers: { Authorization: `Bearer ${authToken}` }
       });
 
@@ -351,7 +352,7 @@ export function GenerarReporteSection() {
     if (!window.confirm(`¿Eliminar reporte "${titulo}"?`)) return;
     setEliminandoId(id);
     try {
-      const res = await fetch(`http://localhost:3000/api/reportes/${id}`, {
+      const res = await fetch(apiUrl(`/api/reportes/${id}`), {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token()}` }
       });

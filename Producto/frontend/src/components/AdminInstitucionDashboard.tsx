@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { apiUrl } from '../config/api';
 import { useNavigate } from "react-router-dom";
 import { FaHandshake, FaPlus, FaUserGraduate, FaUsers } from "react-icons/fa";
 import { AdminEquipoSection } from "./AdminEquipoSection";
@@ -238,7 +239,7 @@ export function AdminInstitucionDashboard({ institucionNombre }: Props) {
   const muestraColaboracion = puedeInvitar || esCentroColaborador;
 
   const api = (path: string, options?: RequestInit) =>
-    fetch(`http://localhost:3000/api/perfiles${path}`, {
+    fetch(apiUrl(`/api/perfiles${path}`), {
       ...options,
       headers: {
         "Content-Type": "application/json",
@@ -296,7 +297,7 @@ export function AdminInstitucionDashboard({ institucionNombre }: Props) {
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (!token) return;
-    fetch("http://localhost:3000/api/auth/usuarios", {
+    fetch(apiUrl("/api/auth/usuarios"), {
       headers: { Authorization: `Bearer ${token}` }
     })
       .then(res => res.json().catch(() => ({})))

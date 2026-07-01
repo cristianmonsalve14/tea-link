@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { apiUrl } from '../config/api';
 import { useNavigate } from "react-router-dom";
 import { isAuthenticated, clearSession, saveSession, syncSessionFromToken, getPostAuthPath } from "../utils/auth";
 import { RoleThemeProvider } from "../context/RoleThemeContext";
@@ -74,7 +75,7 @@ const Login: React.FC = () => {
     setError("");
     setSuccess(false);
     try {
-      const response = await fetch("http://localhost:3000/api/auth/login", {
+      const response = await fetch(apiUrl("/api/auth/login"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: email.trim().toLowerCase(), password })

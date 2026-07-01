@@ -1,4 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import { apiUrl } from '../../config/api';
 import type { InstitucionContacto } from "../../utils/institucionContacto";
 
 export type SuperadminInstitucion = InstitucionContacto & {
@@ -28,7 +29,7 @@ export function SuperadminInstitucionesProvider({ children }: { children: React.
     setError(null);
     try {
       const token = localStorage.getItem("token");
-      const res = await fetch("http://localhost:3000/api/auth/instituciones", {
+      const res = await fetch(apiUrl("/api/auth/instituciones"), {
         headers: { Authorization: `Bearer ${token}` }
       });
       const data = await res.json().catch(() => ({}));

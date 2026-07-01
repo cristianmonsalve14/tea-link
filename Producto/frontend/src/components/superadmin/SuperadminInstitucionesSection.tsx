@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { apiUrl } from '../../config/api';
 import { useNavigate } from "react-router-dom";
 import { FaEdit, FaPlus, FaSearch, FaTrash } from "react-icons/fa";
 import { Alert } from "../ui/Alert";
@@ -138,7 +139,7 @@ export function SuperadminInstitucionesSection() {
     setError(null);
     try {
       const token = localStorage.getItem("token");
-      const res = await fetch(`http://localhost:3000/api/auth/institucion/${inst.id}`, {
+      const res = await fetch(apiUrl(`/api/auth/institucion/${inst.id}`), {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` }
       });

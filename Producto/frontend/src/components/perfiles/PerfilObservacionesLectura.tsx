@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { apiUrl } from '../../config/api';
 import { FaClipboardList } from "react-icons/fa";
 import {
   ObservacionesBitacoraView,
@@ -24,7 +25,7 @@ export function PerfilObservacionesLectura({ perfilId, consentimientoEstado }: P
     try {
       const token = localStorage.getItem("token");
       const res = await fetch(
-        `http://localhost:3000/api/observaciones?perfil_id=${perfilId}`,
+        apiUrl(`/api/observaciones?perfil_id=${perfilId}`),
         { headers: { Authorization: `Bearer ${token}` } }
       );
       const data = await res.json().catch(() => ({}));

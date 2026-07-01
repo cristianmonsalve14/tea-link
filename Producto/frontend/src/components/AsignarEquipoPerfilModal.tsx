@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { apiUrl } from '../config/api';
 import { Modal } from "./ui/Modal";
 import { Button } from "./ui/Button";
 import { Alert } from "./ui/Alert";
@@ -80,7 +81,7 @@ export function AsignarEquipoPerfilModal({
 
   const api = useCallback(
     (path: string, options?: RequestInit) =>
-      fetch(`http://localhost:3000/api/perfiles${path}`, {
+      fetch(apiUrl(`/api/perfiles${path}`), {
         ...options,
         headers: {
           "Content-Type": "application/json",
@@ -98,7 +99,7 @@ export function AsignarEquipoPerfilModal({
     setMensaje(null);
     try {
       const [resStaff, resMiembros] = await Promise.all([
-        fetch("http://localhost:3000/api/auth/usuarios", {
+        fetch(apiUrl("/api/auth/usuarios"), {
           headers: { Authorization: `Bearer ${token()}` }
         }),
         api(`/${perfilId}/miembros-equipo`)

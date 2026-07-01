@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { apiUrl } from '../config/api';
 import { FaSearch } from "react-icons/fa";
 import { Modal } from "./ui/Modal";
 import { Button } from "./ui/Button";
@@ -86,7 +87,7 @@ export function InvitarInstitucionModal({
 
   const api = useCallback(
     (path: string, options?: RequestInit) =>
-      fetch(`http://localhost:3000/api/perfiles${path}`, {
+      fetch(apiUrl(`/api/perfiles${path}`), {
         ...options,
         headers: {
           "Content-Type": "application/json",

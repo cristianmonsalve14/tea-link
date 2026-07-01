@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { apiUrl } from '../config/api';
 import { FaChalkboardTeacher, FaEdit, FaEye, FaKey, FaPlus, FaSearch } from "react-icons/fa";
 import { Card } from "./ui/Card";
 import { Button } from "./ui/Button";
@@ -151,7 +152,7 @@ export function AdminEquipoSection() {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch("http://localhost:3000/api/auth/usuarios", {
+      const res = await fetch(apiUrl("/api/auth/usuarios"), {
         headers: { Authorization: `Bearer ${token()}` }
       });
       const data = await res.json().catch(() => ({}));
@@ -247,7 +248,7 @@ export function AdminEquipoSection() {
           body.especialidad = especialidad;
         }
         const res = await fetch(
-          `http://localhost:3000/api/auth/usuario/${editingUser.id}`,
+          apiUrl(`/api/auth/usuario/${editingUser.id}`),
           {
             method: "PUT",
             headers: {
@@ -272,8 +273,8 @@ export function AdminEquipoSection() {
         esColegio ||
         (config?.rolesPermitidos?.length === 1 && config.rolesPermitidos[0] === "EDUCADOR");
       const url = esSoloEducador
-        ? "http://localhost:3000/api/auth/educadores"
-        : "http://localhost:3000/api/auth/register";
+        ? apiUrl("/api/auth/educadores")
+        : apiUrl("/api/auth/register");
       const emailNorm = email.trim().toLowerCase();
       const body: Record<string, unknown> = esSoloEducador
         ? { email: emailNorm, nombre_completo: nombre.trim() }
@@ -329,7 +330,7 @@ export function AdminEquipoSection() {
     setError(null);
     try {
       const res = await fetch(
-        `http://localhost:3000/api/auth/usuario/${u.id}/reset-password`,
+        apiUrl(`/api/auth/usuario/${u.id}/reset-password`),
         {
           method: "POST",
           headers: { Authorization: `Bearer ${token()}` }
@@ -360,7 +361,7 @@ export function AdminEquipoSection() {
     }
     setEliminandoId(u.id);
     try {
-      const res = await fetch(`http://localhost:3000/api/auth/usuario/${u.id}`, {
+      const res = await fetch(apiUrl(`/api/auth/usuario/${u.id}`), {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token()}` }
       });

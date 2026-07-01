@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { apiUrl } from '../../config/api';
 import { FaBuilding } from "react-icons/fa";
 import { Card } from "../ui/Card";
 import { Field } from "../ui/Field";
@@ -43,7 +44,7 @@ export function MiInstitucionContactoSection() {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch("http://localhost:3000/api/auth/mi-institucion", {
+      const res = await fetch(apiUrl("/api/auth/mi-institucion"), {
         headers: { Authorization: `Bearer ${token()}` }
       });
       const data = await res.json().catch(() => ({}));
@@ -103,7 +104,7 @@ export function MiInstitucionContactoSection() {
 
     setSaving(true);
     try {
-      const res = await fetch("http://localhost:3000/api/auth/mi-institucion/contacto", {
+      const res = await fetch(apiUrl("/api/auth/mi-institucion/contacto"), {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
