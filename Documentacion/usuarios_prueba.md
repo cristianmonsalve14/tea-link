@@ -35,7 +35,7 @@ En ambos casos se genera una **contraseña temporal** mostrada en un modal; el u
 
 ---
 
-## Resumen — 11 usuarios, 3 perfiles, 5 instituciones
+## Resumen — 9 usuarios, 3 perfiles, 5 instituciones
 
 ### Instituciones
 
@@ -62,18 +62,16 @@ En ambos casos se genera una **contraseña temporal** mostrada en un modal; el u
 
 ---
 
-## Operativos — con actividad en bitácora (6 cuentas)
+## Operativos — con actividad en bitácora (4 cuentas)
 
 | Correo | Rol | Institución | Perfil principal | Obs. creadas | Contraseña |
 |--------|-----|-------------|------------------|--------------|------------|
-| familia@tealink.com | FAMILIA | Familia Pérez (#11) | Matías Pérez (#5) — apoderada principal | 4 | `Familia123!` |
-| medico@tealink.com | MEDICO | Centro Médico (#12) | Matías #5 y Clínico #6 | 3 | `Medico123!` |
-| profesional@tealink.com | PROFESIONAL | Centro Médico (#12) | Matías #5 y Clínico #6 | 2 | `Profesional123!` |
-| eduardoaltavida@email.com | EDUCADOR | Colegio AltaVida (#14) | Joaquín (#8) | 1 | `Eduardo123!` |
-| karlataiss@email.com | EDUCADOR | Colegio AltaVida (#14) | Joaquín (#8) | 1 | `Karla123!` |
-| educador1@email.com | EDUCADOR | Colegio AltaVida (#14) | Matías Pérez (#5) | 0 | `Educador123!` |
+| familia@tealink.com | FAMILIA | Familia Pérez (#11) | Matías Pérez — apoderada principal | 4 | `Familia123!` |
+| medico@tealink.com | MEDICO | Centro Médico (#12) | Matías y Clínico | 3 | `Medico123!` |
+| profesional@tealink.com | PROFESIONAL | Centro Médico (#12) | Matías y Clínico | 2 | `Profesional123!` |
+| eduardoaltavida@email.com | EDUCADOR | Colegio AltaVida (#14) | Matías y Joaquín | 1 | `Eduardo123!` |
 
-**Nota sobre `educador1@`:** educador de Colegio AltaVida, vinculado al equipo interdisciplinario de Matías Pérez (#5); consulta la bitácora (caso de prueba CP-10).
+**Nota sobre `eduardoaltavida@`:** educador de Colegio AltaVida, vinculado al equipo de **Matías Pérez** y al perfil **Joaquín Sánchez**; puede consultar la bitácora (caso de prueba CP-10 con Matías).
 
 ---
 
@@ -83,9 +81,9 @@ Cada perfil tiene un **RUT único** en TEA Link (registro de perfiles). Al crear
 
 | ID | Nombre | RUT (demo seed) | Institución | Equipo vinculado | Observaciones |
 |----|--------|-----------------|-------------|------------------|---------------|
-| **5** | Matías Pérez | 11.111.111-1 | Colegio AltaVida (custodia) | familia (principal), medico, profesional, educador1 | 7 |
+| **5** | Matías Pérez | 11.111.111-1 | Colegio AltaVida (custodia) | familia (principal), medico, profesional, eduardoaltavida | 7 |
 | 6 | Matías Pérez Clínico | 33.333.333-3 | Centro Médico | medico, profesional | 2 |
-| 8 | Joaquin Sanchez | 22.222.222-2 | Colegio AltaVida | eduardoaltavida, karlataiss | 2 |
+| 8 | Joaquin Sanchez | 22.222.222-2 | Colegio AltaVida | eduardoaltavida | 1 |
 
 **Demo principal:** perfil **#5 Matías Pérez**.
 
@@ -97,13 +95,15 @@ Cada perfil tiene un **RUT único** en TEA Link (registro de perfiles). Al crear
 |-----------|--------|
 | `profesional.ct@tealink.com` | Sin institución, sin vínculos, sin observaciones |
 | Perfil #9 *perfil de prueba EV3* | Perfil vacío de prueba CP-07 |
+| `educador1@email.com` | Retirado de la cohorte demo (Jun 2026) |
+| `karlataiss@email.com` | Retirado de la cohorte demo (Jun 2026) |
 
 ---
 
 ## Notas
 
-- **11 usuarios** en total: 1 superadmin + 4 admins + 6 operativos.
-- `educador1@` pertenece a Colegio AltaVida (#14) y accede a Matías Pérez (#5) vía `perfil_usuario`.
+- **9 usuarios** en total: 1 superadmin + 3 admins + 4 operativos.
+- `eduardoaltavida@` pertenece a Colegio AltaVida (#14) y accede a Matías Pérez y Joaquín Sánchez vía `perfil_usuario`.
 - Administradores **no** consultan bitácora.
 - **Reset de clave:** superadmin → admins; admin institucional → equipo operativo (ver *Gestión de contraseñas*).
 - Verificar BD: `cd Producto/backend` → `npx ts-node scripts/db-resumen.ts`

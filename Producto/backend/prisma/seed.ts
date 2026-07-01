@@ -200,20 +200,6 @@ async function main() {
     'EDUCADOR',
     colegioAltaVida.id
   );
-  const karlaUser = await createUsuario(
-    'karlataiss@email.com',
-    'Karla123!',
-    'Karla Taiss',
-    'EDUCADOR',
-    colegioAltaVida.id
-  );
-  const educador1User = await createUsuario(
-    'educador1@email.com',
-    'Educador123!',
-    'Educador Uno AltaVida',
-    'EDUCADOR',
-    colegioAltaVida.id
-  );
 
   const perfilMatias = await createPerfil(colegioAltaVida.id, 'Matías Pérez', '11.111.111-1', {
     consentimiento_estado: 'ACEPTADO',
@@ -240,15 +226,13 @@ async function main() {
     data: { consentimiento_aceptado_at: consentAt }
   });
 
-  for (const u of [medicoUser, profesionalUser, educador1User]) {
+  for (const u of [medicoUser, profesionalUser, eduardoUser]) {
     await vincularUsuarioAPerfil(perfilMatias.id, u.id, u.rol);
   }
   for (const u of [medicoUser, profesionalUser]) {
     await vincularUsuarioAPerfil(perfilClinico.id, u.id, u.rol);
   }
-  for (const u of [eduardoUser, karlaUser]) {
-    await vincularUsuarioAPerfil(perfilJoaquin.id, u.id, u.rol);
-  }
+  await vincularUsuarioAPerfil(perfilJoaquin.id, eduardoUser.id, eduardoUser.rol);
 
   const operativos = await prisma.usuario.findMany({
     where: {
@@ -275,13 +259,11 @@ async function main() {
   await createObs(perfilClinico.id, profesionalUser.id, 'Informe terapéutico clínico', 'ACADEMICO');
 
   await createObs(perfilJoaquin.id, eduardoUser.id, 'Observación aula Joaquín', 'ACADEMICO');
-  await createObs(perfilJoaquin.id, karlaUser.id, 'Observación convivencia Joaquín', 'CONDUCTA');
 
   console.log('\n--- Demo depurada cargada (usuarios_prueba.md) ---');
   console.log(`Superadmin:     cr.monsalveb@duocuc.cl / SuperAdmin123!`);
   console.log(`Familia:        familia@tealink.com / Familia123!`);
-  console.log(`Educador Matías: educador1@email.com / Educador123!`);
-  console.log(`Educador Joaquín: eduardoaltavida@email.com / Eduardo123!`);
+  console.log(`Educador:       eduardoaltavida@email.com / Eduardo123!`);
   console.log(`Perfil principal: #${perfilMatias.id} Matías Pérez (Colegio AltaVida)`);
   console.log(`Instituciones: Sistema, Familia Pérez, Centro Médico, Colegio AltaVida, Centro terapeutico`);
   void superadmin;
