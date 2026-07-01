@@ -45,8 +45,6 @@ async function main() {
       'familia@tealink.com',
       'medico@tealink.com',
       'profesional@tealink.com',
-      'educador2@tealink.com',
-      'jose@email.com',
       'educador1@email.com'
     ];
     for (const email of emails) {
