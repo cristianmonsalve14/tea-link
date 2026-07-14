@@ -3,6 +3,7 @@ import { AuthRequest } from '../middleware/authMiddleware';
 import { PrismaClient } from '@prisma/client';
 import { z } from 'zod';
 import { enviarReportePdf } from '../utils/reportePdf';
+import { fechaISOChile } from '../utils/fechaChile';
 import { usuarioTieneAccesoPerfil } from '../utils/perfilAccess';
 import { privacidadVisibleParaRol } from '../utils/privacidadObservacion';
 import { buildReportesListWhere } from '../utils/reporteListQuery';
@@ -232,7 +233,7 @@ export const exportReporte = async (req: AuthRequest, res: Response) => {
         const obs = o.observacion;
         const esc = (s: string) => `"${s.replace(/"/g, '""')}"`;
         return [
-          obs.fecha_evento.toISOString().slice(0, 10),
+          fechaISOChile(obs.fecha_evento),
           obs.categoria,
           esc(obs.titulo),
           esc(obs.descripcion),

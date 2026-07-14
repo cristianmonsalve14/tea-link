@@ -1,5 +1,7 @@
 import type { Response } from 'express';
 
+import { formatFechaChile, formatFechaHoraChile } from './fechaChile';
+
 // require evita fallos de import con ts-node en Windows
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const PDFDocument = require('pdfkit') as typeof import('pdfkit');
@@ -68,11 +70,7 @@ const ROL_EMISOR: Record<string, string> = {
 const ROLES_BLOQUE_EMISOR = new Set(['PROFESIONAL', 'MEDICO', 'EDUCADOR']);
 
 function fmtFecha(d: Date) {
-  try {
-    return d.toLocaleDateString('es-CL', { day: '2-digit', month: 'short', year: 'numeric' });
-  } catch {
-    return d.toISOString().slice(0, 10);
-  }
+  return formatFechaChile(d);
 }
 
 function pdfText(value: string): string {
@@ -203,7 +201,7 @@ function drawMetaCard(doc: PdfDoc, reporte: ReportePdfInput) {
     ['Perfil', reporte.perfilNombre],
     ['Periodo', `${fmtFecha(reporte.fecha_inicio)} — ${fmtFecha(reporte.fecha_fin)}`],
     ['Generado por', reporte.creador.nombre_completo],
-    ['Fecha de emisión', reporte.emitidoEn.toLocaleString('es-CL')]
+    ['Fecha de emisión', formatFechaHoraChile(reporte.emitidoEn)]
   ];
 
   let y = y0 + pad;

@@ -13,6 +13,7 @@ import { CATEGORIA_INFO, PRIVACIDAD_INFO } from "../config/observacionUi";
 import type { CategoriaObs } from "../config/rolPanelConfig";
 import { useRoleTheme } from "../context/RoleThemeContext";
 import { cn } from "../theme/cn";
+import { formatFechaHoraChile } from "../utils/fechaChile";
 import { Button } from "./ui/Button";
 import { Input } from "./ui/Input";
 
@@ -68,14 +69,7 @@ type VistaModo = "rol" | "cronologico";
 type FiltroRol = (typeof FILTROS_ROL)[number]["id"];
 
 function formatFecha(v: string) {
-  try {
-    return new Date(v).toLocaleString("es-CL", {
-      dateStyle: "medium",
-      timeStyle: "short"
-    });
-  } catch {
-    return v;
-  }
+  return formatFechaHoraChile(v);
 }
 
 function categoriaLabel(cat: string) {
