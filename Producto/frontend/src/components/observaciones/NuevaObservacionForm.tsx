@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useDebouncedValue } from "../../hooks/useDebouncedValue";
 import { apiUrl } from '../../config/api';
 import { useNavigate } from "react-router-dom";
 import { FaCheckCircle, FaEdit, FaEye, FaShieldAlt } from "react-icons/fa";
@@ -17,6 +18,13 @@ import {
   validarFechaEvento,
   validarTituloObservacion
 } from "../../utils/formValidation";
+import {
+  datetimeLocalChileToISO,
+  formatDatetimeLocalChile,
+  formatFechaHoraChile,
+  nowDatetimeLocalChile,
+  toDatetimeLocalChile
+} from "../../utils/fechaChile";
 import { useRoleTheme } from "../../context/RoleThemeContext";
 import { Card } from "../ui/Card";
 import { PerfilSelector } from "../perfiles/PerfilSelector";
@@ -35,24 +43,6 @@ type Props = {
   observacionId?: number;
 };
 
-function toDatetimeLocal(iso: string) {
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return new Date().toISOString().slice(0, 16);
-  const pad = (n: number) => String(n).padStart(2, "0");
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
-}
-
-function formatPreviewFecha(v: string) {
-  try {
-    return new Date(v).toLocaleString("es-CL", {
-      dateStyle: "medium",
-      timeStyle: "short"
-    });
-  } catch {
-    return v;
-  }
-}
-
 export function NuevaObservacionForm({ perfilIdInicial, observacionId }: Props) {
   const navigate = useNavigate();
   const rol = getRole() ?? "EDUCADOR";
@@ -65,9 +55,7 @@ export function NuevaObservacionForm({ perfilIdInicial, observacionId }: Props) 
   const [titulo, setTitulo] = useState("");
   const [descripcion, setDescripcion] = useState("");
   const [categoria, setCategoria] = useState<CategoriaObs>(config.defaultCategoria);
-  const [fechaEvento, setFechaEvento] = useState(
-    () => new Date().toISOString().slice(0, 16)
-  );
+  const [fechaEvento, setFechaEvento] = useState(nowDatetimeLocalChile);
   const [privacidad, setPrivacidad] = useState<PrivacidadKey>("PUBLICA");
   const [formLoading, setFormLoading] = useState(false);
   const [loadingInitial, setLoadingInitial] = useState(isEdit);
@@ -143,7 +131,7 @@ export function NuevaObservacionForm({ perfilIdInicial, observacionId }: Props) 
         setTitulo(obs.titulo ?? "");
         setDescripcion(obs.descripcion ?? "");
         setCategoria((obs.categoria as CategoriaObs) ?? config.defaultCategoria);
-        setFechaEvento(toDatetimeLocal(obs.fecha_evento));
+        setFechaEvento(toDatetimeLocalChile(obs.fecha_evento));
         if (obs.privacidad && obs.privacidad in PRIVACIDAD_INFO) {
           setPrivacidad(obs.privacidad as PrivacidadKey);
         }
@@ -163,15 +151,20 @@ export function NuevaObservacionForm({ perfilIdInicial, observacionId }: Props) 
 
   const nombrePerfilVisible = perfilNombre || "Sin perfil";
 
+  const tituloPreview = useDebouncedValue(titulo, 280);
+  const descripcionPreview = useDebouncedValue(descripcion, 280);
+  const tituloProgreso = useDebouncedValue(titulo, 400);
+  const descripcionProgreso = useDebouncedValue(descripcion, 400);
+
   const progreso = useMemo(() => {
     let n = 0;
     if (perfilId) n++;
-    if (titulo.trim().length >= 3) n++;
-    if (descripcion.trim().length >= 10) n++;
+    if (tituloProgreso.trim().length >= 3) n++;
+    if (descripcionProgreso.trim().length >= 10) n++;
     if (categoria) n++;
     if (fechaEvento) n++;
     return Math.round((n / 5) * 100);
-  }, [perfilId, titulo, descripcion, categoria, fechaEvento]);
+  }, [perfilId, tituloProgreso, descripcionProgreso, categoria, fechaEvento]);
 
   const guardarObservacion = async () => {
     setFormLoading(true);
@@ -181,7 +174,7 @@ export function NuevaObservacionForm({ perfilIdInicial, observacionId }: Props) 
         titulo: titulo.trim(),
         descripcion: descripcion.trim(),
         categoria,
-        fecha_evento: new Date(fechaEvento).toISOString()
+        fecha_evento: datetimeLocalChileToISO(fechaEvento)
       };
       if (config.showPrivacidad) body.privacidad = privacidad;
 
@@ -297,7 +290,7 @@ export function NuevaObservacionForm({ perfilIdInicial, observacionId }: Props) 
               {registradaEl && (
                 <p className="text-xs text-neutral-gray-medium mt-2">
                   Registrada el{" "}
-                  {formatPreviewFecha(registradaEl)}
+                  {formatFechaHoraChile(registradaEl)}
                   {titulo.trim() ? (
                     <>
                       {" "}
@@ -320,14 +313,14 @@ export function NuevaObservacionForm({ perfilIdInicial, observacionId }: Props) 
           </div>
           <div className="h-2 rounded-full bg-neutral-gray-light overflow-hidden">
             <div
-              className={cn("h-full rounded-full transition-all duration-300", theme.btnPrimary.split(" ")[0])}
+              className={cn("h-full rounded-full", theme.btnPrimary.split(" ")[0])}
               style={{ width: `${progreso}%` }}
             />
           </div>
         </div>
       )}
 
-      <div className="grid lg:grid-cols-5 gap-6 items-start">
+      <div className="grid lg:grid-cols-5 gap-6 items-start [overflow-anchor:none]">
         {/* Formulario */}
         <form
           id="observacion-form"
@@ -444,6 +437,7 @@ export function NuevaObservacionForm({ perfilIdInicial, observacionId }: Props) 
               <Field
                 label="Fecha y hora del evento"
                 required
+                hint="Horario de Chile (continental)"
                 error={submitAttempted ? fieldErrors.fecha : undefined}
               >
                 <Input
@@ -508,7 +502,7 @@ export function NuevaObservacionForm({ perfilIdInicial, observacionId }: Props) 
         </form>
 
         {/* Vista previa */}
-        <aside className="lg:col-span-2 lg:sticky lg:top-6 space-y-4">
+        <aside className="lg:col-span-2 lg:sticky lg:top-6 lg:self-start space-y-4 [contain:layout]">
           <Card
             title={
               <>
@@ -540,16 +534,16 @@ export function NuevaObservacionForm({ perfilIdInicial, observacionId }: Props) 
                   {CATEGORIA_INFO[categoria].label}
                 </span>
               </div>
-              <h3 className="font-bold text-neutral-gray">
-                {titulo.trim() || "Título de la observación"}
+              <h3 className="font-bold text-neutral-gray line-clamp-2 min-h-[3.25rem]">
+                {tituloPreview.trim() || "Título de la observación"}
               </h3>
-              <p className="text-sm text-neutral-gray-medium mt-2 whitespace-pre-wrap">
-                {descripcion.trim() || "La descripción que escriba se mostrará aquí..."}
+              <p className="text-sm text-neutral-gray-medium mt-2 whitespace-pre-wrap min-h-[9rem] max-h-[9rem] overflow-y-auto">
+                {descripcionPreview.trim() || "La descripción que escriba se mostrará aquí..."}
               </p>
               <p className="text-xs text-neutral-gray-medium mt-4 pt-3 border-t border-neutral-gray-medium/20">
                 Perfil: <strong>{nombrePerfilVisible}</strong>
                 <br />
-                {formatPreviewFecha(fechaEvento)}
+                {formatDatetimeLocalChile(fechaEvento)}
                 {config.showPrivacidad && (
                   <>
                     <br />

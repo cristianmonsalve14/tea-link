@@ -17,6 +17,7 @@ import {
   validarRangoFechas,
   validarTituloReporte
 } from "../utils/formValidation";
+import { formatFechaChile, formatFechaHoraChile } from "../utils/fechaChile";
 
 type Observacion = {
   id: number;
@@ -75,11 +76,11 @@ function parseApiError(errorData: Record<string, unknown>, fallback: string): st
 }
 
 function formatFecha(v: string) {
-  try {
-    return new Date(v).toLocaleDateString("es-CL");
-  } catch {
-    return v;
-  }
+  return formatFechaChile(v);
+}
+
+function formatFechaObservacion(v: string) {
+  return formatFechaHoraChile(v);
 }
 
 export function GenerarReporteSection() {
@@ -495,7 +496,7 @@ export function GenerarReporteSection() {
                     <div className="text-sm">
                       <span className="font-medium">{obs.titulo}</span>
                       <span className="text-neutral-gray-medium ml-2">
-                        {obs.categoria} · {formatFecha(obs.fecha_evento)}
+                        {obs.categoria} · {formatFechaObservacion(obs.fecha_evento)}
                       </span>
                       {fuera && fechaDesde && fechaHasta && (
                         <span className="block text-xs text-amber-700 mt-0.5">
@@ -668,7 +669,7 @@ export function GenerarReporteSection() {
                       {obs.descripcion}
                     </p>
                     <p className="text-xs text-neutral-gray-medium mt-2 pt-2 border-t border-neutral-gray-medium/20">
-                      {formatFecha(obs.fecha_evento)} · {obs.autor.nombre_completo}
+                      {formatFechaObservacion(obs.fecha_evento)} · {obs.autor.nombre_completo}
                     </p>
                   </li>
                 ))}
